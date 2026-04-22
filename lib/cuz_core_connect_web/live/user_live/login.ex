@@ -2,6 +2,8 @@ defmodule CuzCoreConnectWeb.UserLive.Login do
   use CuzCoreConnectWeb, :live_view
 
   alias CuzCoreConnect.Account
+  alias CuzCoreConnect.Account.User
+  alias CuzCoreConnect.Account.Scope
 
   @impl true
   def render(assigns) do
@@ -43,7 +45,7 @@ defmodule CuzCoreConnectWeb.UserLive.Login do
           phx-submit="submit_magic"
         >
           <.input
-            readonly={!!@current_scope}
+            readonly={@current_scope && @current_scope.user != nil}
             field={f[:email]}
             type="email"
             label="Email"
@@ -68,7 +70,7 @@ defmodule CuzCoreConnectWeb.UserLive.Login do
           phx-trigger-action={@trigger_submit}
         >
           <.input
-            readonly={!!@current_scope}
+            readonly={@current_scope && @current_scope.user != nil}
             field={f[:email]}
             type="email"
             label="Email"
@@ -99,7 +101,10 @@ defmodule CuzCoreConnectWeb.UserLive.Login do
   def mount(_params, _session, socket) do
     email =
       Phoenix.Flash.get(socket.assigns.flash, :email) ||
-        get_in(socket.assigns, [:current_scope, Access.key(:user), Access.key(:email)])
+        case socket.assigns[:current_scope] do
+          %Scope{user: %User{} = user} -> user.email
+          _ -> nil
+        end
 
     form = to_form(%{"email" => email}, as: "user")
 

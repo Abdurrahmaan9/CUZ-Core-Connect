@@ -35,35 +35,37 @@ defmodule CuzCoreConnectWeb.Layouts do
 
   def app(assigns) do
     ~H"""
-    <header class="navbar px-4 sm:px-6 lg:px-8">
-      <div class="flex-1">
-        <a href="/" class="flex-1 flex w-fit items-center gap-2">
-          <img src={~p"/images/logo.svg"} width="36" />
-          <span class="text-sm font-semibold">v{Application.spec(:phoenix, :vsn)}</span>
-        </a>
-      </div>
-      <div class="flex-none">
-        <ul class="flex flex-column px-1 space-x-4 items-center">
-          <li>
-            <a href="https://phoenixframework.org/" class="btn btn-ghost">Website</a>
-          </li>
-          <li>
-            <a href="https://github.com/phoenixframework/phoenix" class="btn btn-ghost">GitHub</a>
-          </li>
-          <li>
-            <.theme_toggle />
-          </li>
-          <li>
-            <a href="https://hexdocs.pm/phoenix/overview.html" class="btn btn-primary">
-              Get Started <span aria-hidden="true">&rarr;</span>
-            </a>
-          </li>
+    <header class="fixed top-0 left-0 right-0 z-50 container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl bg-white rounded-xl shadow-sm mt-5">
+      <div class="flex items-center justify-between py-4">
+        <div class="flex items-center">
+          <a href="/" class="flex items-center gap-2 text-xl font-bold text-primary">
+            UniFlow
+          </a>
+        </div>
+        <ul class="flex items-center space-x-6">
+          <li><a href="#" class="font-medium text-gray-600 hover:text-gray-900">About</a></li>
+          <li><a href="#" class="font-medium text-gray-600 hover:text-gray-900">Developers</a></li>
+          <li><a href="#" class="font-medium text-gray-600 hover:text-gray-900">Help Center</a></li>
         </ul>
+        <div class="flex items-center space-x-3">
+          <.theme_toggle />
+          <%= if @current_scope && @current_scope.user do %>
+            <span class="text-sm text-gray-600">{@current_scope.user.email}</span>
+            <%= if @current_scope.user.user_role == "Admin" do %>
+              <.link href={~p"/Admin/Dashboard"} class="text-sm font-medium text-primary hover:text-primary/90">Admin</.link>
+            <% end %>
+            <.link href={~p"/users/settings"} class="text-sm font-medium text-gray-600 hover:text-gray-900">Settings</.link>
+            <.link href={~p"/users/log-out"} method="delete" class="btn btn-outline border-gray-300 text-gray-700 hover:bg-gray-50">Log out</.link>
+          <% else %>
+            <.link href={~p"/users/log-in"} class="btn btn-outline border-gray-300 text-gray-700 hover:bg-gray-50">Log In</.link>
+            <.link href={~p"/users/register"} class="btn bg-primary text-white hover:bg-orange-600 border-transparent">Sign Up</.link>
+          <% end %>
+        </div>
       </div>
     </header>
 
-    <main class="px-4 py-20 sm:px-6 lg:px-8">
-      <div class="mx-auto max-w-2xl space-y-4">
+    <main class="px-4 pt-32 pb-20 sm:px-6 lg:px-8">
+      <div class="mx-auto w-full space-y-4">
         {render_slot(@inner_block)}
       </div>
     </main>

@@ -45,7 +45,7 @@ defmodule CuzCoreConnectWeb.UserLive.Registration do
   @impl true
   def mount(_params, _session, %{assigns: %{current_scope: %{user: user}}} = socket)
       when not is_nil(user) do
-    {:ok, redirect(socket, to: CuzCoreConnectWeb.UserAuth.signed_in_path(socket))}
+    {:ok, redirect(socket, to: CuzCoreConnectWeb.Plugs.UserAuth.signed_in_path(socket))}
   end
 
   def mount(_params, _session, socket) do

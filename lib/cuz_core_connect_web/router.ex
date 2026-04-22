@@ -1,7 +1,7 @@
 defmodule CuzCoreConnectWeb.Router do
   use CuzCoreConnectWeb, :router
 
-  import CuzCoreConnectWeb.UserAuth
+  import CuzCoreConnectWeb.Plugs.UserAuth
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -52,10 +52,45 @@ defmodule CuzCoreConnectWeb.Router do
     pipe_through [:browser, :require_authenticated_user]
 
     live_session :require_authenticated_user,
-      on_mount: [{CuzCoreConnectWeb.UserAuth, :require_authenticated}] do
+      on_mount: [{CuzCoreConnectWeb.Plugs.UserAuth, :require_authenticated}] do
       live "/users/settings", UserLive.Settings, :edit
       live "/users/settings/confirm-email/:token", UserLive.Settings, :confirm_email
     end
+
+    live_session :require_admin_user,
+      on_mount: [{CuzCoreConnectWeb.Plugs.UserAuth, :require_authenticated}, {CuzCoreConnectWeb.Plugs.AdminAuth, :ensure_admin}] do
+        scope "/Admin" do
+          live "/Dashboard", Admin.DashboardLive, :index
+        end
+    end
+
+    # live_session :require_academics_user,
+    #   on_mount: [{CuzCoreConnectWeb.Plugs.UserAuth, :require_authenticated}, {CuzCoreConnectWeb.Plugs.UserAuth, :ensure_academics_role}] do
+    #     scope "/Academics" do
+    #       live "/Dashboard", Academics.DashboardLive, :index
+    #     end
+    # end
+
+    # live_session :require_finance_user,
+    #   on_mount: [{CuzCoreConnectWeb.Plugs.UserAuth, :require_authenticated}, {CuzCoreConnectWeb.Plugs.UserAuth, :ensure_finance_role}] do
+    #     scope "/Finance" do
+    #       live "/Dashboard", Finance.DashboardLive, :index
+    #     end
+    # end
+
+    # live_session :require_hod_user,
+    #   on_mount: [{CuzCoreConnectWeb.Plugs.UserAuth, :require_authenticated}, {CuzCoreConnectWeb.Plugs.UserAuth, :ensure_hod_role}] do
+    #     scope "/HOD" do
+    #       live "/Dashboard", HOD.DashboardLive, :index
+    #     end
+    # end
+
+    # live_session :require_student_user,
+    #   on_mount: [{CuzCoreConnectWeb.Plugs.UserAuth, :require_authenticated}, {CuzCoreConnectWeb.Plugs.UserAuth, :ensure_student_role}] do
+    #     scope "/Retention" do
+    #       live "/Dashboard", Retention.DashboardLive, :index
+    #     end
+    # end
 
     post "/users/update-password", UserSessionController, :update_password
   end
@@ -64,7 +99,7 @@ defmodule CuzCoreConnectWeb.Router do
     pipe_through [:browser]
 
     live_session :current_user,
-      on_mount: [{CuzCoreConnectWeb.UserAuth, :mount_current_scope}] do
+      on_mount: [{CuzCoreConnectWeb.Plugs.UserAuth, :mount_current_scope}] do
       live "/users/register", UserLive.Registration, :new
       live "/users/log-in", UserLive.Login, :new
       live "/users/log-in/:token", UserLive.Confirmation, :new

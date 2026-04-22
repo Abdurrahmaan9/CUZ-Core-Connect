@@ -4,7 +4,7 @@ defmodule CuzCoreConnectWeb.UserAuthTest do
   alias Phoenix.LiveView
   alias CuzCoreConnect.Account
   alias CuzCoreConnect.Account.Scope
-  alias CuzCoreConnectWeb.UserAuth
+  alias CuzCoreConnectWeb.Plugs.UserAuth
 
   import CuzCoreConnect.AccountFixtures
 

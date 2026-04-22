@@ -8,6 +8,9 @@ defmodule CuzCoreConnect.Account.User do
     field :hashed_password, :string, redact: true
     field :confirmed_at, :utc_datetime
     field :authenticated_at, :utc_datetime, virtual: true
+    field :user_role, :string, default: "Admin"
+    field :status, :string
+    field :is_active, :boolean, default: true
 
     timestamps(type: :utc_datetime)
   end

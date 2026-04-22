@@ -2,7 +2,7 @@ defmodule CuzCoreConnectWeb.UserSessionController do
   use CuzCoreConnectWeb, :controller
 
   alias CuzCoreConnect.Account
-  alias CuzCoreConnectWeb.UserAuth
+  alias CuzCoreConnectWeb.Plugs.UserAuth
 
   def create(conn, %{"_action" => "confirmed"} = params) do
     create(conn, params, "User confirmed successfully.")

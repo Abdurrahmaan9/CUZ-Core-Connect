@@ -8,6 +8,9 @@ defmodule CuzCoreConnect.Repo.Migrations.CreateUsersAuthTables do
       add :email, :citext, null: false
       add :hashed_password, :string
       add :confirmed_at, :utc_datetime
+      add :user_role, :string
+      add :status, :string
+      add :is_active, :boolean, default: true
 
       timestamps(type: :utc_datetime)
     end

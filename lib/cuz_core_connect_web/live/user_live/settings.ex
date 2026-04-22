@@ -1,7 +1,7 @@
 defmodule CuzCoreConnectWeb.UserLive.Settings do
   use CuzCoreConnectWeb, :live_view
 
-  on_mount {CuzCoreConnectWeb.UserAuth, :require_sudo_mode}
+  on_mount {CuzCoreConnectWeb.Plugs.UserAuth, :require_sudo_mode}
 
   alias CuzCoreConnect.Account
 

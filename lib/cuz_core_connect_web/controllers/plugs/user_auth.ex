@@ -1,4 +1,4 @@
-defmodule CuzCoreConnectWeb.UserAuth do
+defmodule CuzCoreConnectWeb.Plugs.UserAuth do
   use CuzCoreConnectWeb, :verified_routes
 
   import Plug.Conn
@@ -37,7 +37,7 @@ defmodule CuzCoreConnectWeb.UserAuth do
 
     conn
     |> create_or_extend_session(user, params)
-    |> redirect(to: user_return_to || signed_in_path(conn))
+    |> redirect(to: user_return_to || signed_in_path_for_user(user))
   end
 
   @doc """
@@ -201,13 +201,13 @@ defmodule CuzCoreConnectWeb.UserAuth do
       defmodule CuzCoreConnectWeb.PageLive do
         use CuzCoreConnectWeb, :live_view
 
-        on_mount {CuzCoreConnectWeb.UserAuth, :mount_current_scope}
+        on_mount {CuzCoreConnectWeb.Plugs.UserAuth, :mount_current_scope}
         ...
       end
 
   Or use the `live_session` of your router to invoke the on_mount callback:
 
-      live_session :authenticated, on_mount: [{CuzCoreConnectWeb.UserAuth, :require_authenticated}] do
+      live_session :authenticated, on_mount: [{CuzCoreConnectWeb.Plugs.UserAuth, :require_authenticated}] do
         live "/profile", ProfileLive, :index
       end
   """
@@ -245,24 +245,164 @@ defmodule CuzCoreConnectWeb.UserAuth do
     end
   end
 
+  def on_mount(:redirect_to_dashboard, _params, _session, socket) do
+    case socket.assigns.current_scope do
+      %{user: %{user_role: "Admin"}} ->
+        {:noreply, Phoenix.LiveView.redirect(socket, to: "/Admin/Dashboard")}
+
+      %{user: %{user_role: "Academics"}} ->
+        {:noreply, Phoenix.LiveView.redirect(socket, to: "/Academics/Dashboard")}
+
+      %{user: %{user_role: "Finance"}} ->
+        {:noreply, Phoenix.LiveView.redirect(socket, to: "/Finance/Dashboard")}
+
+      %{user: %{user_role: "HOD"}} ->
+        {:noreply, Phoenix.LiveView.redirect(socket, to: "/HOD/Dashboard")}
+
+      %{user: %{user_role: "Student"}} ->
+        {:noreply, Phoenix.LiveView.redirect(socket, to: "/Student/Dashboard")}
+
+      _ ->
+        {:noreply, Phoenix.LiveView.redirect(socket, to: "/")}
+    end
+  end
+
+  def on_mount(:ensure_academics_role, _params, _session, socket) do
+    case socket.assigns.current_scope do
+      %{user: %{user_role: "Academics"}} ->
+        {:cont, socket}
+      %{user: _} ->
+        {:halt,
+         socket
+         |> put_flash(:error, "Access denied. Academics privileges required.")
+         |> Phoenix.LiveView.redirect(socket, to: signed_in_path_for_user(socket.assigns.current_scope.user))}
+      _ ->
+        {:halt,
+         socket
+         |> put_flash(:error, "You must be logged in to access this page.")
+         |> redirect(to: "/users/log-in")}
+    end
+  end
+
+  def on_mount(:ensure_finance_role, _params, _session, socket) do
+    case socket.assigns.current_scope do
+      %{user: %{user_role: "Finance"}} ->
+        {:cont, socket}
+      %{user: _} ->
+        {:halt,
+         socket
+         |> put_flash(:error, "Access denied. Finance privileges required.")
+         |> Phoenix.LiveView.redirect(socket, to: signed_in_path_for_user(socket.assigns.current_scope.user))}
+      _ ->
+        {:halt,
+         socket
+         |> put_flash(:error, "You must be logged in to access this page.")
+         |> redirect(to: "/users/log-in")}
+    end
+  end
+
+  def on_mount(:ensure_hod_role, _params, _session, socket) do
+    case socket.assigns.current_scope do
+      %{user: %{user_role: "HOD"}} ->
+        {:cont, socket}
+      %{user: _} ->
+        {:halt,
+         socket
+         |> put_flash(:error, "Access denied. HOD privileges required.")
+         |> Phoenix.LiveView.redirect(socket, to: signed_in_path_for_user(socket.assigns.current_scope.user))}
+      _ ->
+        {:halt,
+         socket
+         |> put_flash(:error, "You must be logged in to access this page.")
+         |> redirect(to: "/users/log-in")}
+    end
+  end
+
+  def on_mount(:ensure_retention_role, _params, _session, socket) do
+    case socket.assigns.current_scope do
+      %{user: %{user_role: "Retention"}} ->
+        {:cont, socket}
+      %{user: _} ->
+        {:halt,
+         socket
+         |> put_flash(:error, "Access denied. Retention privileges required.")
+         |> Phoenix.LiveView.redirect(socket, to: signed_in_path_for_user(socket.assigns.current_scope.user))}
+      _ ->
+        {:halt,
+         socket
+         |> put_flash(:error, "You must be logged in to access this page.")
+         |> redirect(to: "/users/log-in")}
+    end
+  end
+
   defp mount_current_scope(socket, session) do
     Phoenix.Component.assign_new(socket, :current_scope, fn ->
-      {user, _} =
-        if user_token = session["user_token"] do
-          Account.get_user_by_session_token(user_token)
-        end || {nil, nil}
-
-      Scope.for_user(user)
+      get_current_scope_from_session(session)
     end)
   end
 
-  @doc "Returns the path to redirect to after log in."
-  # the user was already logged in, redirect to settings
-  def signed_in_path(%Plug.Conn{assigns: %{current_scope: %Scope{user: %Account.User{}}}}) do
-    ~p"/users/settings"
+  def get_current_scope_from_session(session) do
+    user_token = session["user_token"]
+
+    user =
+      case user_token && Account.get_user_by_session_token(user_token) do
+        {user, _token_inserted_at} -> user
+        _ -> nil
+      end
+
+    Scope.for_user(user)
   end
 
-  def signed_in_path(_), do: ~p"/"
+  @doc "Returns the path to redirect to after log in based on user role."
+  def signed_in_path(%Plug.Conn{assigns: %{current_scope: %{user: %{user_role: "Admin"}}}}) do
+    "/Admin/Dashboard"
+  end
+
+  def signed_in_path(%Plug.Conn{assigns: %{current_scope: %{user: %{user_role: "Academics"}}}}) do
+    "/Academics/Dashboard"
+  end
+
+  def signed_in_path(%Plug.Conn{assigns: %{current_scope: %{user: %{user_role: "Finance"}}}}) do
+    "/Finance/Dashboard"
+  end
+
+  def signed_in_path(%Plug.Conn{assigns: %{current_scope: %{user: %{user_role: "HOD"}}}}) do
+    "/HOD/Dashboard"
+  end
+
+  def signed_in_path(%Plug.Conn{assigns: %{current_scope: %{user: %{user_role: "Retention"}}}}) do
+    "/Retention/Dashboard"
+  end
+
+  def signed_in_path(%Plug.Conn{assigns: %{current_scope: %{user: %{user_role: _user_role}}}}) do
+    # Default fallback for any other role
+    "/users/settings"
+  end
+
+  def signed_in_path(_), do: "/"
+
+  @doc "Returns the path to redirect to after log in based on user role."
+  def signed_in_path_for_user(%Account.User{user_role: "Admin"}) do
+    "/Admin/Dashboard"
+  end
+
+  def signed_in_path_for_user(%Account.User{user_role: "Academics"}) do
+    "/Academics/Dashboard"
+  end
+
+  def signed_in_path_for_user(%Account.User{user_role: "Finance"}) do
+    "/Finance/Dashboard"
+  end
+
+  def signed_in_path_for_user(%Account.User{user_role: "HOD"}) do
+    "/HOD/Dashboard"
+  end
+
+  def signed_in_path_for_user(%Account.User{user_role: "Retention"}) do
+    "/Retention/Dashboard"
+  end
+
+  def signed_in_path_for_user(_), do: "/users/settings"
 
   @doc """
   Plug for routes that require the user to be authenticated.
