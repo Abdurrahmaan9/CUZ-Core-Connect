@@ -60,7 +60,13 @@ defmodule CuzCoreConnectWeb.Router do
     live_session :require_admin_user,
       on_mount: [{CuzCoreConnectWeb.Plugs.UserAuth, :require_authenticated}, {CuzCoreConnectWeb.Plugs.AdminAuth, :ensure_admin}] do
         scope "/Admin" do
-          live "/Dashboard", Admin.DashboardLive, :index
+          live "/Dashboard", Admin.Index, :index
+
+          scope "/users" do
+            live "/", Backend.UserMgt.Index, :index
+            live "/new", Backend.UserMgt.Index, :new
+            live "/:id/edit", Backend.UserMgt.Index, :edit
+          end
         end
     end
 

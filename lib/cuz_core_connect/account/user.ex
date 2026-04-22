@@ -8,7 +8,7 @@ defmodule CuzCoreConnect.Account.User do
     field :hashed_password, :string, redact: true
     field :confirmed_at, :utc_datetime
     field :authenticated_at, :utc_datetime, virtual: true
-    field :user_role, :string, default: "Admin"
+    field :user_role, :string
     field :status, :string
     field :is_active, :boolean, default: true
 
@@ -28,8 +28,22 @@ defmodule CuzCoreConnect.Account.User do
   """
   def email_changeset(user, attrs, opts \\ []) do
     user
-    |> cast(attrs, [:email])
+    |> cast(attrs, [:email, :user_role, :status, :is_active])
     |> validate_email(opts)
+  end
+
+  @doc """
+  A user changeset for registration.
+
+  It validates email, password, and other user fields for new user registration.
+  """
+  def registration_changeset(user, attrs, opts \\ []) do
+    user
+    |> cast(attrs, [:email, :password, :user_role, :status, :is_active])
+    |> validate_email(opts)
+    |> validate_required([:email, :password])
+    |> validate_length(:password, min: 8, max: 24)
+    |> maybe_hash_password(opts)
   end
 
   defp validate_email(changeset, opts) do
@@ -131,5 +145,34 @@ defmodule CuzCoreConnect.Account.User do
   def valid_password?(_, _) do
     Bcrypt.no_user_verify()
     false
+  end
+
+
+  @doc """
+  Generates a random secure password.
+
+  ## Examples
+
+      iex> generate_random_password()
+      "Abc123!@#"
+
+  """
+  def generate_random_password do
+    :crypto.strong_rand_bytes(12)
+    |> Base.encode64()
+    |> binary_part(0, 12)
+    |> String.replace(["+", "/", "="], "")
+    |> ensure_password_requirements()
+  end
+
+  # Ensure password meets requirements (at least one uppercase, one lowercase, one number, one special character)
+  defp ensure_password_requirements(password) do
+    cond do
+      not (password =~ ~r/[A-Z]/) -> ensure_password_requirements(password <> "A")
+      not (password =~ ~r/[a-z]/) -> ensure_password_requirements(password <> "a")
+      not (password =~ ~r/[0-9]/) -> ensure_password_requirements(password <> "1")
+      not (password =~ ~r/[!@#$%^&*]/) -> ensure_password_requirements(password <> "!")
+      true -> password
+    end
   end
 end

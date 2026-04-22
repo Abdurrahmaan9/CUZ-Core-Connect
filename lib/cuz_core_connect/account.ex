@@ -45,6 +45,34 @@ defmodule CuzCoreConnect.Account do
   end
 
   @doc """
+  Gets recent users ordered by creation date.
+
+  ## Examples
+
+      iex> list_recent_users()
+      [%User{}, ...]
+
+  """
+  def list_recent_users(limit \\ 5) do
+    from(u in User, order_by: [desc: u.inserted_at], limit: ^limit)
+    |> Repo.all()
+  end
+
+  @doc """
+  Gets all users ordered by creation date.
+
+  ## Examples
+
+      iex> list_all_users()
+      [%User{}, ...]
+
+  """
+  def list_all_users do
+    from(u in User, order_by: [desc: u.inserted_at])
+    |> Repo.all()
+  end
+
+  @doc """
   Gets a single user.
 
   Raises `Ecto.NoResultsError` if the User does not exist.
@@ -75,9 +103,36 @@ defmodule CuzCoreConnect.Account do
 
   """
   def register_user(attrs) do
-    %User{}
-    |> User.email_changeset(attrs)
-    |> Repo.insert()
+    # Auto-generate password if not provided
+    password = Map.get(attrs, "password") || Map.get(attrs, :password) || User.generate_random_password()
+
+    # Ensure status is PENDING and use the provided role
+    updated_attrs = attrs
+    |> Map.put("password", password)
+    |> Map.put("status", "PENDING")
+    |> Map.put("is_active", Map.get(attrs, "is_active") == "on")
+
+    changeset = %User{}
+    |> User.registration_changeset(updated_attrs)
+
+    case Repo.insert(changeset) do
+      {:ok, user} ->
+        # Show generated password in terminal
+        IO.puts("""
+        ==========================================
+        NEW USER CREATED SUCCESSFULLY
+        ==========================================
+        Email: #{user.email}
+        Role: #{user.user_role}
+        Status: #{user.status || "PENDING"}
+        Generated Password: #{password}
+        ==========================================
+        """)
+        {:ok, user}
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
   end
 
   ## Settings
