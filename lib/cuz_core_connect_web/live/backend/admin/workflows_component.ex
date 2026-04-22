@@ -6,9 +6,8 @@ defmodule CuzCoreConnectWeb.Admin.WorkflowsComponent do
     ~H"""
     <div class="bg-base-100 shadow-lg rounded-box">
       <div class="px-4 py-5 sm:p-6">
-        <div class="flex justify-between items-center mb-6">
+        <div class="mb-6">
           <h3 class="text-lg font-semibold text-base-content">Workflow Management</h3>
-          <.link href={~p"/Admin/workflows/new"} class="btn btn-primary btn-sm">Create Workflow</.link>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

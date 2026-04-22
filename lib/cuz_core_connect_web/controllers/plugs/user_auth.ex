@@ -223,8 +223,8 @@ defmodule CuzCoreConnectWeb.Plugs.UserAuth do
     else
       socket =
         socket
-        |> Phoenix.LiveView.put_flash(:error, "You must log in to access this page.")
-        |> Phoenix.LiveView.redirect(to: ~p"/users/log-in")
+        |> put_flash(:error, "You must log in to access this page.")
+        |> redirect(to: ~p"/users/log-in")
 
       {:halt, socket}
     end
@@ -238,8 +238,8 @@ defmodule CuzCoreConnectWeb.Plugs.UserAuth do
     else
       socket =
         socket
-        |> Phoenix.LiveView.put_flash(:error, "You must re-authenticate to access this page.")
-        |> Phoenix.LiveView.redirect(to: ~p"/users/log-in")
+        |> put_flash(:error, "You must re-authenticate to access this page.")
+        |> redirect(to: ~p"/users/log-in")
 
       {:halt, socket}
     end
@@ -248,22 +248,22 @@ defmodule CuzCoreConnectWeb.Plugs.UserAuth do
   def on_mount(:redirect_to_dashboard, _params, _session, socket) do
     case socket.assigns.current_scope do
       %{user: %{user_role: "Admin"}} ->
-        {:noreply, Phoenix.LiveView.redirect(socket, to: "/Admin/Dashboard")}
+        {:noreply, redirect(socket, to: "/Admin/Dashboard")}
 
       %{user: %{user_role: "Academics"}} ->
-        {:noreply, Phoenix.LiveView.redirect(socket, to: "/Academics/Dashboard")}
+        {:noreply, redirect(socket, to: "/Academics/Dashboard")}
 
       %{user: %{user_role: "Finance"}} ->
-        {:noreply, Phoenix.LiveView.redirect(socket, to: "/Finance/Dashboard")}
+        {:noreply, redirect(socket, to: "/Finance/Dashboard")}
 
       %{user: %{user_role: "HOD"}} ->
-        {:noreply, Phoenix.LiveView.redirect(socket, to: "/HOD/Dashboard")}
+        {:noreply, redirect(socket, to: "/HOD/Dashboard")}
 
       %{user: %{user_role: "Student"}} ->
-        {:noreply, Phoenix.LiveView.redirect(socket, to: "/Student/Dashboard")}
+        {:noreply, redirect(socket, to: "/Student/Dashboard")}
 
       _ ->
-        {:noreply, Phoenix.LiveView.redirect(socket, to: "/")}
+        {:noreply, redirect(socket, to: "/")}
     end
   end
 
@@ -275,7 +275,7 @@ defmodule CuzCoreConnectWeb.Plugs.UserAuth do
         {:halt,
          socket
          |> put_flash(:error, "Access denied. Academics privileges required.")
-         |> Phoenix.LiveView.redirect(socket, to: signed_in_path_for_user(socket.assigns.current_scope.user))}
+         |> redirect(to: signed_in_path_for_user(socket.assigns.current_scope.user))}
       _ ->
         {:halt,
          socket
@@ -292,7 +292,7 @@ defmodule CuzCoreConnectWeb.Plugs.UserAuth do
         {:halt,
          socket
          |> put_flash(:error, "Access denied. Finance privileges required.")
-         |> Phoenix.LiveView.redirect(socket, to: signed_in_path_for_user(socket.assigns.current_scope.user))}
+         |> redirect(to: signed_in_path_for_user(socket.assigns.current_scope.user))}
       _ ->
         {:halt,
          socket
@@ -309,7 +309,7 @@ defmodule CuzCoreConnectWeb.Plugs.UserAuth do
         {:halt,
          socket
          |> put_flash(:error, "Access denied. HOD privileges required.")
-         |> Phoenix.LiveView.redirect(socket, to: signed_in_path_for_user(socket.assigns.current_scope.user))}
+         |> redirect(to: signed_in_path_for_user(socket.assigns.current_scope.user))}
       _ ->
         {:halt,
          socket
@@ -326,7 +326,7 @@ defmodule CuzCoreConnectWeb.Plugs.UserAuth do
         {:halt,
          socket
          |> put_flash(:error, "Access denied. Retention privileges required.")
-         |> Phoenix.LiveView.redirect(socket, to: signed_in_path_for_user(socket.assigns.current_scope.user))}
+         |> redirect(to: signed_in_path_for_user(socket.assigns.current_scope.user))}
       _ ->
         {:halt,
          socket

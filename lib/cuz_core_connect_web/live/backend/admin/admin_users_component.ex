@@ -2,9 +2,13 @@ defmodule CuzCoreConnectWeb.Admin.AdminUsersComponent do
   use CuzCoreConnectWeb, :live_component
 
   @impl true
-  def render(assigns) do
+  def update(assigns, socket) do
     users = CuzCoreConnect.Account.list_all_users()
+    {:ok, assign(socket, Map.merge(assigns, %{users: users}))}
+  end
 
+  @impl true
+  def render(assigns) do
     ~H"""
     <div class="bg-base-100 shadow-lg rounded-box">
       <div class="px-4 py-5 sm:p-6">
@@ -25,7 +29,7 @@ defmodule CuzCoreConnectWeb.Admin.AdminUsersComponent do
               </tr>
             </thead>
             <tbody>
-              <%= for user <- users do %>
+              <%= for user <- @users do %>
                 <tr>
                   <td>
                     <div class="flex items-center space-x-3">

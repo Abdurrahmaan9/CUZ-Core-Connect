@@ -35,7 +35,8 @@ defmodule CuzCoreConnectWeb.Layouts do
 
   def app(assigns) do
     ~H"""
-    <header class="fixed top-0 left-0 right-0 z-50 container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl bg-white rounded-xl shadow-sm mt-5">
+    <header class="fixed top-0 left-0 right-0 z-50 container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl bg-base-100/60 backdrop-blur-sm rounded-xl shadow-sm mt-5">
+    <!-- <header class="fixed top-0 left-0 right-0 z-50 container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl bg-white rounded-xl shadow-sm mt-5"> -->
       <div class="flex items-center justify-between py-4">
         <div class="flex items-center">
           <a href="/" class="flex items-center gap-2 text-xl font-bold text-primary">
@@ -50,12 +51,43 @@ defmodule CuzCoreConnectWeb.Layouts do
         <div class="flex items-center space-x-3">
           <.theme_toggle />
           <%= if @current_scope && @current_scope.user do %>
-            <span class="text-sm text-gray-600">{@current_scope.user.email}</span>
-            <%= if @current_scope.user.user_role == "Admin" do %>
-              <.link href={~p"/Admin/Dashboard"} class="text-sm font-medium text-primary hover:text-primary/90">Admin</.link>
-            <% end %>
-            <.link href={~p"/users/settings"} class="text-sm font-medium text-gray-600 hover:text-gray-900">Settings</.link>
-            <.link href={~p"/users/log-out"} method="delete" class="btn btn-outline border-gray-300 text-gray-700 hover:bg-gray-50">Log out</.link>
+            <div class="dropdown dropdown-end">
+              <label tabindex="0" class="btn btn-ghost btn-circle avatar">
+                <div class="w-10 rounded-full">
+                  <div class="bg-neutral text-neutral-content rounded-full w-10 h-10 flex items-center justify-center">
+                    <span class="text-sm font-medium">
+                      {String.first(@current_scope.user.email)}
+                    </span>
+                  </div>
+                </div>
+              </label>
+              <ul tabindex="0" class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
+                <li class="menu-title">
+                  <span class="text-base-content/70 font-normal">{@current_scope.user.email}</span>
+                </li>
+                <div class="divider my-1"></div>
+                <%= if @current_scope.user.user_role == "Admin" do %>
+                  <li>
+                    <.link href={~p"/Admin/Dashboard"} class="text-base-content">
+                      <.icon name="hero-cog-6-tooth" class="w-4 h-4" />
+                      Admin Dashboard
+                    </.link>
+                  </li>
+                <% end %>
+                <li>
+                  <.link href={~p"/users/settings"} class="text-base-content">
+                    <.icon name="hero-cog-8-tooth" class="w-4 h-4" />
+                    Settings
+                  </.link>
+                </li>
+                <li>
+                  <.link href={~p"/users/log-out"} method="delete" class="text-base-content">
+                    <.icon name="hero-arrow-right-on-rectangle" class="w-4 h-4" />
+                    Log out
+                  </.link>
+                </li>
+              </ul>
+            </div>
           <% else %>
             <.link href={~p"/users/log-in"} class="btn btn-outline border-gray-300 text-gray-700 hover:bg-gray-50">Log In</.link>
             <.link href={~p"/users/register"} class="btn bg-primary text-white hover:bg-orange-600 border-transparent">Sign Up</.link>
