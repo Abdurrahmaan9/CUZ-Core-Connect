@@ -70,33 +70,40 @@ defmodule CuzCoreConnectWeb.Router do
         end
     end
 
-    # live_session :require_academics_user,
-    #   on_mount: [{CuzCoreConnectWeb.Plugs.UserAuth, :require_authenticated}, {CuzCoreConnectWeb.Plugs.UserAuth, :ensure_academics_role}] do
-    #     scope "/Academics" do
-    #       live "/Dashboard", Academics.DashboardLive, :index
-    #     end
-    # end
+    live_session :require_academics_user,
+      on_mount: [{CuzCoreConnectWeb.Plugs.UserAuth, :require_authenticated}, {CuzCoreConnectWeb.Plugs.UserAuth, :ensure_academics_role}] do
+      scope "/Academics" do
+        live "/Dashboard", SysUser.Dashboard.Index, :index
+      end
+    end
 
-    # live_session :require_finance_user,
-    #   on_mount: [{CuzCoreConnectWeb.Plugs.UserAuth, :require_authenticated}, {CuzCoreConnectWeb.Plugs.UserAuth, :ensure_finance_role}] do
-    #     scope "/Finance" do
-    #       live "/Dashboard", Finance.DashboardLive, :index
-    #     end
-    # end
+    live_session :require_finance_user,
+      on_mount: [{CuzCoreConnectWeb.Plugs.UserAuth, :require_authenticated}, {CuzCoreConnectWeb.Plugs.UserAuth, :ensure_finance_role}] do
+      scope "/Finance" do
+        live "/Dashboard", SysUser.Dashboard.Index, :index
+      end
+    end
 
-    # live_session :require_hod_user,
-    #   on_mount: [{CuzCoreConnectWeb.Plugs.UserAuth, :require_authenticated}, {CuzCoreConnectWeb.Plugs.UserAuth, :ensure_hod_role}] do
-    #     scope "/HOD" do
-    #       live "/Dashboard", HOD.DashboardLive, :index
-    #     end
-    # end
+    live_session :require_hod_user,
+      on_mount: [{CuzCoreConnectWeb.Plugs.UserAuth, :require_authenticated}, {CuzCoreConnectWeb.Plugs.UserAuth, :ensure_hod_role}] do
+      scope "/HOD" do
+        live "/Dashboard", SysUser.Dashboard.Index, :index
+      end
+    end
 
-    # live_session :require_student_user,
-    #   on_mount: [{CuzCoreConnectWeb.Plugs.UserAuth, :require_authenticated}, {CuzCoreConnectWeb.Plugs.UserAuth, :ensure_student_role}] do
-    #     scope "/Retention" do
-    #       live "/Dashboard", Retention.DashboardLive, :index
-    #     end
-    # end
+    live_session :require_retention_user,
+      on_mount: [{CuzCoreConnectWeb.Plugs.UserAuth, :require_authenticated}, {CuzCoreConnectWeb.Plugs.UserAuth, :ensure_retention_role}] do
+      scope "/Retention" do
+        live "/Dashboard", SysUser.Dashboard.Index, :index
+      end
+    end
+
+    live_session :require_student_user,
+      on_mount: [{CuzCoreConnectWeb.Plugs.UserAuth, :require_authenticated}] do
+      scope "/Student" do
+        live "/Dashboard", SysUser.Dashboard.Index, :index
+      end
+    end
 
     post "/users/update-password", UserSessionController, :update_password
   end
