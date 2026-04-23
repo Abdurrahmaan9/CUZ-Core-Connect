@@ -21,7 +21,8 @@ defmodule CuzCoreConnectWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
-    live "/live", LandingLive
+    live "/get-started", GetStartedLive
+    live "/Student/registration", Student.Registration.RegistrationLive
   end
 
   # Other scopes may use custom stacks.

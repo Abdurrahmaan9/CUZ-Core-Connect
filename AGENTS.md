@@ -390,7 +390,7 @@ LiveSocket constructor:
     const MyHook = {
       mounted() { ... }
     }
-    let liveSocket = new LiveSocket("/live", Socket, {
+    let liveSocket = new LiveSocket("register", Socket, {
       hooks: { MyHook }
     });
 
