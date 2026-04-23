@@ -4,7 +4,6 @@
       <button 
         id="sidebar-toggle" 
         class="btn btn-ghost btn-sm lg:hidden"
-        phx-click={JS.toggle(to: "#sidebar")}
       >
         <.icon name="hero-bars-3" class="w-5 h-5" />
       </button>
@@ -132,7 +131,6 @@
 <div 
   id="sidebar-overlay" 
   class="fixed inset-0 bg-black/50 z-30 hidden lg:hidden"
-  phx-click={JS.toggle(to: "#sidebar") |> JS.toggle(to: "#sidebar-overlay")}
 ></div>
 
 <.flash_group flash={@flash} />
