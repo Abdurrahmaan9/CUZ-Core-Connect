@@ -1,14 +1,6 @@
 import Config
 
-# Configure your database
-config :cuz_core_connect, CuzCoreConnect.Repo,
-  username: "postgres",
-  password: "postgres",
-  hostname: "localhost",
-  database: "cuz_core_connect_dev",
-  stacktrace: true,
-  show_sensitive_data_on_connection_error: true,
-  pool_size: 10
+# Database configuration has been moved to runtime so it gets the system envs specific to each developer
 
 # For development, we disable any cache and enable
 # debugging and code reloading.
