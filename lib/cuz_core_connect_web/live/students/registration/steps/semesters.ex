@@ -7,14 +7,22 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Semesters do
     %{value: "summer", label: "Summer Semester"}
   ]
 
+  @intakes [
+    %{value: "january", label: "January Intake"},
+    %{value: "july", label: "July Intake"},
+    %{value: "october", label: "October Intake"}
+  ]
+
   @impl true
   def update(assigns, socket) do
     {:ok,
      socket
      |> assign(assigns)
+     |> assign_new(:student_id, fn -> assigns.registration.student_id || "" end)
      |> assign_new(:academic_year, fn -> assigns.registration.academic_year || "" end)
      |> assign_new(:semester, fn -> assigns.registration.semester end)
-     |> assign(semesters: @semesters, errors: %{})}
+     |> assign_new(:intake, fn -> assigns.registration.intake end)
+     |> assign(semesters: @semesters, intakes: @intakes, errors: %{})}
   end
 
   @impl true
@@ -27,6 +35,28 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Semesters do
       </p>
 
       <div class="mt-6 space-y-5">
+        <%!-- Student Number --%>
+        <div>
+          <label class="block text-sm font-medium text-base-content/80 mb-1">
+            Student Number
+          </label>
+          <input
+            type="text"
+            value={@student_id}
+            placeholder="e.g. 202512345"
+            phx-blur="set_student_id"
+            phx-target={@myself}
+            name="student_id"
+            class={[
+              "input input-bordered w-full",
+              Map.get(@errors, :student_id) && "input-error"
+            ]}
+          />
+          <%= if msg = Map.get(@errors, :student_id) do %>
+            <p class="mt-1 text-xs text-error">{msg}</p>
+          <% end %>
+        </div>
+
         <%!-- Academic Year --%>
         <div>
           <label class="block text-sm font-medium text-base-content/80 mb-1">
@@ -77,6 +107,35 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Semesters do
             <p class="mt-1 text-xs text-error">{msg}</p>
           <% end %>
         </div>
+
+        <%!-- Intake selector --%>
+        <div>
+          <label class="block text-sm font-medium text-base-content/80 mb-2">
+            Intake Period
+          </label>
+          <div class="grid grid-cols-3 gap-3">
+            <%= for intake <- @intakes do %>
+              <button
+                type="button"
+                phx-click="select_intake"
+                phx-value-intake={intake.value}
+                phx-target={@myself}
+                class={[
+                  "py-3 rounded-xl border-2 text-sm font-medium transition-all",
+                  @intake == intake.value &&
+                    "border-primary bg-primary/5 text-primary",
+                  @intake != intake.value &&
+                    "border-base-200 hover:border-base-300 text-base-content/60"
+                ]}
+              >
+                {intake.label}
+              </button>
+            <% end %>
+          </div>
+          <%= if msg = Map.get(@errors, :intake) do %>
+            <p class="mt-1 text-xs text-error">{msg}</p>
+          <% end %>
+        </div>
       </div>
 
       <div class="mt-8 flex justify-between">
@@ -102,6 +161,10 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Semesters do
   end
 
   @impl true
+  def handle_event("set_student_id", %{"value" => student_id}, socket) do
+    {:noreply, assign(socket, student_id: String.trim(student_id))}
+  end
+
   def handle_event("set_year", %{"value" => year}, socket) do
     {:noreply, assign(socket, academic_year: String.trim(year))}
   end
@@ -110,13 +173,19 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Semesters do
     {:noreply, assign(socket, semester: semester, errors: Map.delete(socket.assigns.errors, :semester))}
   end
 
+  def handle_event("select_intake", %{"intake" => intake}, socket) do
+    {:noreply, assign(socket, intake: intake, errors: Map.delete(socket.assigns.errors, :intake))}
+  end
+
   def handle_event("next", _params, socket) do
     errors = validate(socket.assigns)
 
     if map_size(errors) == 0 do
       send(self(), {:next_step, %{
+        student_id: socket.assigns.student_id,
         academic_year: socket.assigns.academic_year,
-        semester: socket.assigns.semester
+        semester: socket.assigns.semester,
+        intake: socket.assigns.intake
       }})
 
       {:noreply, socket}
@@ -134,13 +203,21 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Semesters do
 
   defp validate(assigns) do
     %{}
+    |> maybe_add_error(:student_id, assigns.student_id == "", "Student ID is required.")
+    |> maybe_add_error(:student_id, not valid_student_id_format?(assigns.student_id), "Student ID should be numeric and at least 6 digits.")
     |> maybe_add_error(:academic_year, assigns.academic_year == "", "Academic year is required.")
     |> maybe_add_error(:academic_year, not valid_year_format?(assigns.academic_year), "Use format YYYY/YYYY, e.g. 2025/2026.")
     |> maybe_add_error(:semester, is_nil(assigns.semester), "Please select a semester.")
+    |> maybe_add_error(:intake, is_nil(assigns.intake), "Please select an intake period.")
   end
 
   defp maybe_add_error(errors, _key, false, _msg), do: errors
   defp maybe_add_error(errors, key, true, msg), do: Map.put(errors, key, msg)
+
+  defp valid_student_id_format?(""), do: false
+  defp valid_student_id_format?(student_id) do
+    Regex.match?(~r/^\d{6,}$/, student_id)
+  end
 
   defp valid_year_format?(""), do: true  # handled separately above
   defp valid_year_format?(year), do: Regex.match?(~r/^\d{4}\/\d{4}$/, year)

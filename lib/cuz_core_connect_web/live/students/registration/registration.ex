@@ -1,13 +1,23 @@
 defmodule CuzCoreConnectWeb.Student.Registration.RegistrationLive do
   use CuzCoreConnectWeb, :live_view
 
+  alias CuzCoreConnect.Registration
+  alias CuzCoreConnectWeb.Student.Registration.Steps.Review
+  alias CuzCoreConnectWeb.Student.Registration.Steps.Courses
   alias CuzCoreConnectWeb.Student.Registration.Steps.Programs
   alias CuzCoreConnectWeb.Student.Registration.Steps.Semesters
-  alias CuzCoreConnectWeb.Student.Registration.Steps.Courses
-  alias CuzCoreConnectWeb.Student.Registration.Steps.Review
+  alias CuzCoreConnectWeb.Student.Registration.Steps.PersonalInfo
 
-  @steps [:program, :semester, :courses, :review]
+  @steps [
+    :personal_info,
+    :program,
+    :semester,
+    :courses,
+    :review
+  ]
+
   @step_labels %{
+    personal_info: "Personal Info",
     program: "Program",
     semester: "Semester",
     courses: "Courses",
@@ -21,14 +31,20 @@ defmodule CuzCoreConnectWeb.Student.Registration.RegistrationLive do
     {:ok,
      assign(socket,
        current_scope: current_scope,
-       current_step: :program,
+       current_step: :personal_info,
        registration: %{
-         program_id: nil,
-         program_name: nil,
-         academic_year: nil,
-         semester: nil,
-         courses: []
-       }
+        student_id: nil,
+        student_names: nil,
+        student_email: nil,
+        student_contact: nil,
+        program_id: nil,
+        program_name: nil,
+        academic_year: nil,
+        semester: nil,
+        intake: nil,
+        courses: [],
+        uploaded_receipts: []
+      }
      )}
   end
 
@@ -54,6 +70,8 @@ defmodule CuzCoreConnectWeb.Student.Registration.RegistrationLive do
 
       <div class="mt-8 bg-base-100 rounded-2xl shadow-sm border border-base-200 p-6">
         <%= case @current_step do %>
+          <% :personal_info -> %>
+            <.live_component module={PersonalInfo} id="step-personal-info" registration={@registration} />
           <% :program -> %>
             <.live_component module={Programs} id="step-program" registration={@registration} />
           <% :semester -> %>
@@ -117,11 +135,19 @@ defmodule CuzCoreConnectWeb.Student.Registration.RegistrationLive do
 
   @impl true
   def handle_info({:next_step, step_data}, socket) do
-    updated_registration = Map.merge(socket.assigns.registration, step_data)
-    current_index = Enum.find_index(@steps, &(&1 == socket.assigns.current_step))
-    next_step = Enum.at(@steps, current_index + 1, socket.assigns.current_step)
+    current_step_index = Enum.find_index(@steps, &(&1 == socket.assigns.current_step))
+    next_step = Enum.at(@steps, current_step_index + 1)
+    registration = Map.merge(socket.assigns.registration, step_data)
 
-    {:noreply, assign(socket, current_step: next_step, registration: updated_registration)}
+    # If this is the final step (review), trigger submission
+    if socket.assigns.current_step == :review do
+      handle_submit_registration(registration, socket)
+    else
+      {:noreply,
+       socket
+       |> assign(:registration, registration)
+       |> assign(:current_step, next_step)}
+    end
   end
 
   def handle_info(:prev_step, socket) do
@@ -132,14 +158,39 @@ defmodule CuzCoreConnectWeb.Student.Registration.RegistrationLive do
   end
 
   def handle_info(:submit_registration, socket) do
-    # TODO: wire to your context, e.g.:
-    # case Registrations.create(socket.assigns.current_scope.user, socket.assigns.registration) do
-    #   {:ok, _}    -> success path
-    #   {:error, _} -> error path
-    # end
-    {:noreply,
-     socket
-     |> put_flash(:info, "Registration submitted successfully!")
-     |> push_navigate(to: "/Student/Dashboard")}
+    handle_submit_registration(socket.assigns.registration, socket)
+  end
+
+  defp handle_submit_registration(reg, socket) do
+    # Create registration without requiring authentication
+    with {:ok, registration} <- Registration.create_registration(nil, reg) do
+      case save_receipts(registration.id, reg.uploaded_receipts) do
+        :ok ->
+          {:noreply,
+           socket
+           |> put_flash(:info, "Registration submitted! Tracking #: #{registration.tracking_number}")
+           |> push_navigate(to: "/")}
+        error ->
+          {:noreply, put_flash(socket, :error, "Receipt saving failed, please try again.")}
+      end
+    else
+      {:error, _changeset} ->
+        {:noreply, put_flash(socket, :error, "Submission failed, please try again.")}
+    end
+  end
+
+  defp save_receipts(_registration_id, nil), do: :ok
+  defp save_receipts(_registration_id, []), do: :ok
+  defp save_receipts(registration_id, files) do
+    Enum.each(files, fn file ->
+      Registration.create_payment_receipt(%{
+        student_registration_id: registration_id,
+        uploaded_by_student_id: nil,
+        original_filename: file.original_filename,
+        storage_key: file.storage_key,
+        content_type: file.content_type,
+        file_size: file.file_size
+      })
+    end)
   end
 end
