@@ -23,6 +23,8 @@ defmodule CuzCoreConnectWeb.Router do
     get "/", PageController, :home
     live "/get-started", GetStartedLive
     live "/Student/registration", Student.Registration.RegistrationLive
+    live "/registration/tracking", Student.Tracking.Index, :index
+    live "/registration/tracking/:tracking_number", Student.Tracking.Index, :show
   end
 
   # Other scopes may use custom stacks.
