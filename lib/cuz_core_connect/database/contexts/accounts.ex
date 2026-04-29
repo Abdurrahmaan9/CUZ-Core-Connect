@@ -1,4 +1,4 @@
-defmodule CuzCoreConnect.Account do
+defmodule CuzCoreConnect.Accounts do
   @moduledoc """
   The Account context.
   """
@@ -6,7 +6,7 @@ defmodule CuzCoreConnect.Account do
   import Ecto.Query, warn: false
   alias CuzCoreConnect.Repo
 
-  alias CuzCoreConnect.Account.{User, UserToken, UserNotifier}
+  alias CuzCoreConnect.Accounts.{User, UserToken, UserNotifier}
 
   ## Database getters
 
@@ -103,36 +103,13 @@ defmodule CuzCoreConnect.Account do
 
   """
   def register_user(attrs) do
-    # Auto-generate password if not provided
-    password = Map.get(attrs, "password") || Map.get(attrs, :password) || User.generate_random_password()
+    password =
+      Map.get(attrs, "password") || Map.get(attrs, :password) || User.generate_random_password()
 
-    # Ensure status is PENDING and use the provided role
-    updated_attrs = attrs
-    |> Map.put("password", password)
-    |> Map.put("status", "PENDING")
-    |> Map.put("is_active", Map.get(attrs, "is_active") == "on")
-
-    changeset = %User{}
-    |> User.registration_changeset(updated_attrs)
-
-    case Repo.insert(changeset) do
-      {:ok, user} ->
-        # Show generated password in terminal
-        IO.puts("""
-        ==========================================
-        NEW USER CREATED SUCCESSFULLY
-        ==========================================
-        Email: #{user.email}
-        Role: #{user.user_role}
-        Status: #{user.status || "PENDING"}
-        Generated Password: #{password}
-        ==========================================
-        """)
-        {:ok, user}
-
-      {:error, changeset} ->
-        {:error, changeset}
-    end
+    %User{}
+    |> User.registration_changeset(Map.put(attrs, "password", password))
+    |> Repo.insert()
+    # |> IO.inspect()
   end
 
   ## Settings
@@ -154,7 +131,7 @@ defmodule CuzCoreConnect.Account do
   @doc """
   Returns an `%Ecto.Changeset{}` for changing the user email.
 
-  See `CuzCoreConnect.Account.User.email_changeset/3` for a list of supported options.
+  See `CuzCoreConnect.Accounts.User.email_changeset/3` for a list of supported options.
 
   ## Examples
 
@@ -190,7 +167,7 @@ defmodule CuzCoreConnect.Account do
   @doc """
   Returns an `%Ecto.Changeset{}` for changing the user password.
 
-  See `CuzCoreConnect.Account.User.password_changeset/3` for a list of supported options.
+  See `CuzCoreConnect.Accounts.User.password_changeset/3` for a list of supported options.
 
   ## Examples
 
@@ -277,15 +254,15 @@ defmodule CuzCoreConnect.Account do
     {:ok, query} = UserToken.verify_magic_link_token_query(token)
 
     case Repo.one(query) do
-      # Prevent session fixation attacks by disallowing magic links for unconfirmed users with password
-      {%User{confirmed_at: nil, hashed_password: hash}, _token} when not is_nil(hash) ->
-        raise """
-        magic link log in is not allowed for unconfirmed users with a password set!
+      # # Prevent session fixation attacks by disallowing magic links for unconfirmed users with password
+      # {%User{confirmed_at: nil, hashed_password: hash}, _token} when not is_nil(hash) ->
+      #   raise """
+      #   magic link log in is not allowed for unconfirmed users with a password set!
 
-        This cannot happen with the default implementation, which indicates that you
-        might have adapted the code to a different use case. Please make sure to read the
-        "Mixing magic link and password registration" section of `mix help phx.gen.auth`.
-        """
+      #   This cannot happen with the default implementation, which indicates that you
+      #   might have adapted the code to a different use case. Please make sure to read the
+      #   "Mixing magic link and password registration" section of `mix help phx.gen.auth`.
+      #   """
 
       {%User{confirmed_at: nil} = user, _token} ->
         user

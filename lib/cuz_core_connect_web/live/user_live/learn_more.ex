@@ -1,4 +1,4 @@
-defmodule CuzCoreConnectWeb.GetStartedLive do
+defmodule CuzCoreConnectWeb.UserLive.LearnMore do
   use CuzCoreConnectWeb, :live_view
 
   @impl true
@@ -6,6 +6,7 @@ defmodule CuzCoreConnectWeb.GetStartedLive do
     {:ok,
      socket
      |> assign(:count, 0)
+     |> assign(show_mobile_menu: false)
      |> assign(:subtitle, "This page is powered by Phoenix LiveView, updating instantly without a page reload.")}
   end
 
@@ -17,8 +18,11 @@ defmodule CuzCoreConnectWeb.GetStartedLive do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash}>
-      <div class="mx-auto w-full rounded-[2rem] border border-base-200 bg-base-100/80 p-8 shadow-xl shadow-base-200/40">
+    <Layouts.unauth flash={@flash}>
+      <:header>
+        <CuzCoreConnectWeb.Navigations.Unauth.header show_mobile_menu={@show_mobile_menu} />
+      </:header>
+      <div class="mt-26 mb-8 mx-auto w-full">
         <div class="space-y-8">
 
           <%!-- Registration Instructions --%>
@@ -92,7 +96,7 @@ defmodule CuzCoreConnectWeb.GetStartedLive do
                     </div>
                     <p class="text-sm text-base-content/70">Contact our academic advisors for program guidance and registration assistance.</p>
                     <div class="mt-2">
-                      <a href="mailto:support@university.edu" class="text-sm text-primary hover:underline">support@university.edu</a>
+                      <a href="mailto:support@cuz.coreconnect.edu" class="text-sm text-primary hover:underline">support@cuz.coreconnect.edu</a>
                     </div>
                   </div>
 
@@ -129,7 +133,7 @@ defmodule CuzCoreConnectWeb.GetStartedLive do
 
           <%!-- Quick Actions --%>
           <div class="flex flex-wrap gap-4 justify-center">
-            <.link navigate="/Student/registration" class="btn btn-primary btn-lg">
+            <.link navigate="/student/registration" class="btn btn-primary btn-lg">
               <.icon name="hero-rocket-launch" class="w-5 h-5 mr-2" />
               Start Registration Now
             </.link>
@@ -142,7 +146,10 @@ defmodule CuzCoreConnectWeb.GetStartedLive do
 
         </div>
       </div>
-    </Layouts.app>
+      <:footer>
+        <CuzCoreConnectWeb.Navigations.Unauth.footer />
+      </:footer>
+    </Layouts.unauth>
     """
   end
 end

@@ -49,7 +49,7 @@ defmodule CuzCoreConnectWeb.Plugs.AdminAuth do
 
   defp signed_in_path(socket) do
     case socket.assigns.current_scope do
-      %{user: %{user_role: "Admin"}} -> "/Admin/Dashboard"
+      %{user: %{user_role: "Admin"}} -> "/admin/dashboard"
       _ -> "/users/settings"
     end
   end

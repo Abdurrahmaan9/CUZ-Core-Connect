@@ -1,16 +1,17 @@
-defmodule CuzCoreConnect.Account.User do
+defmodule CuzCoreConnect.Accounts.User do
   use Ecto.Schema
   import Ecto.Changeset
 
-  schema "users" do
+  schema "tbl_users" do
     field :email, :string
+    field :username, :string
     field :password, :string, virtual: true, redact: true
     field :hashed_password, :string, redact: true
     field :confirmed_at, :utc_datetime
     field :authenticated_at, :utc_datetime, virtual: true
-    field :user_role, :string
-    field :status, :string
-    field :is_active, :boolean, default: true
+    field :user_role, :string, default: "student"
+    field :status, :string, default: "PENDING"
+    field :is_active, :boolean, default: false
 
     timestamps(type: :utc_datetime)
   end
@@ -28,7 +29,7 @@ defmodule CuzCoreConnect.Account.User do
   """
   def email_changeset(user, attrs, opts \\ []) do
     user
-    |> cast(attrs, [:email, :user_role, :status, :is_active])
+    |> cast(attrs, [:email, :user_role, :status, :is_active, :username])
     |> validate_email(opts)
   end
 
@@ -39,9 +40,10 @@ defmodule CuzCoreConnect.Account.User do
   """
   def registration_changeset(user, attrs, opts \\ []) do
     user
-    |> cast(attrs, [:email, :password, :user_role, :status, :is_active])
+    |> cast(attrs, [:email, :password, :user_role, :status, :is_active, :username])
+    |> validate_inclusion(:user_role, ~w(admin academics finance hod student))
     |> validate_email(opts)
-    |> validate_required([:email, :password])
+    |> validate_required([:email, :password, :username])
     |> validate_length(:password, min: 8, max: 24)
     |> maybe_hash_password(opts)
   end
@@ -137,7 +139,7 @@ defmodule CuzCoreConnect.Account.User do
   If there is no user or the user doesn't have a password, we call
   `Bcrypt.no_user_verify/0` to avoid timing attacks.
   """
-  def valid_password?(%CuzCoreConnect.Account.User{hashed_password: hashed_password}, password)
+  def valid_password?(%CuzCoreConnect.Accounts.User{hashed_password: hashed_password}, password)
       when is_binary(hashed_password) and byte_size(password) > 0 do
     Bcrypt.verify_pass(password, hashed_password)
   end
@@ -146,7 +148,6 @@ defmodule CuzCoreConnect.Account.User do
     Bcrypt.no_user_verify()
     false
   end
-
 
   @doc """
   Generates a random secure password.

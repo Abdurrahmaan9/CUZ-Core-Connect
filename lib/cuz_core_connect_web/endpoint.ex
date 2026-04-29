@@ -11,7 +11,7 @@ defmodule CuzCoreConnectWeb.Endpoint do
     same_site: "Lax"
   ]
 
-  socket "/Student/registration", Phoenix.LiveView.Socket,
+  socket "/live", Phoenix.LiveView.Socket,
     websocket: [connect_info: [session: @session_options]],
     longpoll: [connect_info: [session: @session_options]]
 

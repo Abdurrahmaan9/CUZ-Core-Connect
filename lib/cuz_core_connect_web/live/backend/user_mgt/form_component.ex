@@ -17,7 +17,7 @@ defmodule CuzCoreConnectWeb.UserFormComponent do
 
         <.form
           :let={f}
-          for={@changeset || to_form(%CuzCoreConnect.Account.User{})}
+          for={@changeset || to_form(%CuzCoreConnect.Accounts.User{})}
           id="user-form"
           phx-submit={if @user.id, do: "update_user", else: "create_user"}
           phx-target={@myself}
@@ -29,7 +29,7 @@ defmodule CuzCoreConnectWeb.UserFormComponent do
                 field={f[:email]}
                 type="email"
                 label="Email Address"
-                placeholder="user@university.edu"
+                placeholder="user@cuz.coreconnect.edu"
                 class="input input-bordered w-full"
                 required
               />
@@ -82,7 +82,7 @@ defmodule CuzCoreConnectWeb.UserFormComponent do
           </div>
 
           <div class="flex justify-end space-x-3">
-            <.link href={~p"/Admin/users"} class="btn btn-ghost">Cancel</.link>
+            <.link href={~p"/admin/users"} class="btn btn-ghost">Cancel</.link>
             <.button type="submit" class="btn btn-primary">
               {if @user.id, do: "Update User", else: "Create User"}
             </.button>

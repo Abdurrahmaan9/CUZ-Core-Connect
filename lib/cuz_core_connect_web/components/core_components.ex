@@ -54,9 +54,11 @@ defmodule CuzCoreConnectWeb.CoreComponents do
     <div
       :if={msg = render_slot(@inner_block) || Phoenix.Flash.get(@flash, @kind)}
       id={@id}
+      phx-hook="AutoFade"
+      data-fade-delay="100000"
       phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("##{@id}")}
       role="alert"
-      class="toast toast-top toast-end z-50"
+      class="fixed top-21 left-1/2 z-[999] transition-all duration-500 ease-in-out"
       {@rest}
     >
       <div class={[
@@ -272,6 +274,75 @@ defmodule CuzCoreConnectWeb.CoreComponents do
     """
   end
 
+  def input(%{type: "password"} = assigns) do
+    ~H"""
+    <div phx-feedback-for={@name} class="fieldset mb-2">
+      <label>
+        <span :if={@label} class="label mb-1">
+          {@label}<span :if={Map.has_key?(@rest, :required) and @rest.required} class="text-red-500">*</span>
+        </span>
+        <div class="relative">
+          <input
+            type="password"
+            name={@name}
+            id={@id}
+            value={Phoenix.HTML.Form.normalize_value(@type, @value)}
+            class={[
+              @class || "w-full input",
+              @errors != [] && (@error_class || "input-error")
+            ]}
+            {@rest}
+          />
+          <button
+            id={"#{@id}-password-toggle-button"}
+            type="button"
+            phx-hook="PasswordToggle"
+            data-target={@id}
+            class="absolute inset-y-0 right-2 px-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+          >
+            <%!-- show icon (eye) --%>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+              class="show-icon hidden h-5 w-5 size-6"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"
+              />
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+              />
+            </svg>
+            <%!-- hide icon (eye-off) --%>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke-width="1.5"
+              stroke="currentColor"
+              class="hide-icon h-5 w-5 size-6"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88"
+              />
+            </svg>
+          </button>
+        </div>
+      </label>
+      <.error :for={msg <- @errors}>{msg}</.error>
+    </div>
+    """
+  end
+
   # All other inputs text, datetime-local, url, password, etc. are handled here...
   def input(assigns) do
     ~H"""
@@ -416,6 +487,119 @@ defmodule CuzCoreConnectWeb.CoreComponents do
       </li>
     </ul>
     """
+  end
+
+  # Navigation Link Component
+  attr :href, :string, required: true
+  attr :icon, :string, required: true
+  attr :active, :boolean, default: false
+  attr :label, :string, required: true
+
+  def navigation_link(assigns) do
+    ~H"""
+    <div
+      phx-click={JS.navigate(@href)}
+      class={[
+        "flex items-center px-1 py-3 text-sm font-medium rounded-r transition-all duration-200 group cursor-pointer",
+        if(@active,
+          do: "bg-primary/20 border-l-2 border-orange-500",
+          else:
+            "hover:bg-secondary/50 hover:border-l-2 hover:border-orange-500/50"
+        )
+      ]}
+    >
+      <.icon name={"hero-" <> @icon} class="w-5 h-5 mr-2" />
+      <span>{@label}</span>
+    </div>
+    """
+  end
+
+  # Dropdown Menu Component
+  attr :id, :string, required: true
+  attr :icon, :string, required: true
+  attr :label, :string, required: true
+  attr :active, :boolean, default: false
+  slot :inner_block, required: true
+
+  def dropdown_menu(assigns) do
+    ~H"""
+    <div class="space-y-1">
+      <button
+        phx-click={toggle_dropdown("##{@id}")}
+        class={[
+          "w-full flex items-center justify-between px-1 py-3 text-sm font-medium rounded-md transition-all duration-200 group cursor-pointer ",
+          if(@active,
+            do: "bg-primary/20 border-l-2 border-orange-500",
+            else:
+              "hover:bg-secondary/50 hover:border-l-2 hover:border-orange-500/50"
+          )
+        ]}
+      >
+        <div class="flex items-center">
+          <.icon name={"hero-" <> @icon} class="w-5 h-5 mr-2" />
+          <span>{@label}</span>
+        </div>
+        <svg
+          class={[
+            "w-4 h-4 transform transition-transform duration-200 ml-0",
+            @active && "rotate-90"
+          ]}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke-width="1.5"
+          stroke="currentColor"
+          id={"#{@id}-chevron"}
+        >
+          <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+        </svg>
+      </button>
+
+      <div
+        id={@id}
+        phx-mounted={@active && JS.show(to: "##{@id}")}
+        class="hidden pl-11 pr-2 py-1 space-y-1"
+      >
+        {render_slot(@inner_block)}
+      </div>
+    </div>
+    """
+  end
+
+  # Dropdown Item Component
+  attr :href, :string, required: true
+  attr :active, :boolean, default: false
+  slot :inner_block, required: true
+
+  def dropdown_item(assigns) do
+    ~H"""
+    <div
+      phx-click={JS.navigate(@href)}
+      href={@href}
+      class={[
+        "flex items-center cursor-pointer px-2 py-1 text-sm font-medium rounded-md transition-all duration-200",
+        if(@active,
+          do: "bg-primary/20",
+          else: "hover:bg-secondary/50"
+        )
+      ]}
+    >
+      <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 8h16M4 16h16" />
+      </svg>
+      <span>{render_slot(@inner_block)}</span>
+    </div>
+    """
+  end
+
+  def toggle_dropdown(js \\ %JS{}, menu_id) do
+    js
+    |> JS.toggle(to: menu_id)
+    |> JS.toggle(
+      to: "#{menu_id}",
+      in: {"ease-out duration-200", "opacity-0 scale-95", "opacity-100 scale-100"},
+      out: {"ease-in duration-150", "opacity-100 scale-100", "opacity-0 scale-95"}
+    )
+    |> JS.toggle_class("rotate-90", to: "#{menu_id}-chevron")
   end
 
   @doc """

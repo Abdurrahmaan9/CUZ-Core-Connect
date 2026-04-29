@@ -1,4 +1,4 @@
-<Layouts.app flash={@flash} current_scope={@current_scope}>
+<Layouts.admin flash={@flash} current_scope={@current_scope}>
   <div class="min-h-screen bg-base-100">
     <!-- Admin Header -->
     <div class="bg-base-200 border-b border-base-300">
@@ -9,8 +9,8 @@
             <p class="text-sm text-base-content/70 mt-1">Manage system users and permissions</p>
           </div>
           <div class="flex items-center space-x-4">
-            <.link href={~p"/Admin/Dashboard"} class="btn btn-ghost btn-sm">Back to Dashboard</.link>
-            <.link href={~p"/Admin/users/new"} class="btn btn-primary btn-sm">Add User</.link>
+            <.link href={~p"/admin/dashboard"} class="btn btn-ghost btn-sm">Back to Dashboard</.link>
+            <.link href={~p"/admin/users/new"} class="btn btn-primary btn-sm">Add User</.link>
           </div>
         </div>
       </div>
@@ -20,29 +20,29 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <%= case @live_action do %>
         <% :new -> %>
-          <.live_component 
-            module={CuzCoreConnectWeb.UserFormComponent} 
-            id="user-form" 
-            user={@user} 
-            changeset={@changeset} 
+          <.live_component
+            module={CuzCoreConnectWeb.UserFormComponent}
+            id="user-form"
+            user={@user}
+            changeset={@changeset}
             current_user={@current_scope.user}
           />
         <% :edit -> %>
-          <.live_component 
-            module={CuzCoreConnectWeb.UserFormComponent} 
-            id="user-form-edit" 
-            user={@user} 
-            changeset={@changeset} 
+          <.live_component
+            module={CuzCoreConnectWeb.UserFormComponent}
+            id="user-form-edit"
+            user={@user}
+            changeset={@changeset}
             current_user={@current_scope.user}
           />
         <% _ -> %>
-          <.live_component 
-            module={CuzCoreConnectWeb.UserListComponent} 
-            id="user-list" 
-            users={@users} 
+          <.live_component
+            module={CuzCoreConnectWeb.UserListComponent}
+            id="user-list"
+            users={@users}
             current_user={@current_scope.user}
           />
       <% end %>
     </div>
   </div>
-</Layouts.app>
+</Layouts.admin>

@@ -1,15 +1,15 @@
-defmodule CuzCoreConnect.Account.UserNotifier do
+defmodule CuzCoreConnect.Accounts.UserNotifier do
   import Swoosh.Email
 
   alias CuzCoreConnect.Mailer
-  alias CuzCoreConnect.Account.User
+  alias CuzCoreConnect.Accounts.User
 
   # Delivers the email using the application mailer.
   defp deliver(recipient, subject, body) do
     email =
       new()
       |> to(recipient)
-      |> from({"CuzCoreConnect", "contact@example.com"})
+      |> from({"CUZ - Core Connect", "contact@cuz.coreconnect.edu"})
       |> subject(subject)
       |> text_body(body)
 

@@ -1,7 +1,7 @@
 defmodule CuzCoreConnectWeb.Admin.Index do
   use CuzCoreConnectWeb, :live_view
 
-  alias CuzCoreConnect.Account
+  alias CuzCoreConnect.Accounts
 
   @impl true
   def mount(_params, _session, socket) do
@@ -12,6 +12,7 @@ defmodule CuzCoreConnectWeb.Admin.Index do
       {:ok,
        socket
        |> assign(:page_title, "Admin Dashboard")
+       |> assign(:current_page, :admin_dashboard)
        |> assign(:active_tab, "overview")
        |> assign(:stats, get_admin_stats())
        |> assign(:recent_users, get_recent_users())
@@ -35,7 +36,7 @@ defmodule CuzCoreConnectWeb.Admin.Index do
 
   @impl true
   def handle_event("switch_tab", %{"tab" => tab}, socket) do
-    {:noreply, push_patch(socket, to: ~p"/Admin/Dashboard?tab=#{tab}")}
+    {:noreply, push_patch(socket, to: ~p"/admin/dashboard?tab=#{tab}")}
   end
 
   # Helper functions
@@ -49,7 +50,7 @@ defmodule CuzCoreConnectWeb.Admin.Index do
   end
 
   defp get_recent_users do
-    Account.list_recent_users(5)
+    Accounts.list_recent_users(5)
   end
 
   defp get_workflows do

@@ -71,7 +71,7 @@ defmodule CuzCoreConnectWeb.UserListComponent do
                   </td>
                   <td>
                     <div class="flex space-x-2">
-                      <.link href={~p"/Admin/users/#{user.id}/edit"} class="btn btn-xs btn-primary">Edit</.link>
+                      <.link href={~p"/admin/users/#{user.id}/edit"} class="btn btn-xs btn-primary">Edit</.link>
                       <button
                         phx-click="delete_user"
                         phx-value-id={user.id}

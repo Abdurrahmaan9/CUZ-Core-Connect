@@ -1,7 +1,7 @@
-defmodule CuzCoreConnect.Account.UserToken do
+defmodule CuzCoreConnect.Accounts.UserToken do
   use Ecto.Schema
   import Ecto.Query
-  alias CuzCoreConnect.Account.UserToken
+  alias CuzCoreConnect.Accounts.UserToken
 
   @hash_algorithm :sha256
   @rand_size 32
@@ -12,12 +12,12 @@ defmodule CuzCoreConnect.Account.UserToken do
   @change_email_validity_in_days 7
   @session_validity_in_days 14
 
-  schema "users_tokens" do
+  schema "tbl_users_tokens" do
     field :token, :binary
     field :context, :string
     field :sent_to, :string
     field :authenticated_at, :utc_datetime
-    belongs_to :user, CuzCoreConnect.Account.User
+    belongs_to :user, CuzCoreConnect.Accounts.User
 
     timestamps(type: :utc_datetime, updated_at: false)
   end

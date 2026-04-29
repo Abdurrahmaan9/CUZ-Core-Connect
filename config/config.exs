@@ -10,7 +10,7 @@ import Config
 config :cuz_core_connect, :scopes,
   user: [
     default: true,
-    module: CuzCoreConnect.Account.Scope,
+    module: CuzCoreConnect.Accounts.Scope,
     assign_key: :current_scope,
     access_path: [:user, :id],
     schema_key: :user_id,

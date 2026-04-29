@@ -1,8 +1,8 @@
 defmodule CuzCoreConnectWeb.Backend.UserMgt.Index do
   use CuzCoreConnectWeb, :live_view
 
-  alias CuzCoreConnect.Account
-  alias CuzCoreConnect.Account.User
+  alias CuzCoreConnect.Accounts
+  alias CuzCoreConnect.Accounts.User
   alias CuzCoreConnectWeb.Layouts
 
   @impl true
@@ -37,7 +37,7 @@ defmodule CuzCoreConnectWeb.Backend.UserMgt.Index do
   end
 
   defp apply_action(socket, :edit, %{"id" => id}) do
-    case Account.get_user!(id) do
+    case Accounts.get_user!(id) do
       %User{} = user ->
         socket
         |> assign(:page_title, "Edit User")
@@ -46,7 +46,7 @@ defmodule CuzCoreConnectWeb.Backend.UserMgt.Index do
       _ ->
         socket
         |> put_flash(:error, "User not found")
-        |> redirect(to: ~p"/Admin/users")
+        |> redirect(to: ~p"/admin/users")
     end
   end
 
@@ -58,12 +58,12 @@ defmodule CuzCoreConnectWeb.Backend.UserMgt.Index do
 
   @impl true
   def handle_info({:create_user, user_params}, socket) do
-    case Account.register_user(user_params) do
+    case Accounts.register_user(user_params) do
       {:ok, _user} ->
         {:noreply,
          socket
          |> put_flash(:info, "User created successfully")
-         |> push_navigate(to: ~p"/Admin/users")}
+         |> push_navigate(to: ~p"/admin/users")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply,
@@ -78,12 +78,12 @@ defmodule CuzCoreConnectWeb.Backend.UserMgt.Index do
     {:noreply,
      socket
      |> put_flash(:info, "User updated successfully")
-     |> push_navigate(to: ~p"/Admin/users")}
+     |> push_navigate(to: ~p"/admin/users")}
   end
 
   @impl true
   def handle_info({:delete_user, id}, socket) do
-    case Account.get_user!(id) do
+    case Accounts.get_user!(id) do
       %User{} = _user ->
         # Here you would implement user deletion logic
         # For now, we'll just show a success message
@@ -100,6 +100,6 @@ defmodule CuzCoreConnectWeb.Backend.UserMgt.Index do
 
   # Helper functions
   defp list_users do
-    Account.list_all_users()
+    Accounts.list_all_users()
   end
 end

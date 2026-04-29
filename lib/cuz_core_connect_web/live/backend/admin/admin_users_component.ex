@@ -3,7 +3,7 @@ defmodule CuzCoreConnectWeb.Admin.AdminUsersComponent do
 
   @impl true
   def update(assigns, socket) do
-    users = CuzCoreConnect.Account.list_all_users()
+    users = CuzCoreConnect.Accounts.list_all_users()
     {:ok, assign(socket, Map.merge(assigns, %{users: users}))}
   end
 
@@ -14,7 +14,7 @@ defmodule CuzCoreConnectWeb.Admin.AdminUsersComponent do
       <div class="px-4 py-5 sm:p-6">
         <div class="flex justify-between items-center mb-6">
           <h3 class="text-lg font-semibold text-base-content">User Management</h3>
-          <.link href={~p"/Admin/users/new"} class="btn btn-primary btn-sm">Add User</.link>
+          <.link href={~p"/admin/users/new"} class="btn btn-primary btn-sm">Add User</.link>
         </div>
 
         <div class="overflow-hidden shadow ring-1 ring-base-300 md:rounded-lg">
@@ -70,8 +70,8 @@ defmodule CuzCoreConnectWeb.Admin.AdminUsersComponent do
                   </td>
                   <td>
                     <div class="flex space-x-2">
-                      <.link href={~p"/Admin/users/#{user.id}/edit"} class="btn btn-xs btn-primary">Edit</.link>
-                      <.link href={~p"/Admin/users"} class="btn btn-xs btn-secondary">View All</.link>
+                      <.link href={~p"/admin/users/#{user.id}/edit"} class="btn btn-xs btn-primary">Edit</.link>
+                      <.link href={~p"/admin/users"} class="btn btn-xs btn-secondary">View All</.link>
                     </div>
                   </td>
                 </tr>

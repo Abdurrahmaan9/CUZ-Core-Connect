@@ -1,4 +1,4 @@
-    <Layouts.app flash={@flash} current_scope={@current_scope}>
+<Layouts.admin flash={@flash} current_scope={@current_scope} page_title={@page_title} current_page={@current_page}>
   <div class="min-h-screen bg-base-100">
     <!-- Admin Header -->
     <div class="bg-base-200 border-b border-base-300">
@@ -6,13 +6,15 @@
         <div class="flex justify-between items-center py-6">
           <div>
             <h1 class="text-2xl font-bold text-base-content">Admin Dashboard</h1>
-            <p class="text-sm text-base-content/70 mt-1">System Administration & Workflow Management</p>
+            <p class="text-sm text-base-content/70 mt-1">
+              System Administration & Workflow Management
+            </p>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Tab Navigation -->
+<!-- Tab Navigation -->
     <div class="bg-base-200 border-b border-base-300">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <nav class="flex space-x-8">
@@ -52,31 +54,31 @@
       </div>
     </div>
 
-    <!-- Tab Content -->
+<!-- Tab Content -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <%= case @active_tab do %>
         <% "overview" -> %>
-          <.live_component 
-            module={CuzCoreConnectWeb.Admin.OverviewComponent} 
-            id="overview" 
-            stats={@stats} 
-            recent_users={@recent_users} 
-            workflows={@workflows} 
+          <.live_component
+            module={CuzCoreConnectWeb.Admin.OverviewComponent}
+            id="overview"
+            stats={@stats}
+            recent_users={@recent_users}
+            workflows={@workflows}
           />
         <% "users" -> %>
-          <.live_component 
-            module={CuzCoreConnectWeb.Admin.AdminUsersComponent} 
-            id="admin-users" 
+          <.live_component
+            module={CuzCoreConnectWeb.Admin.AdminUsersComponent}
+            id="admin-users"
           />
         <% "workflows" -> %>
-          <.live_component 
-            module={CuzCoreConnectWeb.Admin.WorkflowsComponent} 
-            id="workflows" 
+          <.live_component
+            module={CuzCoreConnectWeb.Admin.WorkflowsComponent}
+            id="workflows"
           />
         <% "settings" -> %>
-          <.live_component 
-            module={CuzCoreConnectWeb.Admin.SettingsComponent} 
-            id="settings" 
+          <.live_component
+            module={CuzCoreConnectWeb.Admin.SettingsComponent}
+            id="settings"
           />
         <% _ -> %>
           <div class="text-center py-12">
@@ -85,4 +87,4 @@
       <% end %>
     </div>
   </div>
-</Layouts.app>
+</Layouts.admin>

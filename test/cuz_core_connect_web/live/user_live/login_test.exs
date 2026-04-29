@@ -27,7 +27,7 @@ defmodule CuzCoreConnectWeb.UserLive.LoginTest do
 
       assert html =~ "If your email is in our system"
 
-      assert CuzCoreConnect.Repo.get_by!(CuzCoreConnect.Account.UserToken, user_id: user.id).context ==
+      assert CuzCoreConnect.Repo.get_by!(CuzCoreConnect.Accounts.UserToken, user_id: user.id).context ==
                "login"
     end
 

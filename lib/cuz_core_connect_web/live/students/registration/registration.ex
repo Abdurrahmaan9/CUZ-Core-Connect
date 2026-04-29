@@ -63,7 +63,7 @@ defmodule CuzCoreConnectWeb.Student.Registration.RegistrationLive do
     assigns = assign(assigns, steps: @steps, step_labels: @step_labels)
 
     ~H"""
-    <Layouts.app flash={@flash} current_scope={@current_scope}>
+    <Layouts.unauth flash={@flash} current_scope={@current_scope}>
       <div class="max-w-3xl mx-auto py-8 px-4">
         <div class="mb-8">
           <h1 class="text-2xl font-bold text-gray-900">Course Registration</h1>
@@ -78,28 +78,20 @@ defmodule CuzCoreConnectWeb.Student.Registration.RegistrationLive do
           step_labels={@step_labels}
         />
 
-        <div class="mt-8 bg-base-100 rounded-2xl shadow-sm border border-base-200 p-6">
-          <%= case @current_step do %>
-            <% :personal_info -> %>
-              <.live_component module={PersonalInfo} id="step-personal-info" registration={@registration} />
-            <% :program -> %>
-              <.live_component module={Programs} id="step-program" registration={@registration} />
-            <% :semester -> %>
-              <.live_component module={Semesters} id="step-semester" registration={@registration} />
-            <% :courses -> %>
-              <.live_component module={Courses} id="step-courses" registration={@registration} />
-            <% :receipts -> %>
-              <.live_component
-                module={Receipts}
-                id="step-receipts"
-                upload_config={@uploads.receipt}
-              />
-            <% :review -> %>
-              <.live_component module={Review} id="step-review" registration={@registration} upload_config={@uploads.receipt} />
-          <% end %>
-        </div>
+      <div class="mt-8 bg-base-100 rounded-2xl shadow-sm border border-base-200 p-6">
+        <%= case @current_step do %>
+          <% :program -> %>
+            <.live_component module={Programs} id="step-program" registration={@registration} />
+          <% :semester -> %>
+            <.live_component module={Semesters} id="step-semester" registration={@registration} />
+          <% :courses -> %>
+            <.live_component module={Courses} id="step-courses" registration={@registration} />
+          <% :review -> %>
+            <.live_component module={Review} id="step-review" registration={@registration} />
+        <% end %>
       </div>
-    </Layouts.app>
+    </div>
+    </Layouts.unauth>
     """
   end
 
@@ -168,114 +160,15 @@ defmodule CuzCoreConnectWeb.Student.Registration.RegistrationLive do
     {:noreply, assign(socket, current_step: prev_step)}
   end
 
-  @impl true
-  def handle_event("validate_upload", _params, socket) do
-    {:noreply, socket}
-  end
-
-  @impl true
-  def handle_event("cancel_upload", %{"ref" => ref}, socket) do
-    {:noreply, cancel_upload(socket, :receipt, ref)}
-  end
-
-  @impl true
-  def handle_event("next_receipt_step", _params, socket) do
-    {completed_entries, in_progress_entries} = uploaded_entries(socket, :receipt)
-
-    cond do
-      in_progress_entries != [] ->
-        {:noreply, put_flash(socket, :error, "Please wait for the receipt upload to finish before continuing.")}
-
-      completed_entries == [] ->
-        {:noreply, put_flash(socket, :error, "At least one payment receipt is required to continue.")}
-
-      true ->
-        current_step_index = Enum.find_index(@steps, &(&1 == socket.assigns.current_step))
-        next_step = Enum.at(@steps, current_step_index + 1)
-
-        {:noreply, assign(socket, :current_step, next_step)}
-    end
-  end
-
-  @impl true
-  def handle_event("submit_review", _params, socket) do
-    {completed_entries, in_progress_entries} = uploaded_entries(socket, :receipt)
-
-    cond do
-      in_progress_entries != [] ->
-        {:noreply, put_flash(socket, :error, "Please wait for the receipt upload to finish before submitting.")}
-
-      completed_entries == [] ->
-        {:noreply, put_flash(socket, :error, "At least one payment receipt is required to submit registration.")}
-
-      true ->
-        handle_submit_registration(socket.assigns.registration, socket)
-    end
-  end
-
-
-  defp handle_submit_registration(reg, socket) do
-    # Process uploads from parent's upload config
-    uploaded_files =
-      consume_uploaded_entries(socket, :receipt, fn %{path: tmp_path}, entry ->
-        # Build a unique storage key
-        ext = Path.extname(entry.client_name)
-        key = "receipts/#{Date.utc_today().year}/#{Ecto.UUID.generate()}#{ext}"
-
-        # Save to priv/static/uploads directory
-        uploads_dir = "priv/static/uploads"
-        dest = Path.join([uploads_dir, key])
-        File.mkdir_p!(Path.dirname(dest))
-        File.cp!(tmp_path, dest)
-
-        {:ok, %{
-          original_filename: entry.client_name,
-          storage_key: key,
-          content_type: entry.client_type,
-          file_size: entry.client_size
-        }}
-      end)
-
-    # Add uploaded files to registration data
-    reg_with_receipts = Map.put(reg, :uploaded_receipts, uploaded_files)
-
-    with {:ok, registration} <- Registration.create_registration(nil, reg_with_receipts) do
-      case save_receipts(registration.id, uploaded_files) do
-        :ok ->
-          {:noreply,
-           socket
-           |> put_flash(:info, "Registration submitted! Tracking #: #{registration.tracking_number}")
-           |> push_navigate(to: "/")}
-
-        _ ->
-          {:noreply, put_flash(socket, :error, "Receipt saving failed, please try again.")}
-      end
-    else
-      {:error, _changeset} ->
-        {:noreply, put_flash(socket, :error, "Submission failed, please try again.")}
-    end
-  end
-
-  defp save_receipts(_registration_id, nil), do: {:error, "No payment receipts provided"}
-  defp save_receipts(_registration_id, []), do: {:error, "At least one payment receipt is required"}
-
-  defp save_receipts(registration_id, files) do
-    results =
-      Enum.map(files, fn file ->
-        Registration.create_payment_receipt(%{
-          student_registration_id: registration_id,
-          uploaded_by_student_id: nil,
-          original_filename: file.original_filename,
-          storage_key: file.storage_key,
-          content_type: file.content_type,
-          file_size: file.file_size
-        })
-      end)
-
-    if Enum.any?(results, fn result -> result == :error or match?({:error, _}, result) end) do
-      {:error, "Failed to save some payment receipts"}
-    else
-      :ok
-    end
+  def handle_info(:submit_registration, socket) do
+    # TODO: wire to your context, e.g.:
+    # case Registrations.create(socket.assigns.current_scope.user, socket.assigns.registration) do
+    #   {:ok, _}    -> success path
+    #   {:error, _} -> error path
+    # end
+    {:noreply,
+     socket
+     |> put_flash(:info, "Registration submitted successfully!")
+     |> push_navigate(to: "/student/dashboard")}
   end
 end

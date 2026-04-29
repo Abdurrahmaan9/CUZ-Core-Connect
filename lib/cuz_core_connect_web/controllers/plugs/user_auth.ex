@@ -4,8 +4,8 @@ defmodule CuzCoreConnectWeb.Plugs.UserAuth do
   import Plug.Conn
   import Phoenix.Controller
 
-  alias CuzCoreConnect.Account
-  alias CuzCoreConnect.Account.Scope
+  alias CuzCoreConnect.Accounts
+  alias CuzCoreConnect.Accounts.Scope
 
   # Make the remember me cookie valid for 14 days. This should match
   # the session validity setting in UserToken.
@@ -47,7 +47,7 @@ defmodule CuzCoreConnectWeb.Plugs.UserAuth do
   """
   def log_out_user(conn) do
     user_token = get_session(conn, :user_token)
-    user_token && Account.delete_user_session_token(user_token)
+    user_token && Accounts.delete_user_session_token(user_token)
 
     if live_socket_id = get_session(conn, :live_socket_id) do
       CuzCoreConnectWeb.Endpoint.broadcast(live_socket_id, "disconnect", %{})
@@ -66,7 +66,7 @@ defmodule CuzCoreConnectWeb.Plugs.UserAuth do
   """
   def fetch_current_scope_for_user(conn, _opts) do
     with {token, conn} <- ensure_user_token(conn),
-         {user, token_inserted_at} <- Account.get_user_by_session_token(token) do
+         {user, token_inserted_at} <- Accounts.get_user_by_session_token(token) do
       conn
       |> assign(:current_scope, Scope.for_user(user))
       |> maybe_reissue_user_session_token(user, token_inserted_at)
@@ -109,7 +109,7 @@ defmodule CuzCoreConnectWeb.Plugs.UserAuth do
   # function will clear the session to avoid fixation attacks. See the
   # renew_session function to customize this behaviour.
   defp create_or_extend_session(conn, user, params) do
-    token = Account.generate_user_session_token(user)
+    token = Accounts.generate_user_session_token(user)
     remember_me = get_session(conn, :user_remember_me)
 
     conn
@@ -233,7 +233,7 @@ defmodule CuzCoreConnectWeb.Plugs.UserAuth do
   def on_mount(:require_sudo_mode, _params, session, socket) do
     socket = mount_current_scope(socket, session)
 
-    if Account.sudo_mode?(socket.assigns.current_scope.user, -10) do
+    if Accounts.sudo_mode?(socket.assigns.current_scope.user, -10) do
       {:cont, socket}
     else
       socket =
@@ -247,20 +247,20 @@ defmodule CuzCoreConnectWeb.Plugs.UserAuth do
 
   def on_mount(:redirect_to_dashboard, _params, _session, socket) do
     case socket.assigns.current_scope do
-      %{user: %{user_role: "Admin"}} ->
-        {:noreply, redirect(socket, to: "/Admin/Dashboard")}
+      %{user: %{user_role: "admin"}} ->
+        {:noreply, redirect(socket, to: "/admin/dashboard")}
 
-      %{user: %{user_role: "Academics"}} ->
-        {:noreply, redirect(socket, to: "/Academics/Dashboard")}
+      %{user: %{user_role: "academics"}} ->
+        {:noreply, redirect(socket, to: "/academics/dashboard")}
 
-      %{user: %{user_role: "Finance"}} ->
-        {:noreply, redirect(socket, to: "/Finance/Dashboard")}
+      %{user: %{user_role: "finance"}} ->
+        {:noreply, redirect(socket, to: "/finance/dashboard")}
 
-      %{user: %{user_role: "HOD"}} ->
-        {:noreply, redirect(socket, to: "/HOD/Dashboard")}
+      %{user: %{user_role: "hod"}} ->
+        {:noreply, redirect(socket, to: "/Hod/dashboard")}
 
-      %{user: %{user_role: "Student"}} ->
-        {:noreply, redirect(socket, to: "/Student/Dashboard")}
+      %{user: %{user_role: "student"}} ->
+        {:noreply, redirect(socket, to: "/student/dashboard")}
 
       _ ->
         {:noreply, redirect(socket, to: "/")}
@@ -269,7 +269,7 @@ defmodule CuzCoreConnectWeb.Plugs.UserAuth do
 
   def on_mount(:ensure_academics_role, _params, _session, socket) do
     case socket.assigns.current_scope do
-      %{user: %{user_role: "Academics"}} ->
+      %{user: %{user_role: "academics"}} ->
         {:cont, socket}
       %{user: _} ->
         {:halt,
@@ -286,7 +286,7 @@ defmodule CuzCoreConnectWeb.Plugs.UserAuth do
 
   def on_mount(:ensure_finance_role, _params, _session, socket) do
     case socket.assigns.current_scope do
-      %{user: %{user_role: "Finance"}} ->
+      %{user: %{user_role: "finance"}} ->
         {:cont, socket}
       %{user: _} ->
         {:halt,
@@ -303,7 +303,7 @@ defmodule CuzCoreConnectWeb.Plugs.UserAuth do
 
   def on_mount(:ensure_hod_role, _params, _session, socket) do
     case socket.assigns.current_scope do
-      %{user: %{user_role: "HOD"}} ->
+      %{user: %{user_role: "hod"}} ->
         {:cont, socket}
       %{user: _} ->
         {:halt,
@@ -320,12 +320,30 @@ defmodule CuzCoreConnectWeb.Plugs.UserAuth do
 
   def on_mount(:ensure_retention_role, _params, _session, socket) do
     case socket.assigns.current_scope do
-      %{user: %{user_role: "Retention"}} ->
+      %{user: %{user_role: "retention"}} ->
         {:cont, socket}
       %{user: _} ->
         {:halt,
          socket
          |> put_flash(:error, "Access denied. Retention privileges required.")
+         |> redirect(to: signed_in_path_for_user(socket.assigns.current_scope.user))}
+      _ ->
+        {:halt,
+         socket
+         |> put_flash(:error, "You must be logged in to access this page.")
+         |> redirect(to: "/users/log-in")}
+    end
+  end
+
+  def on_mount(:ensure_student_role, _params, _session, socket) do
+    IO.inspect socket.assigns.current_scope
+    case socket.assigns.current_scope do
+      %{user: %{user_role: "student"}} ->
+        {:cont, socket}
+      %{user: _} ->
+        {:halt,
+         socket
+         |> put_flash(:error, "Access denied. Student privileges required.")
          |> redirect(to: signed_in_path_for_user(socket.assigns.current_scope.user))}
       _ ->
         {:halt,
@@ -345,7 +363,7 @@ defmodule CuzCoreConnectWeb.Plugs.UserAuth do
     user_token = session["user_token"]
 
     user =
-      case user_token && Account.get_user_by_session_token(user_token) do
+      case user_token && Accounts.get_user_by_session_token(user_token) do
         {user, _token_inserted_at} -> user
         _ -> nil
       end
@@ -354,24 +372,28 @@ defmodule CuzCoreConnectWeb.Plugs.UserAuth do
   end
 
   @doc "Returns the path to redirect to after log in based on user role."
-  def signed_in_path(%Plug.Conn{assigns: %{current_scope: %{user: %{user_role: "Admin"}}}}) do
-    "/Admin/Dashboard"
+  def signed_in_path(%Plug.Conn{assigns: %{current_scope: %{user: %{user_role: "admin"}}}}) do
+    "/admin/dashboard"
   end
 
-  def signed_in_path(%Plug.Conn{assigns: %{current_scope: %{user: %{user_role: "Academics"}}}}) do
-    "/Academics/Dashboard"
+  def signed_in_path(%Plug.Conn{assigns: %{current_scope: %{user: %{user_role: "academics"}}}}) do
+    "/academics/dashboard"
   end
 
-  def signed_in_path(%Plug.Conn{assigns: %{current_scope: %{user: %{user_role: "Finance"}}}}) do
-    "/Finance/Dashboard"
+  def signed_in_path(%Plug.Conn{assigns: %{current_scope: %{user: %{user_role: "finance"}}}}) do
+    "/finance/dashboard"
   end
 
-  def signed_in_path(%Plug.Conn{assigns: %{current_scope: %{user: %{user_role: "HOD"}}}}) do
-    "/HOD/Dashboard"
+  def signed_in_path(%Plug.Conn{assigns: %{current_scope: %{user: %{user_role: "hod"}}}}) do
+    "/Hod/dashboard"
   end
 
-  def signed_in_path(%Plug.Conn{assigns: %{current_scope: %{user: %{user_role: "Retention"}}}}) do
-    "/Retention/Dashboard"
+  def signed_in_path(%Plug.Conn{assigns: %{current_scope: %{user: %{user_role: "retention"}}}}) do
+    "/retention/dashboard"
+  end
+
+  def signed_in_path(%Plug.Conn{assigns: %{current_scope: %{user: %{user_role: "student"}}}}) do
+    "/retention/dashboard"
   end
 
   def signed_in_path(%Plug.Conn{assigns: %{current_scope: %{user: %{user_role: _user_role}}}}) do
@@ -382,24 +404,28 @@ defmodule CuzCoreConnectWeb.Plugs.UserAuth do
   def signed_in_path(_), do: "/"
 
   @doc "Returns the path to redirect to after log in based on user role."
-  def signed_in_path_for_user(%Account.User{user_role: "Admin"}) do
-    "/Admin/Dashboard"
+  def signed_in_path_for_user(%Accounts.User{user_role: "admin"}) do
+    "/admin/dashboard"
   end
 
-  def signed_in_path_for_user(%Account.User{user_role: "Academics"}) do
-    "/Academics/Dashboard"
+  def signed_in_path_for_user(%Accounts.User{user_role: "academics"}) do
+    "/academics/dashboard"
   end
 
-  def signed_in_path_for_user(%Account.User{user_role: "Finance"}) do
-    "/Finance/Dashboard"
+  def signed_in_path_for_user(%Accounts.User{user_role: "finance"}) do
+    "/finance/dashboard"
   end
 
-  def signed_in_path_for_user(%Account.User{user_role: "HOD"}) do
-    "/HOD/Dashboard"
+  def signed_in_path_for_user(%Accounts.User{user_role: "hod"}) do
+    "/Hod/dashboard"
   end
 
-  def signed_in_path_for_user(%Account.User{user_role: "Retention"}) do
-    "/Retention/Dashboard"
+  def signed_in_path_for_user(%Accounts.User{user_role: "retention"}) do
+    "/retention/dashboard"
+  end
+
+  def signed_in_path_for_user(%Accounts.User{user_role: "student"}) do
+    "/student/dashboard"
   end
 
   def signed_in_path_for_user(_), do: "/users/settings"

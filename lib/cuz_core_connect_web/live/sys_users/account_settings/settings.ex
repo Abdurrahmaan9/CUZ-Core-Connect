@@ -3,12 +3,12 @@ defmodule CuzCoreConnectWeb.UserLive.Settings do
 
   on_mount {CuzCoreConnectWeb.Plugs.UserAuth, :require_sudo_mode}
 
-  alias CuzCoreConnect.Account
+  alias CuzCoreConnect.Accounts
 
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_scope={@current_scope}>
+    <Layouts.user flash={@flash} current_scope={@current_scope}>
       <div class="text-center">
         <.header>
           Account Settings
@@ -65,14 +65,14 @@ defmodule CuzCoreConnectWeb.UserLive.Settings do
           Save Password
         </.button>
       </.form>
-    </Layouts.app>
+    </Layouts.user>
     """
   end
 
   @impl true
   def mount(%{"token" => token}, _session, socket) do
     socket =
-      case Account.update_user_email(socket.assigns.current_scope.user, token) do
+      case Accounts.update_user_email(socket.assigns.current_scope.user, token) do
         {:ok, _user} ->
           put_flash(socket, :info, "Email changed successfully.")
 
@@ -85,8 +85,8 @@ defmodule CuzCoreConnectWeb.UserLive.Settings do
 
   def mount(_params, _session, socket) do
     user = socket.assigns.current_scope.user
-    email_changeset = Account.change_user_email(user, %{}, validate_unique: false)
-    password_changeset = Account.change_user_password(user, %{}, hash_password: false)
+    email_changeset = Accounts.change_user_email(user, %{}, validate_unique: false)
+    password_changeset = Accounts.change_user_password(user, %{}, hash_password: false)
 
     socket =
       socket
@@ -104,7 +104,7 @@ defmodule CuzCoreConnectWeb.UserLive.Settings do
 
     email_form =
       socket.assigns.current_scope.user
-      |> Account.change_user_email(user_params, validate_unique: false)
+      |> Accounts.change_user_email(user_params, validate_unique: false)
       |> Map.put(:action, :validate)
       |> to_form()
 
@@ -114,11 +114,11 @@ defmodule CuzCoreConnectWeb.UserLive.Settings do
   def handle_event("update_email", params, socket) do
     %{"user" => user_params} = params
     user = socket.assigns.current_scope.user
-    true = Account.sudo_mode?(user)
+    true = Accounts.sudo_mode?(user)
 
-    case Account.change_user_email(user, user_params) do
+    case Accounts.change_user_email(user, user_params) do
       %{valid?: true} = changeset ->
-        Account.deliver_user_update_email_instructions(
+        Accounts.deliver_user_update_email_instructions(
           Ecto.Changeset.apply_action!(changeset, :insert),
           user.email,
           &url(~p"/users/settings/confirm-email/#{&1}")
@@ -137,7 +137,7 @@ defmodule CuzCoreConnectWeb.UserLive.Settings do
 
     password_form =
       socket.assigns.current_scope.user
-      |> Account.change_user_password(user_params, hash_password: false)
+      |> Accounts.change_user_password(user_params, hash_password: false)
       |> Map.put(:action, :validate)
       |> to_form()
 
@@ -147,9 +147,9 @@ defmodule CuzCoreConnectWeb.UserLive.Settings do
   def handle_event("update_password", params, socket) do
     %{"user" => user_params} = params
     user = socket.assigns.current_scope.user
-    true = Account.sudo_mode?(user)
+    true = Accounts.sudo_mode?(user)
 
-    case Account.change_user_password(user, user_params) do
+    case Accounts.change_user_password(user, user_params) do
       %{valid?: true} = changeset ->
         {:noreply, assign(socket, trigger_submit: true, password_form: to_form(changeset))}
 
