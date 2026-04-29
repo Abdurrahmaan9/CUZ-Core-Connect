@@ -27,6 +27,12 @@ defmodule CuzCoreConnectWeb.Endpoint do
     only: CuzCoreConnectWeb.static_paths(),
     raise_on_missing_only: code_reloading?
 
+  # Serve uploaded files from the uploads directory
+ plug Plug.Static,
+  at: "/uploads",                    # URL prefix:  /uploads/receipts/2026/04/uuid.jpg
+  from: {:cuz_core_connect, "priv/static/uploads"},  # maps to that folder on disk
+  gzip: false
+
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.
   if code_reloading? do

@@ -64,7 +64,16 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Programs do
         </p>
       <% end %>
 
-      <div class="mt-8 flex justify-end">
+      <div class="mt-8 flex justify-between">
+        <button
+          type="button"
+          phx-click="back"
+          phx-target={@myself}
+          class="btn btn-ghost"
+        >
+          ← Back
+        </button>
+
         <button
           type="button"
           phx-click="next"

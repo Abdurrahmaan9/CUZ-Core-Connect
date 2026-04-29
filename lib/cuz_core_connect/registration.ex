@@ -130,6 +130,32 @@ defmodule CuzCoreConnect.Registration do
     user && (Map.get(user, :phone) || Map.get(user, :contact) || 0)
   end
 
+  # ── File Retrieval ────────────────────────────────────────────────────────────
+
+  def get_payment_receipt_url(registration_id, receipt_id) do
+    with {:ok, receipt} <- get_payment_receipt(registration_id, receipt_id) do
+      {:ok, "/uploads/#{receipt.storage_key}"}
+    else
+      error -> error
+    end
+  end
+
+  def get_payment_receipt(registration_id, receipt_id) do
+    case Repo.get_by(PaymentReceipt,
+      id: receipt_id,
+      student_registration_id: registration_id
+    ) do
+      nil -> {:error, :not_found}
+      receipt -> {:ok, receipt}
+    end
+  end
+
+  def list_payment_receipts(registration_id) do
+    PaymentReceipt
+    |> where([pr], pr.student_registration_id == ^registration_id)
+    |> Repo.all()
+  end
+
   defp format_courses(courses) when is_list(courses) do
     %{
       selected_courses: Enum.map(courses, fn course ->

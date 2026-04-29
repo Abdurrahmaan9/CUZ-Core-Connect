@@ -14,7 +14,7 @@ defmodule CuzCoreConnect.Students.Registration do
     field :approval_level, :string
     field :approved_by, :map, default: %{}
     field :payment_status, :string
-    has_many :payment_receipts, CuzCoreConnect.Students.PaymentReceipt
+    has_many :payment_receipts, CuzCoreConnect.Students.PaymentReceipt, foreign_key: :student_registration_id
 
     timestamps(type: :utc_datetime)
   end

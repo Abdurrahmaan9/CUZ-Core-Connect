@@ -22,7 +22,8 @@ config :cuz_core_connect, :scopes,
 
 config :cuz_core_connect,
   ecto_repos: [CuzCoreConnect.Repo],
-  generators: [timestamp_type: :utc_datetime]
+  generators: [timestamp_type: :utc_datetime],
+  uploads_dir: "priv/static/uploads"
 
 # Configure the endpoint
 config :cuz_core_connect, CuzCoreConnectWeb.Endpoint,
