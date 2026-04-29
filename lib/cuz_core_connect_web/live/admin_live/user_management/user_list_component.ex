@@ -50,11 +50,11 @@ defmodule CuzCoreConnectWeb.UserListComponent do
                   <td>
                     <div class={"badge badge-sm " <>
                       case user.user_role do
-                        "Admin" -> "badge-primary"
-                        "Academics" -> "badge-info"
-                        "Finance" -> "badge-success"
-                        "HOD" -> "badge-warning"
-                        "Student" -> "badge-secondary"
+                        "admin" -> "badge-primary"
+                        "academics" -> "badge-info"
+                        "finance" -> "badge-success"
+                        "hod" -> "badge-warning"
+                        "student" -> "badge-secondary"
                         _ -> "badge-neutral"
                       end}>
                       {user.user_role}

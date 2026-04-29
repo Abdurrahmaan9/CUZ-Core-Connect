@@ -1,4 +1,4 @@
-defmodule CuzCoreConnectWeb.Admin.WorkflowsComponent do
+defmodule CuzCoreConnectWeb.AdminLiveWorkflowsComponent do
   use CuzCoreConnectWeb, :live_component
 
   @impl true

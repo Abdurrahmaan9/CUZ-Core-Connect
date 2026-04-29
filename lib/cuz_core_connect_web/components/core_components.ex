@@ -48,7 +48,8 @@ defmodule CuzCoreConnectWeb.CoreComponents do
   slot :inner_block, doc: "the optional inner block that renders the flash message"
 
   def flash(assigns) do
-    assigns = assign_new(assigns, :id, fn -> "flash-#{assigns.kind}" end)
+    assigns =
+      assign_new(assigns, :id, fn -> "flash-#{assigns.kind}" end)
 
     ~H"""
     <div
@@ -56,7 +57,7 @@ defmodule CuzCoreConnectWeb.CoreComponents do
       id={@id}
       phx-hook="AutoFade"
       data-fade-delay="100000"
-      phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("##{@id}")}
+      phx-click={hide(JS.push("lv:clear-flash", value: %{key: @kind}), "##{@id}")}
       role="alert"
       class="fixed top-21 left-1/2 z-[999] transition-all duration-500 ease-in-out"
       {@rest}

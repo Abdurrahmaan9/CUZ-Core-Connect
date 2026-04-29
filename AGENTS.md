@@ -177,7 +177,7 @@ Controllers automatically have the `current_scope` available if they use the `:b
         live "/users", UserLive, :index
       end
 
-  the UserLive route would point to the `AppWeb.Admin.UserLive` module
+  the UserLive route would point to the `AppWeb.AdminLiveUserLive` module
 
 - `Phoenix.View` no longer is needed or included with Phoenix, don't use it
 <!-- phoenix:phoenix-end -->

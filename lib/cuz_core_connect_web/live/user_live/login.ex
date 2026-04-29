@@ -18,7 +18,7 @@ defmodule CuzCoreConnectWeb.UserLive.Login do
           <div class="mx-auto max-w-sm lg:flex flex-col justify-center space-y-8">
             <div class="text-center">
               <.header>
-                <p>Log in</p>
+                <p>{if(@current_scope, do: "Reauthenticate", else: "Log in")}</p>
                 <:subtitle>
                   <%= if @current_scope do %>
                     You need to reauthenticate to perform sensitive actions on your account.

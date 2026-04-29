@@ -1,4 +1,4 @@
-defmodule CuzCoreConnectWeb.Admin.OverviewComponent do
+defmodule CuzCoreConnectWeb.AdminLiveOverviewComponent do
   use CuzCoreConnectWeb, :live_component
 
   @impl true

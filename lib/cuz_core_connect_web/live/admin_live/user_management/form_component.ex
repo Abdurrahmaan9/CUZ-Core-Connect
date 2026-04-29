@@ -41,11 +41,11 @@ defmodule CuzCoreConnectWeb.UserFormComponent do
                 type="select"
                 label="User Role"
                 options={[
-                  {"Admin", "Admin"},
-                  {"Academics", "Academics"},
-                  {"Finance", "Finance"},
-                  {"HOD", "HOD"},
-                  {"Student", "Student"}
+                  {"Admin", "admin"},
+                  {"Academics", "academics"},
+                  {"Finance", "finance"},
+                  {"HOD", "hod"},
+                  {"Student", "student"}
                 ]}
                 class="select select-bordered w-full"
                 required

@@ -32,10 +32,10 @@ import { TutorialSpotlight } from "./hooks/tutorial_spotlight";
 
 // Define Hooks HERE!
 const Hooks = {
+  AutoFade,
   colocatedHooks,
   CopyToClipboard,
   PasswordToggle,
-  AutoFade,
   TutorialSpotlight
 
 };

@@ -8,7 +8,7 @@ defmodule CuzCoreConnectWeb.UserLive.Settings do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.user flash={@flash} current_scope={@current_scope}>
+    <Layouts.user flash={@flash} current_scope={@current_scope} page_title={@page_title}, current_page={@current_page}>
       <div class="text-center">
         <.header>
           Account Settings
@@ -80,7 +80,12 @@ defmodule CuzCoreConnectWeb.UserLive.Settings do
           put_flash(socket, :error, "Email change link is invalid or it has expired.")
       end
 
-    {:ok, push_navigate(socket, to: ~p"/users/settings")}
+    {:ok,
+    socket
+    |> push_navigate(to: ~p"/users/settings")
+      |> assign(:page_title, "Email changed")
+      |> assign(:current_page, :user_account_settings)
+  }
   end
 
   def mount(_params, _session, socket) do
@@ -93,6 +98,8 @@ defmodule CuzCoreConnectWeb.UserLive.Settings do
       |> assign(:current_email, user.email)
       |> assign(:email_form, to_form(email_changeset))
       |> assign(:password_form, to_form(password_changeset))
+      |> assign(:page_title, "User Account Settings")
+      |> assign(:current_page, :user_account_settings)
       |> assign(:trigger_submit, false)
 
     {:ok, socket}

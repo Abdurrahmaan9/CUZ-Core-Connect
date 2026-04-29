@@ -1,18 +1,23 @@
-defmodule CuzCoreConnectWeb.SysUser.Dashboard.Index do
+defmodule CuzCoreConnectWeb.StudentLive.Dashboard.Index do
   use CuzCoreConnectWeb, :live_view
 
   @impl true
   def mount(_params, _session, socket) do
     {:ok,
-    socket
-  |> assign(page_title: "Dashboard")
-|> assign(current_page: :student_dashboard)}
+     socket
+     |> assign(page_title: "Dashboard")
+     |> assign(current_page: :student_dashboard)}
   end
 
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.user flash={@flash} current_scope={@current_scope} page_title={@page_title} current_page={@current_page}>
+    <Layouts.user
+      flash={@flash}
+      current_scope={@current_scope}
+      page_title={@page_title}
+      current_page={@current_page}
+    >
       <div class="space-y-6">
         <!-- Welcome Section -->
         <div class="bg-gradient-to-r from-primary to-primary/80 text-white rounded-xl p-6 shadow-lg">
@@ -103,7 +108,7 @@ defmodule CuzCoreConnectWeb.SysUser.Dashboard.Index do
           <h2 class="text-xl font-semibold mb-4">Quick Actions</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <.link
-              href={"/students/registered"}
+              href="/students/registered"
               class="block p-4 bg-primary/5 rounded-lg hover:bg-primary/10 transition-colors border border-primary/20"
             >
               <.icon name="hero-users" class="w-6 h-6 text-primary mb-2" />
@@ -112,7 +117,7 @@ defmodule CuzCoreConnectWeb.SysUser.Dashboard.Index do
             </.link>
 
             <.link
-              href={"/students/pending"}
+              href="/students/pending"
               class="block p-4 bg-warning/5 rounded-lg hover:bg-warning/10 transition-colors border border-warning/20"
             >
               <.icon name="hero-document-text" class="w-6 h-6 text-warning mb-2" />
@@ -121,7 +126,7 @@ defmodule CuzCoreConnectWeb.SysUser.Dashboard.Index do
             </.link>
 
             <.link
-              href={"/students/courses"}
+              href="/students/courses"
               class="block p-4 bg-success/5 rounded-lg hover:bg-success/10 transition-colors border border-success/20"
             >
               <.icon name="hero-book-open" class="w-6 h-6 text-success mb-2" />
@@ -130,7 +135,7 @@ defmodule CuzCoreConnectWeb.SysUser.Dashboard.Index do
             </.link>
 
             <.link
-              href={"/reports/attendance"}
+              href="/reports/attendance"
               class="block p-4 bg-info/5 rounded-lg hover:bg-info/10 transition-colors border border-info/20"
             >
               <.icon name="hero-chart-bar" class="w-6 h-6 text-info mb-2" />
@@ -139,7 +144,7 @@ defmodule CuzCoreConnectWeb.SysUser.Dashboard.Index do
             </.link>
 
             <.link
-              href={"/messages"}
+              href="/messages"
               class="block p-4 bg-secondary/5 rounded-lg hover:bg-secondary/10 transition-colors border border-secondary/20"
             >
               <.icon name="hero-chat-bubble-left-right" class="w-6 h-6 text-secondary mb-2" />
@@ -148,7 +153,7 @@ defmodule CuzCoreConnectWeb.SysUser.Dashboard.Index do
             </.link>
 
             <.link
-              href={"/announcements"}
+              href="/announcements"
               class="block p-4 bg-base-200 rounded-lg hover:bg-base-300 transition-colors"
             >
               <.icon name="hero-megaphone" class="w-6 h-6 text-base-content/70 mb-2" />

@@ -1,11 +1,11 @@
 defmodule CuzCoreConnectWeb.Student.Registration.RegistrationLive do
   use CuzCoreConnectWeb, :live_view
 
-  alias CuzCoreConnect.Registration
+  # alias CuzCoreConnect.Registration
   alias CuzCoreConnectWeb.Student.Registration.Steps.Courses
-  alias CuzCoreConnectWeb.Student.Registration.Steps.PersonalInfo
+  # alias CuzCoreConnectWeb.Student.Registration.Steps.PersonalInfo
   alias CuzCoreConnectWeb.Student.Registration.Steps.Programs
-  alias CuzCoreConnectWeb.Student.Registration.Steps.Receipts
+  # alias CuzCoreConnectWeb.Student.Registration.Steps.Receipts
   alias CuzCoreConnectWeb.Student.Registration.Steps.Review
   alias CuzCoreConnectWeb.Student.Registration.Steps.Semesters
 
@@ -153,6 +153,7 @@ defmodule CuzCoreConnectWeb.Student.Registration.RegistrationLive do
      |> assign(:current_step, next_step)}
   end
 
+  @impl true
   def handle_info(:prev_step, socket) do
     current_index = Enum.find_index(@steps, &(&1 == socket.assigns.current_step))
     prev_step = Enum.at(@steps, current_index - 1, socket.assigns.current_step)
@@ -160,6 +161,7 @@ defmodule CuzCoreConnectWeb.Student.Registration.RegistrationLive do
     {:noreply, assign(socket, current_step: prev_step)}
   end
 
+  @impl true
   def handle_info(:submit_registration, socket) do
     # TODO: wire to your context, e.g.:
     # case Registrations.create(socket.assigns.current_scope.user, socket.assigns.registration) do
