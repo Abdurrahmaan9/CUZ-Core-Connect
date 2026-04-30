@@ -106,4 +106,10 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Programs do
         {:noreply, socket}
     end
   end
+
+  @impl true
+  def handle_event("back", _params, socket) do
+    send(self(), :prev_step)
+    {:noreply, socket}
+  end
 end

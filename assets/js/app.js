@@ -24,12 +24,26 @@ import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/cuz_core_connect"
 import topbar from "../vendor/topbar"
+import { AutoFade } from "./hooks/auto_fade";
+import { CopyToClipboard } from "./hooks/copy_to_clipboard";
+import { PasswordToggle } from "./hooks/password_toggle";
+import { TutorialSpotlight } from "./hooks/tutorial_spotlight";
 
+
+// Define Hooks HERE!
+const Hooks = {
+  AutoFade,
+  colocatedHooks,
+  CopyToClipboard,
+  PasswordToggle,
+  TutorialSpotlight
+
+};
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
-const liveSocket = new LiveSocket("/Student/registration", Socket, {
+const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {...colocatedHooks},
+  hooks: Hooks,
 })
 
 // Show progress bar on live navigation and form submits

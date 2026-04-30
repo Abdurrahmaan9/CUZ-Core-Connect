@@ -11,6 +11,7 @@ defmodule CuzCoreConnectWeb.Student.Tracking.Index do
      |> assign(:tracking_number, "")
      |> assign(:registration, nil)
      |> assign(:searched, false)
+     |> assign(:show_mobile_menu, false)
      |> assign(:loading, false)}
   end
 
@@ -59,5 +60,243 @@ defmodule CuzCoreConnectWeb.Student.Tracking.Index do
          |> assign(:searched, true)
          |> assign(:registration, registration)}
     end
+  end
+
+  @impl true
+  def render(assigns) do
+    ~H"""
+    <Layouts.unauth flash={@flash}>
+      <:header>
+        <CuzCoreConnectWeb.Navigations.Unauth.header show_mobile_menu={@show_mobile_menu} />
+      </:header>
+      <div class="max-w-4xl mx-auto py-8 px-4">
+        <div class="text-center mb-8">
+          <h1 class="text-3xl font-bold text-base-content mb-2">Track Your Registration</h1>
+          <p class="text-base-content/70">
+            Enter your tracking number to check your registration status
+          </p>
+        </div>
+
+        <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-8">
+          <!-- Search Form -->
+          <div class="mb-8">
+            <form phx-submit="search_tracking" class="flex gap-4">
+              <div class="flex-1">
+                <input
+                  type="text"
+                  name="tracking_number"
+                  id="tracking_number"
+                  value={@tracking_number}
+                  placeholder="Enter tracking number (e.g., REG-17143584000-a1b2c3)"
+                  class="w-full px-4 py-3 text-lg border border-base-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                phx-disable-with="Searching..."
+                class="px-6 py-3 bg-primary text-primary-content rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-colors"
+              >
+                <.icon name="hero-magnifying-glass" class="w-5 h-5 mr-2" /> Track
+              </button>
+            </form>
+          </div>
+
+    <!-- Loading State -->
+          <%= if @loading do %>
+            <div class="text-center py-12">
+              <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary">
+              </div>
+              <p class="mt-4 text-base-content/70">Searching for your registration...</p>
+            </div>
+          <% end %>
+
+    <!-- Registration Results -->
+          <%= if @searched && !@loading do %>
+            <%= if @registration do %>
+              <div class="space-y-6">
+                <!-- Success Message -->
+                <div class="bg-success/10 border border-success/20 rounded-lg p-4">
+                  <div class="flex items-center">
+                    <.icon name="hero-check-circle" class="w-6 h-6 text-success mr-3" />
+                    <div>
+                      <h3 class="text-success font-semibold">Registration Found</h3>
+                      <p class="text-success/80 text-sm">Your registration details are shown below</p>
+                    </div>
+                  </div>
+                </div>
+
+    <!-- Registration Details -->
+                <div class="space-y-6">
+                  <!-- Student ID -->
+                  <%= if @registration.student_id do %>
+                    <div class="bg-base-200 rounded-lg p-6">
+                      <h3 class="text-lg font-semibold text-base-content mb-4 flex items-center">
+                        <.icon name="hero-identification" class="w-5 h-5 mr-2" /> Student Information
+                      </h3>
+                      <div>
+                        <span class="text-sm font-medium text-base-content/70">Student Number:</span>
+                        <p class="text-base-content font-mono font-semibold text-lg">
+                          {@registration.student_id}
+                        </p>
+                      </div>
+                    </div>
+                  <% end %>
+
+    <!-- Registration Status -->
+                  <div class="bg-base-200 rounded-lg p-6">
+                    <h3 class="text-lg font-semibold text-base-content mb-4 flex items-center">
+                      <.icon name="hero-clipboard-document-check" class="w-5 h-5 mr-2" />
+                      Registration Status
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <span class="text-sm font-medium text-base-content/70">Approval Status:</span>
+                        <div class="mt-1">
+                          <span class={[
+                            "inline-flex items-center px-3 py-1 rounded-full text-sm font-medium",
+                            case @registration.approval_level do
+                              "approved" -> "bg-success/20 text-success"
+                              "pending" -> "bg-warning/20 text-warning"
+                              "rejected" -> "bg-error/20 text-error"
+                              _ -> "bg-base-300 text-base-content"
+                            end
+                          ]}>
+                            <.icon
+                              name={
+                                case @registration.approval_level do
+                                  "approved" -> "hero-check-circle"
+                                  "pending" -> "hero-clock"
+                                  "rejected" -> "hero-x-circle"
+                                  _ -> "hero-question-mark-circle"
+                                end
+                              }
+                              class="w-4 h-4 mr-1"
+                            />
+                            {String.capitalize(@registration.approval_level || "Unknown")}
+                          </span>
+                        </div>
+                      </div>
+                      <div>
+                        <span class="text-sm font-medium text-base-content/70">Payment Status:</span>
+                        <div class="mt-1">
+                          <span class={[
+                            "inline-flex items-center px-3 py-1 rounded-full text-sm font-medium",
+                            case @registration.payment_status do
+                              "verified" -> "bg-success/20 text-success"
+                              "pending" -> "bg-warning/20 text-warning"
+                              "rejected" -> "bg-error/20 text-error"
+                              _ -> "bg-base-300 text-base-content"
+                            end
+                          ]}>
+                            <.icon
+                              name={
+                                case @registration.payment_status do
+                                  "verified" -> "hero-check-circle"
+                                  "pending" -> "hero-clock"
+                                  "rejected" -> "hero-x-circle"
+                                  _ -> "hero-question-mark-circle"
+                                end
+                              }
+                              class="w-4 h-4 mr-1"
+                            />
+                            {String.capitalize(@registration.payment_status || "Unknown")}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+    <!-- Program Details -->
+                <%= if @registration.student_program_details do %>
+                  <div class="bg-primary/10 rounded-lg p-6">
+                    <h3 class="text-lg font-semibold text-base-content mb-4 flex items-center">
+                      <.icon name="hero-academic-cap" class="w-5 h-5 mr-2" /> Program Details
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <span class="text-sm font-medium text-base-content/70">Program:</span>
+                        <p class="text-base-content font-medium">
+                          {@registration.student_program_details["program_name"]}
+                        </p>
+                      </div>
+                      <div>
+                        <span class="text-sm font-medium text-base-content/70">Academic Year:</span>
+                        <p class="text-base-content">
+                          {@registration.student_program_details["academic_year"]}
+                        </p>
+                      </div>
+                      <div>
+                        <span class="text-sm font-medium text-base-content/70">Semester:</span>
+                        <p class="text-base-content">
+                          {@registration.student_program_details["semester"]}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                <% end %>
+
+    <!-- Courses -->
+                <%= if @registration.student_courses && @registration.student_courses["selected_courses"] do %>
+                  <div class="bg-secondary/10 rounded-lg p-6">
+                    <h3 class="text-lg font-semibold text-base-content mb-4 flex items-center">
+                      <.icon name="hero-book-open" class="w-5 h-5 mr-2" /> Registered Courses
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <%= for course <- @registration.student_courses["selected_courses"] do %>
+                        <div class="bg-base-100 rounded-lg p-4 border border-secondary/20">
+                          <div class="flex justify-between items-start mb-2">
+                            <span class="font-mono text-sm text-secondary font-semibold">
+                              {course["code"]}
+                            </span>
+                            <span class="text-sm text-base-content/60">
+                              {course["credit_hours"]} cr
+                            </span>
+                          </div>
+                          <p class="text-base-content font-medium">{course["name"]}</p>
+                        </div>
+                      <% end %>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-secondary/20">
+                      <div class="flex justify-between items-center">
+                        <span class="text-sm font-medium text-base-content/70">
+                          Total Credit Hours:
+                        </span>
+                        <span class="text-lg font-bold text-secondary">
+                          {@registration.student_courses["total_credit_hours"]}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                <% end %>
+              </div>
+            <% else %>
+              <!-- Not Found Message -->
+              <div class="text-center py-12">
+                <.icon name="hero-exclamation-triangle" class="w-16 h-16 text-error mx-auto mb-4" />
+                <h3 class="text-xl font-semibold text-base-content mb-2">Registration Not Found</h3>
+                <p class="text-base-content/70 mb-6">
+                  We couldn't find a registration with that tracking number. Please check the number and try again.
+                </p>
+                <div class="bg-base-200 rounded-lg p-4 max-w-md mx-auto">
+                  <h4 class="font-medium text-base-content mb-2">Tips:</h4>
+                  <ul class="text-sm text-base-content/70 space-y-1 text-left">
+                    <li>• Make sure you entered the complete tracking number</li>
+                    <li>• Check for any typos or extra spaces</li>
+                    <li>• The format should be: REG-1234567890-abc123</li>
+                    <li>• Contact support if you continue to have issues</li>
+                  </ul>
+                </div>
+              </div>
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+      <:footer>
+        <CuzCoreConnectWeb.Navigations.Unauth.footer />
+      </:footer>
+    </Layouts.unauth>
+    """
   end
 end

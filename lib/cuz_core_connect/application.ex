@@ -4,6 +4,7 @@ defmodule CuzCoreConnect.Application do
   @moduledoc false
 
   use Application
+  import Cachex.Spec
 
   @impl true
   def start(_type, _args) do
@@ -15,7 +16,13 @@ defmodule CuzCoreConnect.Application do
       # Start a worker by calling: CuzCoreConnect.Worker.start_link(arg)
       # {CuzCoreConnect.Worker, arg},
       # Start to serve requests, typically the last entry
-      CuzCoreConnectWeb.Endpoint
+      CuzCoreConnectWeb.Endpoint,
+      # cachex for keeping token in the memory
+      Supervisor.child_spec(
+        {Cachex,
+         name: :cuz_core_connect_cache, opts: [expiration: expiration(interval: :timer.minutes(10))]},
+        id: :cuz_core_connect_cache
+      )
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

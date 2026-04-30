@@ -2,7 +2,7 @@ defmodule CuzCoreConnectWeb.UserSessionControllerTest do
   use CuzCoreConnectWeb.ConnCase, async: true
 
   import CuzCoreConnect.AccountFixtures
-  alias CuzCoreConnect.Account
+  alias CuzCoreConnect.Accounts
 
   setup do
     %{unconfirmed_user: unconfirmed_user_fixture(), user: user_fixture()}
@@ -106,7 +106,7 @@ defmodule CuzCoreConnectWeb.UserSessionControllerTest do
       assert redirected_to(conn) == ~p"/"
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "User confirmed successfully."
 
-      assert Account.get_user!(user.id).confirmed_at
+      assert Accounts.get_user!(user.id).confirmed_at
 
       # Now do a logged in request and assert on the menu
       conn = get(conn, ~p"/")

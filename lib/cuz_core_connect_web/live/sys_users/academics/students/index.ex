@@ -14,6 +14,8 @@ defmodule CuzCoreConnectWeb.Academics.Students.Index do
     {:ok,
      socket
      |> assign(
+       page_title: "Pending Registrations",
+       current_page: :student_pending,
        current_scope: current_scope,
        pending_registrations: pending_registrations
      )}

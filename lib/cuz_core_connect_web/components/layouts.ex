@@ -12,7 +12,7 @@ defmodule CuzCoreConnectWeb.Layouts do
   embed_templates "layouts/*"
 
   @doc """
-  Renders your app layout.
+  Renders your unauth layout.
 
   This function is typically invoked from every template,
   and it often contains your application menu, sidebar,
@@ -20,9 +20,9 @@ defmodule CuzCoreConnectWeb.Layouts do
 
   ## Examples
 
-      <Layouts.app flash={@flash}>
+      <Layouts.unauth flash={@flash}>
         <h1>Content</h1>
-      </Layouts.app>
+      </Layouts.unauth>
 
   """
   attr :flash, :map, required: true, doc: "the map of flash messages"
@@ -32,77 +32,136 @@ defmodule CuzCoreConnectWeb.Layouts do
     doc: "the current [scope](https://hexdocs.pm/phoenix/scopes.html)"
 
   slot :inner_block, required: true
+  slot :header
+  slot :footer
 
-  def app(assigns) do
+  def unauth(assigns) do
     ~H"""
-    <header class="fixed top-0 left-0 right-0 z-50 container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl bg-base-100/60 backdrop-blur-sm rounded-xl shadow-sm mt-5">
-    <!-- <header class="fixed top-0 left-0 right-0 z-50 container mx-auto px-4 sm:px-6 lg:px-8 max-w-6xl bg-white rounded-xl shadow-sm mt-5"> -->
-      <div class="flex items-center justify-between py-4">
-        <div class="flex items-center">
-          <a href="/" class="flex items-center gap-2 text-xl font-bold text-primary">
-            UniFlow
-          </a>
+    <div class="min-h-screen flex flex-col">
+      {render_slot(@header)}
+      <main class="flex-1 sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-full space-y-4">
+          {render_slot(@inner_block)}
         </div>
-        <ul class="flex items-center space-x-6">
-          <li><a href="#" class="font-medium text-gray-600 hover:text-gray-900">About</a></li>
-          <li><a href="#" class="font-medium text-gray-600 hover:text-gray-900">Developers</a></li>
-          <li><a href="#" class="font-medium text-gray-600 hover:text-gray-900">Help Center</a></li>
-        </ul>
-        <div class="flex items-center space-x-3">
-          <.theme_toggle />
-          <%= if @current_scope && @current_scope.user do %>
-            <div class="dropdown dropdown-end">
-              <label tabindex="0" class="btn btn-ghost btn-circle avatar">
-                <div class="w-10 rounded-full">
-                  <div class="bg-neutral text-neutral-content rounded-full w-10 h-10 flex items-center justify-center">
-                    <span class="text-sm font-medium">
-                      {String.first(@current_scope.user.email)}
-                    </span>
-                  </div>
-                </div>
-              </label>
-              <ul tabindex="0" class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
-                <li class="menu-title">
-                  <span class="text-base-content/70 font-normal">{@current_scope.user.email}</span>
-                </li>
-                <div class="divider my-1"></div>
-                <%= if @current_scope.user.user_role == "Admin" do %>
-                  <li>
-                    <.link href={~p"/Admin/Dashboard"} class="text-base-content">
-                      <.icon name="hero-cog-6-tooth" class="w-4 h-4" />
-                      Admin Dashboard
-                    </.link>
-                  </li>
-                <% end %>
-                <li>
-                  <.link href={~p"/users/settings"} class="text-base-content">
-                    <.icon name="hero-cog-8-tooth" class="w-4 h-4" />
-                    Settings
-                  </.link>
-                </li>
-                <li>
-                  <.link href={~p"/users/log-out"} method="delete" class="text-base-content">
-                    <.icon name="hero-arrow-right-on-rectangle" class="w-4 h-4" />
-                    Log out
-                  </.link>
-                </li>
-              </ul>
-            </div>
-          <% else %>
-            <.link href={~p"/users/log-in"} class="btn btn-outline border-gray-300 text-gray-700 hover:bg-gray-50">Log In</.link>
-            <.link href={~p"/users/register"} class="btn bg-primary text-white hover:bg-orange-600 border-transparent">Sign Up</.link>
-          <% end %>
-        </div>
-      </div>
+      </main>
+      {render_slot(@footer)}
+    </div>
+    <.flash_group flash={@flash} />
+    """
+  end
+
+  @doc """
+  Renders user layout with sidebar for non-admin users.
+
+  This layout includes a sidebar with navigation for managing students,
+  courses, reports, and communication features.
+
+  ## Examples
+
+      <Layouts.user flash={@flash} current_scope={@current_scope}>
+        <h1>User Dashboard Content</h1>
+      </Layouts.user>
+
+  """
+  def user(assigns) do
+    ~H"""
+    <header class="h-18 fixed top-0 bg-base-100/90 backdrop-blur-lg left-64 right-0 p-4 inset-x-0 z-50 flex justify-between shadow-md">
+      <CuzCoreConnectWeb.Navigations.User.top_nav
+        current_scope={@current_scope}
+        page_title={@page_title}
+      />
     </header>
 
-    <main class="px-4 pt-32 pb-20 sm:px-6 lg:px-8">
-      <div class="mx-auto w-full space-y-4">
-        {render_slot(@inner_block)}
-      </div>
-    </main>
+    <div class="pt-16 flex min-h-screen w-full">
+      <CuzCoreConnectWeb.Navigations.User.side_nav
+        current_user={@current_scope.user}
+        current_page={@current_page}
+      />
+      <main class="w-full p-6 md:ml-64">
+        <div class="min-h-screen">
+          <.flash_group flash={@flash} />
+          <div class="mx-auto max-w-full space-y-4 p-4">
+            {render_slot(@inner_block)}
+          </div>
+        </div>
+      </main>
+      <%= if @current_scope && @current_scope.user do %>
+      <.live_component
+        module={CuzCoreConnectWeb.Components.SessionTimerComponent}
+        id="session-timer-admin"
+      />
+    <% end %>
+    </div>
 
-    <.flash_group flash={@flash} />
+    <!-- Overlay for mobile sidebar -->
+    <div
+      id="sidebar-overlay"
+      class="fixed inset-0 bg-black/50 z-30 hidden lg:hidden"
+      phx-click={JS.toggle(to: "#sidebar") |> JS.toggle(to: "#sidebar-overlay")}
+    ></div>
+    """
+  end
+
+  @doc """
+  Renders admin layout with sidebar for non-admin users.
+
+  This layout includes a sidebar with navigation for managing students,
+  courses, reports, and communication features.
+
+  ## Examples
+
+      <Layouts.user flash={@flash} current_scope={@current_scope}>
+        <h1>User Dashboard Content</h1>
+      </Layouts.user>
+
+  """
+
+  attr :flash, :map, required: true, doc: "the map of flash messages"
+  attr :page_title, :string, required: true, doc: "the title thats going to display"
+  attr :current_page, :atom, required: true, doc: "the active page"
+
+  attr :current_scope, :map,
+    default: nil,
+    doc: "the current [scope](https://hexdocs.pm/phoenix/scopes.html)"
+
+  slot :inner_block, required: true
+
+  def admin(assigns) do
+    ~H"""
+    <header class="h-18 fixed top-0 bg-base-100/90 backdrop-blur-lg left-64 right-0 p-4 inset-x-0 z-50 flex justify-between shadow-md">
+      <CuzCoreConnectWeb.Navigations.Admin.top_nav
+        current_scope={@current_scope}
+        page_title={@page_title}
+      />
+    </header>
+
+    <div class="pt-16 flex min-h-screen w-full">
+      <CuzCoreConnectWeb.Navigations.Admin.side_nav
+        current_user={@current_scope.user}
+        current_page={@current_page}
+      />
+      <main class="w-full p-6 md:ml-64">
+        <div class="min-h-screen">
+          <.flash_group flash={@flash} />
+          <div class="mx-auto max-w-full space-y-4 p-4">
+            {render_slot(@inner_block)}
+          </div>
+        </div>
+      </main>
+      <%= if @current_scope && @current_scope.user do %>
+      <.live_component
+        module={CuzCoreConnectWeb.Components.SessionTimerComponent}
+        id="session-timer-admin"
+      />
+    <% end %>
+    </div>
+
+    <!-- Overlay for mobile sidebar -->
+    <div
+      id="sidebar-overlay"
+      class="fixed inset-0 bg-black/50 z-30 hidden lg:hidden"
+      phx-click={JS.toggle(to: "#sidebar") |> JS.toggle(to: "#sidebar-overlay")}
+    ></div>
     """
   end
 

@@ -4,7 +4,7 @@ defmodule CuzCoreConnectWeb.UserLive.ConfirmationTest do
   import Phoenix.LiveViewTest
   import CuzCoreConnect.AccountFixtures
 
-  alias CuzCoreConnect.Account
+  alias CuzCoreConnect.Accounts
 
   setup do
     %{unconfirmed_user: unconfirmed_user_fixture(), confirmed_user: user_fixture()}
@@ -14,7 +14,7 @@ defmodule CuzCoreConnectWeb.UserLive.ConfirmationTest do
     test "renders confirmation page for unconfirmed user", %{conn: conn, unconfirmed_user: user} do
       token =
         extract_user_token(fn url ->
-          Account.deliver_login_instructions(user, url)
+          Accounts.deliver_login_instructions(user, url)
         end)
 
       {:ok, _lv, html} = live(conn, ~p"/users/log-in/#{token}")
@@ -24,7 +24,7 @@ defmodule CuzCoreConnectWeb.UserLive.ConfirmationTest do
     test "renders login page for confirmed user", %{conn: conn, confirmed_user: user} do
       token =
         extract_user_token(fn url ->
-          Account.deliver_login_instructions(user, url)
+          Accounts.deliver_login_instructions(user, url)
         end)
 
       {:ok, _lv, html} = live(conn, ~p"/users/log-in/#{token}")
@@ -37,7 +37,7 @@ defmodule CuzCoreConnectWeb.UserLive.ConfirmationTest do
 
       token =
         extract_user_token(fn url ->
-          Account.deliver_login_instructions(user, url)
+          Accounts.deliver_login_instructions(user, url)
         end)
 
       {:ok, _lv, html} = live(conn, ~p"/users/log-in/#{token}")
@@ -48,7 +48,7 @@ defmodule CuzCoreConnectWeb.UserLive.ConfirmationTest do
     test "confirms the given token once", %{conn: conn, unconfirmed_user: user} do
       token =
         extract_user_token(fn url ->
-          Account.deliver_login_instructions(user, url)
+          Accounts.deliver_login_instructions(user, url)
         end)
 
       {:ok, lv, _html} = live(conn, ~p"/users/log-in/#{token}")
@@ -61,7 +61,7 @@ defmodule CuzCoreConnectWeb.UserLive.ConfirmationTest do
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
                "User confirmed successfully"
 
-      assert Account.get_user!(user.id).confirmed_at
+      assert Accounts.get_user!(user.id).confirmed_at
       # we are logged in now
       assert get_session(conn, :user_token)
       assert redirected_to(conn) == ~p"/"
@@ -82,7 +82,7 @@ defmodule CuzCoreConnectWeb.UserLive.ConfirmationTest do
     } do
       token =
         extract_user_token(fn url ->
-          Account.deliver_login_instructions(user, url)
+          Accounts.deliver_login_instructions(user, url)
         end)
 
       {:ok, lv, _html} = live(conn, ~p"/users/log-in/#{token}")
@@ -95,7 +95,7 @@ defmodule CuzCoreConnectWeb.UserLive.ConfirmationTest do
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~
                "Welcome back!"
 
-      assert Account.get_user!(user.id).confirmed_at == user.confirmed_at
+      assert Accounts.get_user!(user.id).confirmed_at == user.confirmed_at
 
       # log out, new conn
       conn = build_conn()

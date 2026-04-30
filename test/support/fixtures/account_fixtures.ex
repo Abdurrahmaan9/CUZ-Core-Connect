@@ -1,13 +1,13 @@
 defmodule CuzCoreConnect.AccountFixtures do
   @moduledoc """
   This module defines test helpers for creating
-  entities via the `CuzCoreConnect.Account` context.
+  entities via the `CuzCoreConnect.Accounts` context.
   """
 
   import Ecto.Query
 
-  alias CuzCoreConnect.Account
-  alias CuzCoreConnect.Account.Scope
+  alias CuzCoreConnect.Accounts
+  alias CuzCoreConnect.Accounts.Scope
 
   def unique_user_email, do: "user#{System.unique_integer()}@example.com"
   def valid_user_password, do: "hello world!"
@@ -22,7 +22,7 @@ defmodule CuzCoreConnect.AccountFixtures do
     {:ok, user} =
       attrs
       |> valid_user_attributes()
-      |> Account.register_user()
+      |> Accounts.register_user()
 
     user
   end
@@ -32,11 +32,11 @@ defmodule CuzCoreConnect.AccountFixtures do
 
     token =
       extract_user_token(fn url ->
-        Account.deliver_login_instructions(user, url)
+        Accounts.deliver_login_instructions(user, url)
       end)
 
     {:ok, {user, _expired_tokens}} =
-      Account.login_user_by_magic_link(token)
+      Accounts.login_user_by_magic_link(token)
 
     user
   end
@@ -52,7 +52,7 @@ defmodule CuzCoreConnect.AccountFixtures do
 
   def set_password(user) do
     {:ok, {user, _expired_tokens}} =
-      Account.update_user_password(user, %{password: valid_user_password()})
+      Accounts.update_user_password(user, %{password: valid_user_password()})
 
     user
   end
@@ -65,7 +65,7 @@ defmodule CuzCoreConnect.AccountFixtures do
 
   def override_token_authenticated_at(token, authenticated_at) when is_binary(token) do
     CuzCoreConnect.Repo.update_all(
-      from(t in Account.UserToken,
+      from(t in Accounts.UserToken,
         where: t.token == ^token
       ),
       set: [authenticated_at: authenticated_at]
@@ -73,7 +73,7 @@ defmodule CuzCoreConnect.AccountFixtures do
   end
 
   def generate_user_magic_link_token(user) do
-    {encoded_token, user_token} = Account.UserToken.build_email_token(user, "login")
+    {encoded_token, user_token} = Accounts.UserToken.build_email_token(user, "login")
     CuzCoreConnect.Repo.insert!(user_token)
     {encoded_token, user_token.token}
   end
@@ -82,7 +82,7 @@ defmodule CuzCoreConnect.AccountFixtures do
     dt = DateTime.add(DateTime.utc_now(:second), amount_to_add, unit)
 
     CuzCoreConnect.Repo.update_all(
-      from(ut in Account.UserToken, where: ut.token == ^token),
+      from(ut in Accounts.UserToken, where: ut.token == ^token),
       set: [inserted_at: dt, authenticated_at: dt]
     )
   end

@@ -1,4 +1,4 @@
-<Layouts.user flash={@flash} current_scope={@current_scope}>
+<Layouts.user flash={@flash} current_scope={@current_scope} page_title={@page_title} current_page={@current_page}>
   <div class="mb-3">
     <h1 class="text-base font-bold tracking-wide text-slate-800">Preferential Applications</h1>
     <p class="mt-1 text-xs text-slate-500">
@@ -22,16 +22,6 @@
       <:col :let={registration} label="Company Name">
         <div>
           {registration.student_names}
-        </div>
-      </:col>
-      <:col :let={registration} label="Economic Sector">
-        <div>
-          {get_program_name(registration.student_program_details)}
-        </div>
-      </:col>
-      <:col :let={_registration} label="Category">
-        <div>
-          Citizen Owned Company
         </div>
       </:col>
       <:col :let={registration} label="Date Issued">
