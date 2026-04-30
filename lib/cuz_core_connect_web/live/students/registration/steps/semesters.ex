@@ -137,18 +137,22 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Semesters do
     """
   end
 
+  @impl true
   def handle_event("set_year", %{"value" => year}, socket) do
     {:noreply, assign(socket, academic_year: String.trim(year))}
   end
 
+  @impl true
   def handle_event("select_semester", %{"semester" => semester}, socket) do
     {:noreply, assign(socket, semester: semester, errors: Map.delete(socket.assigns.errors, :semester))}
   end
 
+  @impl true
   def handle_event("select_intake", %{"intake" => intake}, socket) do
     {:noreply, assign(socket, intake: intake, errors: Map.delete(socket.assigns.errors, :intake))}
   end
 
+  @impl true
   def handle_event("next", _params, socket) do
     errors = validate(socket.assigns)
 
@@ -165,6 +169,7 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Semesters do
     end
   end
 
+  @impl true
   def handle_event("back", _params, socket) do
     send(self(), :prev_step)
     {:noreply, socket}

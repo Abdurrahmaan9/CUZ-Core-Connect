@@ -31,6 +31,9 @@ defmodule CuzCoreConnectWeb.CoreComponents do
 
   alias Phoenix.LiveView.JS
 
+  alias CuzCoreConnectWeb.Utilities.Pagination
+  alias CuzCoreConnectWeb.Utilities.Sorting
+
   @doc """
   Renders flash notices.
 
@@ -392,6 +395,297 @@ defmodule CuzCoreConnectWeb.CoreComponents do
   end
 
   @doc """
+  Renders a modern, aesthetic table with enhanced styling.
+
+  ## Examples
+
+      <.modern_table id="registrations" rows={@registrations} class="shadow-sm">
+        <:col :let={registration} label="Student Details">
+          <div class="text-sm font-medium text-gray-900">{registration.student_names}</div>
+          <div class="text-sm text-gray-500">{registration.student_email}</div>
+        </:col>
+        <:col :let={registration} label="Program">{registration.program}</:col>
+        <:action :let={registration}>
+          <.link navigate={~p"/registrations/\#{registration.id}"} class="text-indigo-600 hover:text-indigo-900">
+            View
+          </.link>
+        </:action>
+      </.modern_table>
+  """
+  attr :id, :string, required: true
+  attr :rows, :list, required: true
+  attr :row_id, :any, default: nil, doc: "the function for generating the row id"
+  attr :row_click, :any, default: nil, doc: "the function for handling phx-click on each row"
+  attr :class, :any, default: nil, doc: "additional CSS classes for the table wrapper"
+  attr :show_header, :boolean, default: true, doc: "whether to show the table header"
+  attr :empty_state_title, :string, default: "No data available", doc: "title for empty state"
+
+  attr :empty_state_description, :string,
+    default: "There are no items to display.",
+    doc: "description for empty state"
+
+  attr :search_placeholder, :string,
+    default: "Search",
+    doc: "placeholder text for the table search input"
+
+  attr :row_item, :any,
+    default: &Function.identity/1,
+    doc: "the function for mapping each row before calling the :col and :action slots"
+
+  slot :col, required: true do
+    attr :label, :string
+    attr :class, :string
+  end
+
+  slot :action, doc: "the slot for showing user actions in the last table column"
+
+  def modern_table(assigns) do
+    assigns =
+      with %{rows: %Phoenix.LiveView.LiveStream{}} <- assigns do
+        assign(assigns, row_id: assigns.row_id || fn {id, _item} -> id end)
+      end
+
+    ~H"""
+    <div class={[
+      "rounded-md border border-base-200 bg-base-100 px-6 py-5 shadow-sm",
+      @class
+    ]}>
+      <%= if @show_header do %>
+        <div class="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div class="flex w-full max-w-[214px] overflow-hidden rounded-md border border-base-300 bg-base-100 shadow-sm transition duration-150 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
+            <span class="flex h-[34px] w-[30px] shrink-0 items-center justify-center bg-primary text-primary-content">
+              <.icon name="hero-magnifying-glass" class="size-4" />
+            </span>
+            <input
+              id={"#{@id}-search"}
+              type="search"
+              name="search"
+              placeholder={@search_placeholder}
+              class="h-[34px] min-w-0 flex-1 border-0 bg-base-100 px-2 text-xs text-base-content outline-none placeholder:text-base-content/50 focus:ring-0"
+            />
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2 lg:justify-end">
+            <button
+              type="button"
+              id={"#{@id}-export"}
+              class="inline-flex h-[30px] items-center rounded-md bg-primary px-3 text-[11px] font-bold tracking-wide text-primary-content transition duration-150 hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20"
+            >
+              Export
+            </button>
+            <button
+              type="button"
+              id={"#{@id}-filter"}
+              class="inline-flex h-[30px] items-center gap-1.5 rounded-md bg-primary px-3 text-[11px] font-bold tracking-wide text-primary-content transition duration-150 hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20"
+            >
+              <.icon name="hero-funnel" class="size-3.5" /> Filter
+            </button>
+            <button
+              type="button"
+              id={"#{@id}-transactions-report"}
+              class="inline-flex h-[30px] items-center gap-1.5 rounded-md bg-primary px-3 text-[11px] font-bold tracking-wide text-primary-content transition duration-150 hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20"
+            >
+              <.icon name="hero-chart-bar-square" class="size-3.5" /> Transactions Report
+            </button>
+            <button
+              type="button"
+              id={"#{@id}-reload"}
+              class="inline-flex h-[30px] items-center gap-1.5 rounded-md bg-primary px-3 text-[11px] font-bold tracking-wide text-primary-content transition duration-150 hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20"
+            >
+              <.icon name="hero-arrow-path" class="size-3.5" /> Reload
+            </button>
+          </div>
+        </div>
+      <% end %>
+
+      <%= if @rows == [] do %>
+        <div class="rounded-md border border-dashed border-base-200 px-8 py-14 text-center">
+          <div class="mb-5 inline-flex size-12 items-center justify-center rounded-full bg-base-200">
+            <.icon name="hero-inbox" class="size-6 text-base-content/50" />
+          </div>
+          <h3 class="mb-2 text-sm font-semibold text-base-content">{@empty_state_title}</h3>
+          <p class="mx-auto max-w-md text-xs text-base-content/70">{@empty_state_description}</p>
+        </div>
+      <% else %>
+        <div class="overflow-x-auto">
+          <table class="min-w-full table-fixed border-separate border-spacing-0">
+            <thead>
+              <tr>
+                <th
+                  :for={col <- @col}
+                  class={[
+                    "bg-primary px-2 py-2 text-left text-[9px] font-medium uppercase leading-none tracking-wide text-primary-content first:rounded-l-md",
+                    col[:class] || ""
+                  ]}
+                >
+                  {col[:label]}
+                </th>
+                <th
+                  :if={@action != []}
+                  class="rounded-r-md bg-primary px-2 py-2 text-right text-[9px] font-medium uppercase leading-none tracking-wide text-primary-content"
+                >
+                </th>
+              </tr>
+            </thead>
+            <tbody
+              id={@id}
+              phx-update={is_struct(@rows, Phoenix.LiveView.LiveStream) && "stream"}
+            >
+              <tr
+                :for={row <- @rows}
+                id={@row_id && @row_id.(row)}
+                class="group transition duration-150 hover:bg-base-200"
+              >
+                <td
+                  :for={col <- @col}
+                  phx-click={@row_click && @row_click.(row)}
+                  class={[
+                    "px-2 py-4 align-top text-[10px] leading-5 text-base-content",
+                    @row_click && "hover:cursor-pointer"
+                  ]}
+                >
+                  {render_slot(col, @row_item.(row))}
+                </td>
+                <td :if={@action != []} class="px-0 py-3 text-right align-top">
+                  <div class="flex items-center justify-end gap-2">
+                    <%= for action <- @action do %>
+                      <div>
+                        {render_slot(action, @row_item.(row))}
+                      </div>
+                    <% end %>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="pt-3 text-[10px] text-base-content">
+          Showing 1 to {modern_table_row_count(@rows)} of {modern_table_row_count(@rows)} entries
+        </div>
+      <% end %>
+    </div>
+    """
+  end
+
+  defp modern_table_row_count(%Phoenix.LiveView.LiveStream{}), do: 0
+  defp modern_table_row_count(rows) when is_list(rows), do: length(rows)
+  defp modern_table_row_count(_rows), do: 0
+
+  @doc ~S"""
+  Renders a table with generic styling and sorting functionality.
+
+  ## Examples
+
+      <.table id="users" rows={@users} filter_params={@filter_params}>
+        <:col :let={user} label="id" filter_item="id">{user.id}</:col>
+        <:col :let={user} label="username" filter_item="username">{user.username}</:col>
+      </.table>
+  """
+  attr :id, :string, required: true
+  attr :filter_params, :map, default: %{}
+  attr :pagination, :map
+  attr :selected_column, :string, default: "inserted_at"
+  attr :list_of_operators, :list, default: []
+  attr :operator, :string, default: ""
+  attr :query_fields_list, :list, default: []
+  attr :rows, :list, required: true
+  attr :row_id, :any, default: nil, doc: "the function for generating the row id"
+  attr :row_click, :any, default: nil, doc: "the function for handling phx-click on each row"
+  attr :filter_url, :string, default: "#"
+  attr :export_url, :string, default: "#"
+  attr :show_filter, :boolean, default: false
+  attr :show_export, :boolean, default: false
+
+  attr :row_item, :any,
+    default: &Function.identity/1,
+    doc: "the function for mapping each row before calling the :col and :action slots"
+
+  slot :col, required: true do
+    attr :label, :string
+    attr :filter_item, :string
+  end
+
+  slot :action, doc: "the slot for showing user actions in the last table column"
+
+  def table_with_sorting(assigns) do
+    assigns =
+      with %{rows: %Phoenix.LiveView.LiveStream{}} <- assigns do
+        assign(assigns, row_id: assigns.row_id || fn {id, _item} -> id end)
+      end
+
+    ~H"""
+    <div class="px-2 sm:px-0">
+      <div class="p-2">
+        <div class="overflow-x-auto overflow-y-hidden sm:rounded-lg">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="text-[12px] text-left leading-4 text-white">
+              <tr class="bg-[#0c2f9d] text-left font-medium text-white uppercase tracking-wider sticky top-0">
+                <th :for={col <- @col} class="p-2 pb-2 pr-3 font-normal whitespace-nowrap">
+                  <div class="flex items-center gap-2">
+                    <span class="sm:mr-auto xl:flex text-[11px]">{col[:label]}</span>
+                    <a
+                      :if={col[:filter_item]}
+                      href={Sorting.table_link_encode_url(@filter_params, col[:filter_item])}
+                      data-phx-link="redirect"
+                      data-phx-link-state="push"
+                      class="inline-flex items-center hover:text-gray-700 transition-colors duration-200"
+                    >
+                      {Phoenix.HTML.raw(icon_def(@filter_params, col[:filter_item], @selected_column))}
+                    </a>
+                  </div>
+                </th>
+                <th :if={@action != []} class="relative p-0 pb-2">
+                  <span class="sr-only">{gettext("Actions")}</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody
+              id={@id}
+              phx-update={is_struct(@rows, Phoenix.LiveView.LiveStream) && "stream"}
+              class="relative divide-y divide-zinc-100 border-t border-zinc-200 text-[12px] leading-4 text-zinc-700 bg-white"
+            >
+              <tr
+                :for={row <- @rows}
+                id={@row_id && @row_id.(row)}
+                class="group hover:bg-gray-50 transition duration-150"
+              >
+                <td
+                  :for={{col, i} <- Enum.with_index(@col)}
+                  phx-click={@row_click && @row_click.(row)}
+                  class={[
+                    "relative px-1 py-1 text-[12px] text-gray-900 whitespace-nowrap",
+                    @row_click && "hover:cursor-pointer"
+                  ]}
+                >
+                  <div class="block py-1 pr-2">
+                    <span class="absolute -inset-y-px right-0 -left-4 group-hover:bg-gray-50 sm:rounded-l-xl" />
+                    <span class={["relative", i == 0 && "font-semibold text-zinc-900"]}>
+                      {render_slot(col, @row_item.(row))}
+                    </span>
+                  </div>
+                </td>
+                <td :if={@action != []} class="relative w-12 p-0">
+                  <div class="relative whitespace-nowrap text-left text-[12px] font-medium">
+                    <span class="absolute -inset-y-px -right-4 left-0 group-hover:bg-gray-50 sm:rounded-r-xl" />
+                    <span
+                      :for={action <- @action}
+                      class="relative ml-3 font-semibold leading-4 text-zinc-900 hover:text-zinc-700"
+                    >
+                      {render_slot(action, @row_item.(row))}
+                    </span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  @doc """
   Renders a data list.
 
   ## Examples
@@ -444,6 +738,429 @@ defmodule CuzCoreConnectWeb.CoreComponents do
     <span class={[@name, @class]} />
     """
   end
+
+  @doc """
+  Renders a dropdown component with Alpine.js.
+
+  ## Examples
+
+      <.dropdown id="dropdown-1" label="Options">
+        <a href="#" class="block px-4 py-2">Option 1</a>
+        <a href="#" class="block px-4 py-2">Option 2</a>
+      </.dropdown>
+  """
+  attr :id, :string, required: true
+  attr :class, :string, default: ""
+  attr :label, :string, required: true
+  slot :inner_block, required: true
+
+  def dropdown(assigns) do
+    ~H"""
+    <div
+      id={@id}
+      x-data="dropdown"
+      class={["relative", @class]}
+      @close-dropdown.window="if ($event.detail.dropdownId === $el.id) open = false"
+    >
+      <button
+        x-ref="button"
+        @click="toggle"
+        type="button"
+        class="inline-flex items-center mb-2 text-left rounded-lg bg-[#0c2f9d] px-3 py-2 text-md font-medium text-white"
+      >
+        <span>{@label}</span>
+        <svg
+          class="w-4 h-4 ml-2 -mr-1 transition-transform duration-200"
+          x-bind:class="open ? 'rotate-180' : ''"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+            clip-rule="evenodd"
+          />
+        </svg>
+      </button>
+      <template x-teleport="body">
+        <div
+          x-ref="dropdown"
+          x-show="open"
+          @click.away="open = false"
+          x-transition:enter="transition ease-out duration-100"
+          x-transition:enter-start="transform opacity-0 scale-95"
+          x-transition:enter-end="transform opacity-100 scale-100"
+          x-transition:leave="transition ease-in duration-75"
+          x-transition:leave-start="transform opacity-100 scale-100"
+          x-transition:leave-end="transform opacity-0 scale-95"
+          class="fixed w-48 origin-top-right rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-[9999]"
+          style="max-height: 80vh; overflow-y: auto; transform: translateX(-16px);"
+          x-init="$watch('open', value => value && $nextTick(() => updatePosition()))"
+        >
+          <div class="py-1 divide-y divide-gray-100">
+            {render_slot(@inner_block)}
+          </div>
+        </div>
+      </template>
+    </div>
+    """
+  end
+
+  # Renders sort direction icons for table headers.
+  defp icon_def(filter_params, filter_item, selected_column) do
+    if filter_item == selected_column do
+      if filter_params["sort_order"] == "asc" do
+        ~s"""
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-4 p-1 text-black">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 15.75 7.5-7.5 7.5 7.5" />
+          </svg>
+        """
+      else
+        ~s"""
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-4 p-1 text-black">
+            <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+          </svg>
+        """
+      end
+    else
+      ~s"""
+        <div class="text-zinc-200">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-4">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 15 12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9" />
+          </svg>
+        </div>
+      """
+    end
+  end
+
+  @doc """
+  Renders a search field with options dropdown for filter/export.
+  """
+  attr :filter_params, :map, default: %{}
+  attr :filter_url, :string, default: "#"
+  attr :export_url, :string, default: "#"
+  attr :show_filter, :boolean, default: false
+  attr :show_export, :boolean, default: false
+
+  def search_field(assigns) do
+    assigns = assign(assigns, :show_options, assigns.show_filter || assigns.show_export)
+
+    ~H"""
+    <div class="row mb-1">
+      <div class="flex flex-col sm:flex-row justify-between items-center w-full gap-4 sm:gap-2">
+        <div class="dataTables_filter flex items-center w-full sm:w-auto">
+          <div class="relative w-full sm:w-auto">
+            <input
+              type="search"
+              value={@filter_params["search"]}
+              class="w-full sm:w-auto pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              name="search"
+              placeholder="Search"
+              aria-describedby="basic-addon3"
+              phx-keyup="search"
+              phx-value-key="search"
+              phx-debounce="300"
+            />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-5 w-5 text-gray-400 absolute left-3 top-3"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          </div>
+        </div>
+
+        <%= if @show_options do %>
+          <div class="relative w-full sm:w-auto" id="options-dropdown">
+            <button
+              type="button"
+              class="w-full sm:w-auto inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              id="options-menu"
+              aria-haspopup="true"
+              aria-expanded="false"
+              phx-click={JS.toggle(to: "#dropdown-menu") |> JS.dispatch("options-dropdown-toggled")}
+            >
+              Options
+              <svg
+                class="-mr-1 ml-2 h-5 w-5"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            </button>
+
+            <div
+              id="dropdown-menu"
+              class="hidden origin-top-right absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 divide-y divide-gray-100 focus:outline-none z-50"
+              role="menu"
+              aria-orientation="vertical"
+              aria-labelledby="options-menu"
+            >
+              <div class="py-1" role="none">
+                <%= if @show_filter and @filter_url != "#" do %>
+                  <.link
+                    navigate={@filter_url}
+                    class="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                    role="menuitem"
+                  >
+                    <svg
+                      class="mr-2 h-4 w-4 text-blue-500 group-hover:text-blue-600"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z"
+                        clip-rule="evenodd"
+                      />
+                    </svg>
+                    Filter
+                  </.link>
+                <% end %>
+
+                <%= if @show_export and @export_url != "#" do %>
+                  <.link
+                    navigate={@export_url}
+                    class="group flex items-center px-3 py-1.5 text-xs text-blue-700 hover:bg-blue-50 hover:text-blue-900 rounded transition-colors"
+                    role="menuitem"
+                  >
+                    <svg
+                      class="mr-2 h-4 w-4 text-blue-500 group-hover:text-blue-600"
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path d="M4 3a2 2 0 100 4h12a2 2 0 100-4H4z" />
+                      <path
+                        fill-rule="evenodd"
+                        d="M3 8h14v7a2 2 0 01-2 2H5a2 2 0 01-2-2V8zm5 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"
+                        clip-rule="evenodd"
+                      />
+                    </svg>
+                    Export to Excel
+                  </.link>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+    """
+  end
+
+  @doc """
+  Renders pagination controls.
+  """
+  attr :pagination, :map, required: true
+  attr :filter_params, :map, default: %{}
+
+  def render_pagination(assigns) do
+    ~H"""
+    <!-- BEGIN: Pagination -->
+    <div class="intro-y mb-12 mt-5 flex flex-wrap items-center sm:flex-row sm:flex-nowrap">
+      <nav class="w-full ml-2 sm:mr-auto sm:w-auto">
+        <ul class="flex w-full mr-0 sm:mr-auto sm:w-auto">
+          <%= if @pagination[:page_number] > 1 do %>
+            <li class="flex-1 sm:flex-initial">
+              <a
+                href={Pagination.get_priv_pagination_link(@pagination, @filter_params)}
+                data-phx-link="redirect"
+                data-phx-link-state="push"
+                data-tw-merge=""
+                class="transition duration-200 border items-center justify-center pt-4 py-3 rounded-md cursor-pointer
+                 focus:ring-4 focus:ring-primary focus:ring-opacity-20 focus-visible:outline-none dark:focus:ring-slate-700
+                  dark:focus:ring-opacity-50 [&:hover:not(:disabled)]:bg-opacity-90 [&:hover:not(:disabled)]:border-opacity-90
+                   [&:not(button)]:text-center disabled:opacity-70 disabled:cursor-not-allowed min-w-0 sm:min-w-[40px] shadow-none
+                    font-normal flex border-transparent text-slate-800 sm:mr-2 px-1 sm:px-3"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  class="size-3"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="m18.75 4.5-7.5 7.5 7.5 7.5m-6-15L5.25 12l7.5 7.5"
+                  />
+                </svg>
+              </a>
+            </li>
+          <% else %>
+            <li class="flex-1 sm:flex-initial">
+              <a
+                href="#"
+                data-tw-merge=""
+                class="transition duration-200 border items-center justify-center pt-4 py-3 rounded-md cursor-pointer
+                focus:ring-4 focus:ring-primary focus:ring-opacity-20 focus-visible:outline-none dark:focus:ring-slate-700
+                  dark:focus:ring-opacity-50 [&:hover:not(:disabled)]:bg-opacity-90 [&:hover:not(:disabled)]:border-opacity-90
+                  [&:not(button)]:text-center disabled:opacity-70 disabled:cursor-not-allowed min-w-0 sm:min-w-[40px] shadow-none
+                    font-normal flex border-transparent text-slate-400 sm:mr-2 px-1 sm:px-3"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  class="size-3"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="m18.75 4.5-7.5 7.5 7.5 7.5m-6-15L5.25 12l7.5 7.5"
+                  />
+                </svg>
+              </a>
+            </li>
+          <% end %>
+
+          <%= for number <- gen_page_numbers(@pagination.total_pages, @pagination.page_number) do %>
+            <%= if @pagination[:page_number] == number do %>
+              <li class="flex-1 sm:flex-initial">
+                <a
+                  data-tw-merge=""
+                  class="transition duration-200 border shadow-lg items-center justify-center py-2
+                                             rounded-md cursor-pointer focus:ring-4 focus:ring-primary focus:ring-opacity-20 focus-visible:outline-none
+                                              dark:focus:ring-slate-700 dark:focus:ring-opacity-50 [&:hover:not(:disabled)]:bg-opacity-90
+                                               [&:hover:not(:disabled)]:border-opacity-90 [&:not(button)]:text-center
+                                               disabled:opacity-70 disabled:cursor-not-allowed min-w-0 sm:min-w-[40px] shadow-none font-normal flex
+                                               border-transparent text-fdhBlue sm:mr-2 px-1 sm:px-3 !box dark:bg-darkmode-400"
+                >
+                  {number}
+                </a>
+              </li>
+            <% else %>
+              <li class="flex-1 sm:flex-initial">
+                <a
+                  href={Pagination.get_number_pagination_link(number, @filter_params)}
+                  data-phx-link="redirect"
+                  data-phx-link-state="push"
+                  data-tw-merge=""
+                  class="transition duration-200 border items-center justify-center py-2 rounded-md cursor-pointer focus:ring-4 focus:ring-primary
+                   focus:ring-opacity-20 focus-visible:outline-none dark:focus:ring-slate-700 dark:focus:ring-opacity-50
+                    [&:hover:not(:disabled)]:bg-opacity-90 [&:hover:not(:disabled)]:border-opacity-90 [&:not(button)]:text-center
+                    disabled:opacity-70 disabled:cursor-not-allowed min-w-0 sm:min-w-[40px] shadow-none font-normal flex border-transparent
+                    text-slate-800 sm:mr-2 px-1 sm:px-3"
+                >
+                  {number}
+                </a>
+              </li>
+            <% end %>
+          <% end %>
+
+          <%= if @pagination[:page_number] < @pagination.total_pages do %>
+            <li class="flex-1 sm:flex-initial">
+              <a
+                href={Pagination.get_next_pagination_link(@pagination, @filter_params)}
+                data-phx-link="redirect"
+                data-phx-link-state="push"
+                data-tw-merge=""
+                class="transition duration-200 border items-center justify-center pt-4 py-3 rounded-md cursor-pointer focus:ring-4 focus:ring-primary
+                focus:ring-opacity-20 focus-visible:outline-none dark:focus:ring-slate-700 dark:focus:ring-opacity-50 [&:hover:not(:disabled)]:bg-opacity-90
+                [&:hover:not(:disabled)]:border-opacity-90 [&:not(button)]:text-center disabled:opacity-70 disabled:cursor-not-allowed min-w-0 sm:min-w-[40px]
+                 shadow-none font-normal flex border-transparent text-slate-800 sm:mr-2 px-1 sm:px-3"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  class="size-3"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="m5.25 4.5 7.5 7.5-7.5 7.5m6-15 7.5 7.5-7.5 7.5"
+                  />
+                </svg>
+              </a>
+            </li>
+          <% else %>
+            <li class="flex-1 sm:flex-initial">
+              <a
+                href="#"
+                data-tw-merge=""
+                class="transition duration-200 border items-center justify-center pt-4 py-3 rounded-md cursor-pointer focus:ring-4 focus:ring-primary
+                focus:ring-opacity-20 focus-visible:outline-none dark:focus:ring-slate-700 dark:focus:ring-opacity-50 [&:hover:not(:disabled)]:bg-opacity-90
+                [&:hover:not(:disabled)]:border-opacity-90 [&:not(button)]:text-center disabled:opacity-70 disabled:cursor-not-allowed min-w-0 sm:min-w-[40px]
+                 shadow-none font-normal flex border-transparent text-slate-400 sm:mr-2 px-1 sm:px-3"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke-width="1.5"
+                  stroke="currentColor"
+                  class="size-3"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    d="m5.25 4.5 7.5 7.5-7.5 7.5m6-15 7.5 7.5-7.5 7.5"
+                  />
+                </svg>
+              </a>
+            </li>
+          <% end %>
+        </ul>
+      </nav>
+
+      <form>
+        <select
+          name="page_size"
+          phx-change="page_size"
+          data-tw-merge=""
+          class="disabled:bg-slate-100 disabled:cursor-not-allowed disabled:dark:bg-darkmode-800/50 [&[readonly]]:bg-slate-100 [&[readonly]]:cursor-not-allowed [&[readonly]]:dark:bg-darkmode-800/50 transition duration-200 ease-in-out text-sm border-slate-200 shadow-sm rounded-md py-2 px-3 pr-8 focus:ring-4 focus:ring-primary focus:ring-opacity-20 focus:border-primary focus:border-opacity-40 dark:bg-darkmode-800 dark:border-transparent dark:focus:ring-slate-700 dark:focus:ring-opacity-50 group-[.form-inline]:flex-1 !box mt-3 w-20 sm:mt-0"
+        >
+          <%= for size <- show_options() do %>
+            <%= if size == @filter_params["page_size"] do %>
+              <option selected>{size}</option>
+            <% else %>
+              <option>{size}</option>
+            <% end %>
+          <% end %>
+        </select>
+      </form>
+    </div>
+    <!-- END: Pagination -->
+    """
+  end
+
+  @doc """
+  Generates page numbers for pagination.
+  """
+  def gen_page_numbers(total_pages, current_page) do
+    max_visible = 5
+    start = max(1, current_page - div(max_visible, 2))
+    finish = min(total_pages, start + max_visible - 1)
+    start = max(1, finish - max_visible + 1)
+    Enum.to_list(start..finish)
+  end
+
+  @doc """
+  Returns page size options.
+  """
+  def show_options, do: [10, 25, 50, 100]
 
   ## JS Commands
 

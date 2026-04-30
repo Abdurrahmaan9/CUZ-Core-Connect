@@ -1,0 +1,66 @@
+<Layouts.user flash={@flash} current_scope={@current_scope}>
+  <div class="mb-3">
+    <h1 class="text-base font-bold tracking-wide text-slate-800">Preferential Applications</h1>
+    <p class="mt-1 text-xs text-slate-500">
+      A list of Preferential applications
+    </p>
+  </div>
+
+  <.modern_table
+      id="pending-registrations"
+      rows={@pending_registrations}
+      class="shadow-sm"
+      empty_state_title="No pending registrations"
+      empty_state_description="All student registrations have been processed."
+      show_header={true}
+    >
+      <:col :let={registration} label="Reference">
+        <div class="font-bold">
+          {registration.tracking_number || registration.student_id || registration.id}
+        </div>
+      </:col>
+      <:col :let={registration} label="Company Name">
+        <div>
+          {registration.student_names}
+        </div>
+      </:col>
+      <:col :let={registration} label="Economic Sector">
+        <div>
+          {get_program_name(registration.student_program_details)}
+        </div>
+      </:col>
+      <:col :let={_registration} label="Category">
+        <div>
+          Citizen Owned Company
+        </div>
+      </:col>
+      <:col :let={registration} label="Date Issued">
+        <div>
+          {format_date(registration.registration_date)}
+        </div>
+      </:col>
+      <:col :let={registration} label="Expiry Date">
+        <div>
+          {format_expiry_date(registration.registration_date)}
+        </div>
+      </:col>
+      <:col :let={registration} label="Status">
+        <div class="uppercase">
+          {registration.approval_level}
+        </div>
+      </:col>
+      <:col :let={registration} label="Payment Status">
+        <div class="uppercase">
+          {registration.payment_status}
+        </div>
+      </:col>
+      <:action :let={registration}>
+        <.link
+          navigate={"/registration/tracking/#{registration.tracking_number}"}
+          class="inline-flex h-[29px] items-center rounded-md bg-primary px-3 text-xs text-primary-content transition duration-150 hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20"
+        >
+          Options
+        </.link>
+      </:action>
+    </.modern_table>
+</Layouts.user>

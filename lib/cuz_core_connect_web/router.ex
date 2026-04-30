@@ -58,44 +58,63 @@ defmodule CuzCoreConnectWeb.Router do
       on_mount: [{CuzCoreConnectWeb.Plugs.UserAuth, :require_authenticated}] do
       live "/users/settings", UserLive.Settings, :edit
       live "/users/settings/confirm-email/:token", UserLive.Settings, :confirm_email
+
+      scope "/students" do
+        live "/pending", Academics.Students.Index, :index
+      end
     end
 
     live_session :require_admin_user,
-      on_mount: [{CuzCoreConnectWeb.Plugs.UserAuth, :require_authenticated}, {CuzCoreConnectWeb.Plugs.AdminAuth, :ensure_admin}] do
-        scope "/Admin" do
-          live "/Dashboard", Admin.Index, :index
+      on_mount: [
+        {CuzCoreConnectWeb.Plugs.UserAuth, :require_authenticated},
+        {CuzCoreConnectWeb.Plugs.AdminAuth, :ensure_admin}
+      ] do
+      scope "/Admin" do
+        live "/Dashboard", Admin.Index, :index
 
-          scope "/users" do
-            live "/", Backend.UserMgt.Index, :index
-            live "/new", Backend.UserMgt.Index, :new
-            live "/:id/edit", Backend.UserMgt.Index, :edit
-          end
+        scope "/users" do
+          live "/", Backend.UserMgt.Index, :index
+          live "/new", Backend.UserMgt.Index, :new
+          live "/:id/edit", Backend.UserMgt.Index, :edit
         end
+      end
     end
 
     live_session :require_academics_user,
-      on_mount: [{CuzCoreConnectWeb.Plugs.UserAuth, :require_authenticated}, {CuzCoreConnectWeb.Plugs.UserAuth, :ensure_academics_role}] do
+      on_mount: [
+        {CuzCoreConnectWeb.Plugs.UserAuth, :require_authenticated},
+        {CuzCoreConnectWeb.Plugs.UserAuth, :ensure_academics_role}
+      ] do
       scope "/Academics" do
         live "/Dashboard", SysUser.Dashboard.Index, :index
       end
     end
 
     live_session :require_finance_user,
-      on_mount: [{CuzCoreConnectWeb.Plugs.UserAuth, :require_authenticated}, {CuzCoreConnectWeb.Plugs.UserAuth, :ensure_finance_role}] do
+      on_mount: [
+        {CuzCoreConnectWeb.Plugs.UserAuth, :require_authenticated},
+        {CuzCoreConnectWeb.Plugs.UserAuth, :ensure_finance_role}
+      ] do
       scope "/Finance" do
         live "/Dashboard", SysUser.Dashboard.Index, :index
       end
     end
 
     live_session :require_hod_user,
-      on_mount: [{CuzCoreConnectWeb.Plugs.UserAuth, :require_authenticated}, {CuzCoreConnectWeb.Plugs.UserAuth, :ensure_hod_role}] do
+      on_mount: [
+        {CuzCoreConnectWeb.Plugs.UserAuth, :require_authenticated},
+        {CuzCoreConnectWeb.Plugs.UserAuth, :ensure_hod_role}
+      ] do
       scope "/HOD" do
         live "/Dashboard", SysUser.Dashboard.Index, :index
       end
     end
 
     live_session :require_retention_user,
-      on_mount: [{CuzCoreConnectWeb.Plugs.UserAuth, :require_authenticated}, {CuzCoreConnectWeb.Plugs.UserAuth, :ensure_retention_role}] do
+      on_mount: [
+        {CuzCoreConnectWeb.Plugs.UserAuth, :require_authenticated},
+        {CuzCoreConnectWeb.Plugs.UserAuth, :ensure_retention_role}
+      ] do
       scope "/Retention" do
         live "/Dashboard", SysUser.Dashboard.Index, :index
       end
