@@ -95,11 +95,11 @@ defmodule CuzCoreConnectWeb.Academics.Students.Index do
     |> Repo.update()
   end
 
-  defp get_program_name(program_details) when is_map(program_details) do
-    Map.get(program_details, "program_name", "Not specified")
-  end
+  # defp get_program_name(program_details) when is_map(program_details) do
+  #   Map.get(program_details, "program_name", "Not specified")
+  # end
 
-  defp get_program_name(_), do: "Not specified"
+  # defp get_program_name(_), do: "Not specified"
 
   defp format_date(%DateTime{} = datetime) do
     datetime

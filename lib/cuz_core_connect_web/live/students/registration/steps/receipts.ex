@@ -105,7 +105,7 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Receipts do
         <button type="button" phx-click="back" phx-target={@myself} class="btn btn-ghost">
           ← Back
         </button>
-        <button type="button" phx-click="next_receipt_step" class="btn btn-primary px-8">
+        <button type="button" phx-click="next_receipt_step" phx-target={@myself} class="btn btn-primary px-8">
           Review →
         </button>
       </div>
@@ -116,6 +116,12 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Receipts do
   @impl true
   def handle_event("back", _params, socket) do
     send(self(), :prev_step)
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("next_receipt_step", _params, socket) do
+    send(self(), {:next_step, %{}})
     {:noreply, socket}
   end
 

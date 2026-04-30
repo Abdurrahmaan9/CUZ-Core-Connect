@@ -82,7 +82,7 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Review do
         <button type="button" phx-click="back" phx-target={@myself} class="btn btn-ghost">
           ← Back
         </button>
-        <button type="button" phx-click="submit_review" class="btn btn-primary px-8">
+        <button type="button" phx-click="submit_review" phx-target={@myself} class="btn btn-primary px-8">
           <.icon name="hero-check-circle" class="w-5 h-5 mr-1" /> Submit Registration
         </button>
       </div>
@@ -93,6 +93,12 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Review do
   @impl true
   def handle_event("back", _params, socket) do
     send(self(), :prev_step)
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("submit_review", _params, socket) do
+    send(self(), :submit_registration)
     {:noreply, socket}
   end
 

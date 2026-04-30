@@ -1,7 +1,7 @@
 defmodule CuzCoreConnectWeb.Student.Registration.RegistrationLive do
   use CuzCoreConnectWeb, :live_view
 
-  # alias CuzCoreConnect.Registration
+  alias CuzCoreConnect.Registration
   alias CuzCoreConnectWeb.Student.Registration.Steps.Courses
   alias CuzCoreConnectWeb.Student.Registration.Steps.PersonalInfo
   alias CuzCoreConnectWeb.Student.Registration.Steps.Programs
@@ -89,9 +89,9 @@ defmodule CuzCoreConnectWeb.Student.Registration.RegistrationLive do
           <% :courses -> %>
             <.live_component module={Courses} id="step-courses" registration={@registration} />
           <% :receipts -> %>
-            <.live_component module={Receipts} id="step-receipts" registration={@registration} />
+            <.live_component module={Receipts} id="step-receipts" registration={@registration} upload_config={@uploads.receipt} />
           <% :review -> %>
-            <.live_component module={Review} id="step-review" registration={@registration} />
+            <.live_component module={Review} id="step-review" registration={@registration} upload_config={@uploads.receipt} />
         <% end %>
       </div>
     </div>
@@ -167,14 +167,51 @@ defmodule CuzCoreConnectWeb.Student.Registration.RegistrationLive do
 
   @impl true
   def handle_info(:submit_registration, socket) do
-    # TODO: wire to your context, e.g.:
-    # case Registrations.create(socket.assigns.current_scope.user, socket.assigns.registration) do
-    #   {:ok, _}    -> success path
-    #   {:error, _} -> error path
-    # end
-    {:noreply,
-     socket
-     |> put_flash(:info, "Registration submitted successfully!")
-     |> push_navigate(to: "/student/dashboard")}
+    registration_data = socket.assigns.registration
+
+    # Convert student_contact to integer as required by schema
+    registration_data = case registration_data.student_contact do
+      contact when is_binary(contact) ->
+        Map.put(registration_data, :student_contact, String.to_integer(contact))
+      _ ->
+        registration_data
+    end
+
+    case Registration.create_registration(socket.assigns.current_scope, registration_data) do
+      {:ok, registration} ->
+        # Handle uploaded receipts
+        consume_uploaded_entries(socket, :receipt, fn %{path: path}, entry ->
+          Registration.create_payment_receipt(%{
+            original_filename: entry.client_name,
+            storage_key: path,
+            content_type: entry.client_type,
+            file_size: entry.client_size,
+            uploaded_by_student_id: registration_data.student_id,
+            student_registration_id: registration.id
+          })
+          {:ok, path}
+        end)
+
+        {:noreply,
+         socket
+         |> put_flash(:info, "Registration submitted successfully!")
+         |> push_navigate(to: "/student/registration")}
+
+      {:error, changeset} ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "Failed to submit registration: #{inspect(changeset.errors)}")
+         |> assign(:current_step, :review)}
+    end
+  end
+
+  @impl true
+  def handle_event("validate_upload", _params, socket) do
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("cancel_upload", %{"ref" => ref}, socket) do
+    {:noreply, cancel_upload(socket, :receipt, ref)}
   end
 end
