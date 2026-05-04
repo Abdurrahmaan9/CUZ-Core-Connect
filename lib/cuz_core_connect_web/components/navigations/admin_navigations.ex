@@ -49,21 +49,21 @@ defmodule CuzCoreConnectWeb.Navigations.Admin do
           />
 
           <.navigation_link
-            href="/students/registered"
+            href="/admin/student/registered"
             active={@current_page == :students_registered}
             icon="academic-cap"
             label="Registered Students"
           />
 
           <.navigation_link
-            href="/students/pending"
+            href="/admin/student/pending"
             active={@current_page == :students_pending}
             icon="clock"
             label="Pending Registrations"
           />
 
           <.navigation_link
-            href="/students/courses"
+            href="/admin/student/courses"
             active={@current_page == :students_courses}
             icon="book-open"
             label="Course Management"
@@ -76,14 +76,14 @@ defmodule CuzCoreConnectWeb.Navigations.Admin do
           </div>
 
           <.navigation_link
-            href="/reports/attendance"
+            href="/admin/reports/attendance"
             active={@current_page == :reports_attendance}
             icon="chart-bar"
             label="Attendance Reports"
           />
 
           <.navigation_link
-            href="/reports/performance"
+            href="/admin/reports/performance"
             active={@current_page == :reports_performance}
             icon="presentation-chart-bar"
             label="Performance Analytics"
@@ -96,14 +96,14 @@ defmodule CuzCoreConnectWeb.Navigations.Admin do
           </div>
 
           <.navigation_link
-            href="/messages"
+            href="/admin/messages"
             active={@current_page == :messages}
             icon="chat-bubble-left-right"
             label="Messages"
           />
 
           <.navigation_link
-            href="/announcements"
+            href="/admin/announcements"
             active={@current_page == :announcements}
             icon="chat-megaphone"
             label="Announcements"

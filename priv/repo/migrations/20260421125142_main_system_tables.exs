@@ -78,6 +78,12 @@ defmodule CuzCoreConnect.Repo.Migrations.MainSystemTables do
       add :approved_by, :map, default: %{}
       add :payment_status, :string, null: false
 
+      add :retention_status, :string, null: false
+      add :accademics_status, :string, null: false
+      add :hod_status, :string, null: false
+      add :financial_status, :string, null: false
+      add :registration_status, :string, null: false
+
       timestamps(type: :utc_datetime)
     end
 
