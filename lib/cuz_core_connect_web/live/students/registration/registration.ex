@@ -37,8 +37,10 @@ defmodule CuzCoreConnectWeb.Student.Registration.RegistrationLive do
        current_scope: current_scope,
        current_step: :personal_info,
        show_success_modal: false,
+       show_mobile_menu: false,
        tracking_number: nil,
        registration: %{
+         g_number: nil,
          student_id: nil,
          student_names: nil,
          student_email: nil,
@@ -65,78 +67,81 @@ defmodule CuzCoreConnectWeb.Student.Registration.RegistrationLive do
     assigns = assign(assigns, steps: @steps, step_labels: @step_labels)
 
     ~H"""
-    <Layouts.unauth flash={@flash} current_scope={@current_scope}>
-      <div class="max-w-3xl mx-auto py-8 px-4">
-        <div class="mb-8">
-          <h1 class="text-2xl font-bold text-gray-900">Course Registration</h1>
-          <p class="text-sm text-gray-500 mt-1">
-            Complete all steps to register your courses for the semester.
-          </p>
+      <Layouts.unauth flash={@flash}>
+        <:header>
+          <CuzCoreConnectWeb.Navigations.Unauth.header show_mobile_menu={@show_mobile_menu} />
+        </:header>
+        <div class="max-w-3xl mx-auto py-8 px-4">
+          <div class="mb-8">
+            <h1 class="text-2xl font-bold text-gray-900">Course Registration</h1>
+            <p class="text-sm text-gray-500 mt-1">
+              Complete all steps to register your courses for the semester.
+            </p>
+          </div>
+
+          <.step_indicator
+            current_step={@current_step}
+            steps={@steps}
+            step_labels={@step_labels}
+          />
+
+          <div class="mt-8 bg-base-100 rounded-2xl shadow-sm border border-base-200 p-6">
+            <%= case @current_step do %>
+              <% :personal_info -> %>
+                <.live_component module={PersonalInfo} id="step-personal-info" registration={@registration} />
+              <% :program -> %>
+                <.live_component module={Programs} id="step-program" registration={@registration} />
+              <% :semester -> %>
+                <.live_component module={Semesters} id="step-semester" registration={@registration} />
+              <% :courses -> %>
+                <.live_component module={Courses} id="step-courses" registration={@registration} />
+              <% :receipts -> %>
+                <.live_component module={Receipts} id="step-receipts" registration={@registration} upload_config={@uploads.receipt} />
+              <% :review -> %>
+                <.live_component module={Review} id="step-review" registration={@registration} upload_config={@uploads.receipt} />
+            <% end %>
+          </div>
         </div>
 
-        <.step_indicator
-          current_step={@current_step}
-          steps={@steps}
-          step_labels={@step_labels}
-        />
+        <%= if @show_success_modal do %>
+          <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div class="bg-base-100 rounded-2xl shadow-xl max-w-md w-full mx-4 p-6">
+              <div class="text-center">
+                <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 mb-4">
+                  <.icon name="hero-check-circle" class="w-8 h-8 text-green-600" />
+                </div>
+                <h3 class="text-xl font-bold text-base-content mb-2">Registration Submitted Successfully!</h3>
+                <p class="text-sm text-base-content/70 mb-6">
+                  Your registration has been submitted for review. Please save your tracking number for future reference.
+                </p>
 
-      <div class="mt-8 bg-base-100 rounded-2xl shadow-sm border border-base-200 p-6">
-        <%= case @current_step do %>
-          <% :personal_info -> %>
-            <.live_component module={PersonalInfo} id="step-personal-info" registration={@registration} />
-          <% :program -> %>
-            <.live_component module={Programs} id="step-program" registration={@registration} />
-          <% :semester -> %>
-            <.live_component module={Semesters} id="step-semester" registration={@registration} />
-          <% :courses -> %>
-            <.live_component module={Courses} id="step-courses" registration={@registration} />
-          <% :receipts -> %>
-            <.live_component module={Receipts} id="step-receipts" registration={@registration} upload_config={@uploads.receipt} />
-          <% :review -> %>
-            <.live_component module={Review} id="step-review" registration={@registration} upload_config={@uploads.receipt} />
-        <% end %>
-      </div>
-    </div>
+                <div class="bg-base-200 rounded-xl p-4 mb-6">
+                  <p class="text-xs text-base-content/50 mb-1">Tracking Number</p>
+                  <div class="flex items-center justify-center gap-2">
+                    <code class="text-lg font-mono font-bold text-primary">{@tracking_number}</code>
+                    <button
+                      type="button"
+                      phx-click="copy_tracking_number"
+                      class="p-2 hover:bg-base-300 rounded-lg transition-colors"
+                      title="Copy to clipboard"
+                    >
+                      <.icon name="hero-document-duplicate" class="w-5 h-5 text-base-content/70" />
+                    </button>
+                  </div>
+                </div>
 
-    <%= if @show_success_modal do %>
-      <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-        <div class="bg-base-100 rounded-2xl shadow-xl max-w-md w-full mx-4 p-6">
-          <div class="text-center">
-            <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 mb-4">
-              <.icon name="hero-check-circle" class="w-8 h-8 text-green-600" />
-            </div>
-            <h3 class="text-xl font-bold text-base-content mb-2">Registration Submitted Successfully!</h3>
-            <p class="text-sm text-base-content/70 mb-6">
-              Your registration has been submitted for review. Please save your tracking number for future reference.
-            </p>
-
-            <div class="bg-base-200 rounded-xl p-4 mb-6">
-              <p class="text-xs text-base-content/50 mb-1">Tracking Number</p>
-              <div class="flex items-center justify-center gap-2">
-                <code class="text-lg font-mono font-bold text-primary">{@tracking_number}</code>
                 <button
                   type="button"
-                  phx-click="copy_tracking_number"
-                  class="p-2 hover:bg-base-300 rounded-lg transition-colors"
-                  title="Copy to clipboard"
+                  phx-click="close_success_modal"
+                  class="w-full btn btn-primary"
                 >
-                  <.icon name="hero-document-duplicate" class="w-5 h-5 text-base-content/70" />
+                  Done
                 </button>
               </div>
             </div>
-
-            <button
-              type="button"
-              phx-click="close_success_modal"
-              class="w-full btn btn-primary"
-            >
-              Done
-            </button>
           </div>
-        </div>
-      </div>
-    <% end %>
-    </Layouts.unauth>
+        <% end %>
+      </Layouts.unauth>
     """
   end
 
@@ -268,5 +273,10 @@ defmodule CuzCoreConnectWeb.Student.Registration.RegistrationLive do
      socket
      |> assign(:show_success_modal, false)
      |> push_navigate(to: "/student/registration")}
+  end
+
+  @impl true
+  def handle_event("toggle_mobile_menu", _params, socket) do
+    {:noreply, assign(socket, :show_mobile_menu, !socket.assigns.show_mobile_menu)}
   end
 end
