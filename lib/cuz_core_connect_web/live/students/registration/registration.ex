@@ -36,6 +36,8 @@ defmodule CuzCoreConnectWeb.Student.Registration.RegistrationLive do
      |> assign(
        current_scope: current_scope,
        current_step: :personal_info,
+       show_success_modal: false,
+       tracking_number: nil,
        registration: %{
          student_id: nil,
          student_names: nil,
@@ -95,6 +97,45 @@ defmodule CuzCoreConnectWeb.Student.Registration.RegistrationLive do
         <% end %>
       </div>
     </div>
+
+    <%= if @show_success_modal do %>
+      <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div class="bg-base-100 rounded-2xl shadow-xl max-w-md w-full mx-4 p-6">
+          <div class="text-center">
+            <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 mb-4">
+              <.icon name="hero-check-circle" class="w-8 h-8 text-green-600" />
+            </div>
+            <h3 class="text-xl font-bold text-base-content mb-2">Registration Submitted Successfully!</h3>
+            <p class="text-sm text-base-content/70 mb-6">
+              Your registration has been submitted for review. Please save your tracking number for future reference.
+            </p>
+
+            <div class="bg-base-200 rounded-xl p-4 mb-6">
+              <p class="text-xs text-base-content/50 mb-1">Tracking Number</p>
+              <div class="flex items-center justify-center gap-2">
+                <code class="text-lg font-mono font-bold text-primary">{@tracking_number}</code>
+                <button
+                  type="button"
+                  phx-click="copy_tracking_number"
+                  class="p-2 hover:bg-base-300 rounded-lg transition-colors"
+                  title="Copy to clipboard"
+                >
+                  <.icon name="hero-document-duplicate" class="w-5 h-5 text-base-content/70" />
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              phx-click="close_success_modal"
+              class="w-full btn btn-primary"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      </div>
+    <% end %>
     </Layouts.unauth>
     """
   end
@@ -195,7 +236,8 @@ defmodule CuzCoreConnectWeb.Student.Registration.RegistrationLive do
         {:noreply,
          socket
          |> put_flash(:info, "Registration submitted successfully!")
-         |> push_navigate(to: "/student/registration")}
+         |> assign(:show_success_modal, true)
+         |> assign(:tracking_number, registration.tracking_number)}
 
       {:error, changeset} ->
         {:noreply,
@@ -213,5 +255,18 @@ defmodule CuzCoreConnectWeb.Student.Registration.RegistrationLive do
   @impl true
   def handle_event("cancel_upload", %{"ref" => ref}, socket) do
     {:noreply, cancel_upload(socket, :receipt, ref)}
+  end
+
+  @impl true
+  def handle_event("copy_tracking_number", _params, socket) do
+    {:noreply, socket |> put_flash(:info, "Tracking number copied to clipboard!")}
+  end
+
+  @impl true
+  def handle_event("close_success_modal", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:show_success_modal, false)
+     |> push_navigate(to: "/student/registration")}
   end
 end
