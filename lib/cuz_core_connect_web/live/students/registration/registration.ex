@@ -104,28 +104,28 @@ defmodule CuzCoreConnectWeb.Student.Registration.RegistrationLive do
         </div>
 
         <%= if @show_success_modal do %>
-          <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-            <div class="bg-base-100 rounded-2xl shadow-xl max-w-md w-full mx-4 p-6">
+          <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div class="bg-base-100 rounded-2xl shadow-xl max-w-md w-full mx-4 p-4 sm:p-6">
               <div class="text-center">
-                <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 mb-4">
-                  <.icon name="hero-check-circle" class="w-8 h-8 text-green-600" />
+                <div class="mx-auto flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-green-100 mb-4">
+                  <.icon name="hero-check-circle" class="w-6 h-6 sm:w-8 sm:h-8 text-green-600" />
                 </div>
-                <h3 class="text-xl font-bold text-base-content mb-2">Registration Submitted Successfully!</h3>
-                <p class="text-sm text-base-content/70 mb-6">
+                <h3 class="text-lg sm:text-xl font-bold text-base-content mb-2">Registration Submitted Successfully!</h3>
+                <p class="text-xs sm:text-sm text-base-content/70 mb-6">
                   Your registration has been submitted for review. Please save your tracking number for future reference.
                 </p>
 
-                <div class="bg-base-200 rounded-xl p-4 mb-6">
+                <div class="bg-base-200 rounded-xl p-3 sm:p-4 mb-6">
                   <p class="text-xs text-base-content/50 mb-1">Tracking Number</p>
                   <div class="flex items-center justify-center gap-2">
-                    <code class="text-lg font-mono font-bold text-primary">{@tracking_number}</code>
+                    <code class="text-base sm:text-lg font-mono font-bold text-primary break-all">{@tracking_number}</code>
                     <button
                       type="button"
                       phx-click="copy_tracking_number"
-                      class="p-2 hover:bg-base-300 rounded-lg transition-colors"
+                      class="p-1.5 sm:p-2 hover:bg-base-300 rounded-lg transition-colors flex-shrink-0"
                       title="Copy to clipboard"
                     >
-                      <.icon name="hero-document-duplicate" class="w-5 h-5 text-base-content/70" />
+                      <.icon name="hero-document-duplicate" class="w-4 h-4 sm:w-5 sm:h-5 text-base-content/70" />
                     </button>
                   </div>
                 </div>
@@ -133,7 +133,7 @@ defmodule CuzCoreConnectWeb.Student.Registration.RegistrationLive do
                 <button
                   type="button"
                   phx-click="close_success_modal"
-                  class="w-full btn btn-primary"
+                  class="w-full btn btn-primary text-sm sm:text-base"
                 >
                   Done
                 </button>
