@@ -2,6 +2,8 @@ defmodule CuzCoreConnect.Registration do
   alias CuzCoreConnect.Repo
   alias CuzCoreConnect.Students.Registration
   import Ecto.Query
+  import Scrivener.Config
+  @pagination [page_size: 10]
 
   def changeset(registration, attrs) do
     Registration.changeset(registration, attrs)
@@ -41,8 +43,26 @@ defmodule CuzCoreConnect.Registration do
     Registration.changeset(registration, attrs)
   end
 
-  def list_pending_registrations do
-    Repo.all(from r in Registration, where: r.approval_level == "pending")
+
+
+  @doc """
+  Returns list of pending registrations with pagination support.
+  """
+  def list_pending_registrations(search_params) do
+    Registration
+    |> handle_registration_filter(search_params)
+    |> order_by(desc: :registration_date)
+    |> Scrivener.paginate(Scrivener.Config.new(Repo, @pagination, search_params))
+  end
+
+  @doc """
+  Returns pending registrations for export (no pagination).
+  """
+  def pending_registrations_export(search_params) do
+    Registration
+    |> handle_registration_filter(search_params)
+    |> order_by(desc: :registration_date)
+    |> Repo.all()
   end
 
   def list_approved_registrations do
@@ -172,4 +192,48 @@ defmodule CuzCoreConnect.Registration do
   end
 
   defp format_courses(_), do: %{}
+
+  # ==================== REGISTRATION FILTER HELPERS ====================
+
+  defp handle_registration_filter(query, params) do
+    Enum.reduce(params, query, fn
+      {"isearch", value}, query when byte_size(value) > 0 ->
+        registration_isearch_filter(query, sanitize_term(value))
+
+      {"student_names", value}, query when byte_size(value) > 0 ->
+        where(query, [r], fragment("lower(?) LIKE lower(?)", r.student_names, ^"%#{sanitize_term(value)}%"))
+
+      {"tracking_number", value}, query when byte_size(value) > 0 ->
+        where(query, [r], fragment("lower(?) LIKE lower(?)", r.tracking_number, ^"%#{sanitize_term(value)}%"))
+
+      {"approval_level", value}, query when byte_size(value) > 0 ->
+        where(query, [r], fragment("lower(?) LIKE lower(?)", r.approval_level, ^"%#{sanitize_term(value)}%"))
+
+      {"payment_status", value}, query when byte_size(value) > 0 ->
+        where(query, [r], fragment("lower(?) LIKE lower(?)", r.payment_status, ^"%#{sanitize_term(value)}%"))
+
+      {"from", value}, query when byte_size(value) > 0 ->
+        where(query, [r], fragment("CAST(? AS DATE) >= ?", r.registration_date, ^to_db_date(value)))
+
+      {"to", value}, query when byte_size(value) > 0 ->
+        where(query, [r], fragment("CAST(? AS DATE) <= ?", r.registration_date, ^to_db_date(value)))
+
+      {_, _}, query ->
+        query
+    end)
+  end
+
+  defp registration_isearch_filter(query, search_term) do
+    where(
+      query,
+      [r],
+      fragment("lower(?) LIKE lower(?)", r.student_names, ^"%#{search_term}%") or
+        fragment("lower(?) LIKE lower(?)", r.tracking_number, ^"%#{search_term}%") or
+        fragment("lower(?) LIKE lower(?)", r.approval_level, ^"%#{search_term}%") or
+        fragment("lower(?) LIKE lower(?)", r.payment_status, ^"%#{search_term}%")
+    )
+  end
+
+  defp sanitize_term(term), do: String.trim(term)
+  defp to_db_date(date), do: Date.from_iso8601!(date)
 end

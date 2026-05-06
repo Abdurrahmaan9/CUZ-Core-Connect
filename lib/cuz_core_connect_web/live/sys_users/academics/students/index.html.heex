@@ -1,17 +1,53 @@
 <Layouts.user flash={@flash} current_scope={@current_scope} page_title={@page_title} current_page={@current_page}>
   <div class="mb-3">
-    <h1 class="text-base font-bold tracking-wide text-slate-800">Preferential Applications</h1>
+    <h1 class="text-base font-bold tracking-wide text-slate-800">Pending Registrations</h1>
     <p class="mt-1 text-xs text-slate-500">
-      A list of Preferential applications
+      A list of pending student registrations
     </p>
   </div>
 
-  <.modern_table
+  <!-- Search and Filter Section -->
+  <div class="mb-6 flex flex-col sm:flex-row gap-4">
+    <.form for={@params} phx-change="iSearch" class="flex-1">
+      <input
+        type="text"
+        name="isearch"
+        value={@params["isearch"]}
+        placeholder="Search by name, tracking number, status..."
+        class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+    </.form>
+    
+    <.form for={@params} phx-change="filter" class="flex gap-2">
+      <select name="approval_level" class="px-4 py-2 border rounded-lg">
+        <option value="">All Status</option>
+        <option value="pending">Pending</option>
+        <option value="approved">Approved</option>
+        <option value="rejected">Rejected</option>
+      </select>
+      
+      <select name="payment_status" class="px-4 py-2 border rounded-lg">
+        <option value="">All Payment Status</option>
+        <option value="pending">Pending</option>
+        <option value="paid">Paid</option>
+        <option value="unpaid">Unpaid</option>
+      </select>
+    </.form>
+  </div>
+
+  <!-- Data Loading State -->
+  <%= if @data_loader do %>
+    <div class="flex justify-center items-center py-12">
+      <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+    </div>
+  <% else %>
+    <!-- Data Table -->
+    <.modern_table
       id="pending-registrations"
-      rows={@pending_registrations}
+      rows={@data}
       class="shadow-sm"
       empty_state_title="No pending registrations"
-      empty_state_description="All student registrations have been processed."
+      empty_state_description="No registrations found matching your criteria."
       show_header={true}
     >
       <:col :let={registration} label="Reference">
@@ -53,4 +89,13 @@
         </.link>
       </:action>
     </.modern_table>
+
+    <!-- Pagination Component -->
+    <.live_component
+      module={CuzCoreConnectWeb.Helps.PaginationComponent}
+      id="pagination"
+      params={@params}
+      pagination_data={@data}
+    />
+  <% end %>
 </Layouts.user>

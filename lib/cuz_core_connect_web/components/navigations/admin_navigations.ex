@@ -62,9 +62,18 @@ defmodule CuzCoreConnectWeb.Navigations.Admin do
             label="Pending Registrations"
           />
 
+          <div class="divider my-4"></div>
+
+          <.navigation_link
+            href="/admin/student/programs"
+            active={@current_page == :programs}
+            icon="book-open"
+            label="Program Management"
+          />
+
           <.navigation_link
             href="/admin/student/courses"
-            active={@current_page == :students_courses}
+            active={@current_page == :courses}
             icon="book-open"
             label="Course Management"
           />

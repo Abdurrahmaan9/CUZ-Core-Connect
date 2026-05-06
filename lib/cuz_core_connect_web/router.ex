@@ -84,6 +84,18 @@ defmodule CuzCoreConnectWeb.Router do
 
         scope "/student" do
           live "/pending", Academics.Students.Index, :index
+
+          scope "/programs" do
+            live "/", Admin.AcademicManagement.Programs.Index, :index
+            live "/new", Admin.AcademicManagement.Programs.Index, :new
+            live "/:id/edit", Admin.AcademicManagement.Programs.Index, :edit
+          end
+
+          scope "/courses" do
+            live "/", Admin.AcademicManagement.Courses.Index, :index
+            live "/new", Admin.AcademicManagement.Courses.Index, :new
+            live "/:id/edit", Admin.AcademicManagement.Courses.Index, :edit
+          end
         end
       end
     end

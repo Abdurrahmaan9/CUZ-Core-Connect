@@ -1,36 +1,89 @@
 defmodule CuzCoreConnectWeb.Academics.Students.Index do
   use CuzCoreConnectWeb, :live_view
 
-  alias CuzCoreConnect.Students.Registration
+  alias CuzCoreConnect.Registration
   alias CuzCoreConnect.Repo
-  import Ecto.Query
+  alias CuzCoreConnectWeb.Helps.PaginationControl, as: Control
 
   @impl true
   def mount(_params, _session, socket) do
     current_scope = socket.assigns[:current_scope]
 
-    pending_registrations = list_pending_registrations()
-
     {:ok,
      socket
+     |> assign(:data_loader, true)
+     |> assign(:data, [])
+     |> assign(:selected_records, [])
+     |> assign(:select_all, false)
+     |> assign(:info_modal, false)
+     |> assign(:error_modal, false)
+     |> assign(:success_modal, false)
+     |> assign(:error_message, "")
+     |> assign(:session, socket.assigns[:session])
      |> assign(
        page_title: "Pending Registrations",
        current_page: :student_pending,
-       current_scope: current_scope,
-       pending_registrations: pending_registrations
-     )}
+       current_scope: current_scope
+     )
+     |> Control.order_by_composer()
+     |> Control.i_search_composer()}
   end
 
   @impl true
+  def handle_params(params, _url, socket) do
+    if connected?(socket), do: send(self(), {:fetch_registrations, params})
+
+    {
+      :noreply,
+      socket
+      |> assign(:params, params)
+      |> apply_action(socket.assigns.live_action, params)
+    }
+  end
+
+  defp apply_action(socket, :index, _params) do
+    socket
+    |> assign(:page_title, "Pending Registrations")
+    |> assign(:info_modal, false)
+  end
+
+  @impl true
+  def handle_info({:fetch_registrations, params}, socket) do
+    fetch_registrations(socket, params)
+  end
+
+  @impl true
+  def handle_info(data, socket), do: handle_info_switch(socket, data)
+
+  defp handle_info_switch(socket, {:fetch_registrations, params}) do
+    fetch_registrations(socket, params)
+  end
+
+  defp fetch_registrations(socket, params) do
+    data = Registration.list_pending_registrations(Control.create_table_params(socket, params))
+
+    {
+      :noreply,
+      assign(socket, :data, data)
+      |> assign(:data_loader, false)
+      |> assign(:params, params)
+    }
+  end
+
+  @impl true
+  def handle_event("iSearch", params, socket) do
+    fetch_registrations(socket, params)
+  end
+
+  def handle_event("filter", params, socket) do
+    fetch_registrations(socket, params)
+  end
+
   def handle_event("approve_registration", %{"registration-id" => registration_id}, socket) do
     case approve_registration(registration_id) do
       {:ok, _registration} ->
-        pending_registrations = list_pending_registrations()
-
-        {:noreply,
-         socket
-         |> assign(:pending_registrations, pending_registrations)
-         |> put_flash(:info, "Registration approved successfully")}
+        send(self(), {:fetch_registrations, socket.assigns.params})
+        {:noreply, socket |> put_flash(:info, "Registration approved successfully")}
 
       {:error, _changeset} ->
         {:noreply, put_flash(socket, :error, "Failed to approve registration")}
@@ -41,26 +94,12 @@ defmodule CuzCoreConnectWeb.Academics.Students.Index do
   def handle_event("reject_registration", %{"registration-id" => registration_id}, socket) do
     case reject_registration(registration_id) do
       {:ok, _registration} ->
-        pending_registrations = list_pending_registrations()
-
-        {:noreply,
-         socket
-         |> assign(:pending_registrations, pending_registrations)
-         |> put_flash(:info, "Registration rejected")}
+        send(self(), {:fetch_registrations, socket.assigns.params})
+        {:noreply, socket |> put_flash(:info, "Registration rejected")}
 
       {:error, _changeset} ->
         {:noreply, put_flash(socket, :error, "Failed to reject registration")}
     end
-  end
-
-  # Private functions
-
-  defp list_pending_registrations do
-    Registration
-    |> where([r], r.approval_level == "pending")
-    |> order_by([r], desc: r.registration_date)
-    |> Repo.all()
-    |> Repo.preload(:payment_receipts)
   end
 
   defp approve_registration(registration_id) do

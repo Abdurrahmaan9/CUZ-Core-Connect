@@ -1,0 +1,66 @@
+<Layouts.user flash={@flash} current_scope={@current_scope} page_title={@page_title} current_page={@current_page}>
+  <.header>
+    Programs
+    <:subtitle>Manage academic programs in the system</:subtitle>
+    <:actions>
+      <.link patch={~p"/admin/student/programs/new"}>
+        <.button>New Program</.button>
+      </.link>
+    </:actions>
+  </.header>
+
+  <.modern_table
+      id="programs"
+      rows={@streams.programs}
+      class="shadow-sm"
+      empty_state_title="No programs found"
+      empty_state_description="No programs have been created yet."
+      row_click={fn {_id, program} -> JS.navigate(~p"/admin/student/programs/#{program}/edit") end}
+    >
+      <:col :let={{_id, program}} label="Code"><%= program.code %></:col>
+      <:col :let={{_id, program}} label="Name"><%= program.name %></:col>
+      <:col :let={{_id, program}} label="Duration"><%= program.duration_years %> years</:col>
+      <:col :let={{_id, program}} label="Status">
+        <span class={[
+          "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
+          program.is_active && "bg-green-100 text-green-800",
+          !program.is_active && "bg-gray-100 text-gray-800"
+        ]}>
+          <%= if program.is_active, do: "Active", else: "Inactive" %>
+        </span>
+      </:col>
+      <:action :let={{_id, program}}>
+        <div class="sr-only">
+          <.link navigate={~p"/admin/student/programs/#{program}"}>Show</.link>
+        </div>
+        <.link patch={~p"/admin/student/programs/#{program}/edit"}>
+          <.button>Edit</.button>
+        </.link>
+      </:action>
+      <:action :let={{id, program}}>
+        <.link
+          phx-click={JS.push("delete", value: %{id: program.id}) |> hide("##{id}")}
+          data-confirm="Are you sure?"
+        >
+          <.button class="bg-red-600 hover:bg-red-700 text-white">Delete</.button>
+        </.link>
+      </:action>
+    </.modern_table>
+
+  <div :if={@live_action in [:new, :edit]} class="fixed inset-0 z-50 overflow-y-auto">
+  <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+    <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+      <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+        <.live_component
+          module={FormComponent}
+          id={@program.id || :new}
+          title={@page_title}
+          action={@live_action}
+          program={@program}
+          patch={~p"/admin/student/programs"}
+        />
+      </div>
+    </div>
+  </div>
+</div>
+</Layouts.user>

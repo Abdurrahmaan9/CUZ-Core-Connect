@@ -100,6 +100,37 @@ defmodule CuzCoreConnect.Repo.Migrations.MainSystemTables do
 
       timestamps(type: :utc_datetime)
     end
+
+    create_if_not_exists table(:tbl_programs) do
+      add :name, :string, null: false
+      add :code, :string, null: false
+      add :description, :string
+      add :duration_years, :integer, default: 4
+      add :is_active, :boolean, default: true
+
+      timestamps()
+    end
+
+    create_if_not_exists table(:tbl_courses) do
+      add :title, :string, null: false
+      add :description, :string
+      add :code, :string, null: false
+      add :credits, :integer, default: 3
+      add :is_active, :boolean, default: true
+
+      timestamps()
+    end
+
+    create_if_not_exists table(:tbl_program_courses) do
+      add :program_id, references(:tbl_programs, on_delete: :delete_all), null: false
+      add :course_id, references(:tbl_courses, on_delete: :delete_all), null: false
+      add :year, :integer, null: false
+      add :semester, :integer, null: false
+      add :is_core, :boolean, default: false
+      add :is_active, :boolean, default: true
+
+      timestamps()
+    end
   end
 
   def index_tables() do
@@ -117,6 +148,17 @@ defmodule CuzCoreConnect.Repo.Migrations.MainSystemTables do
     create_if_not_exists index(:tbl_pages, [:is_deleted])
     create_if_not_exists index(:tbl_pages, [:is_admin])
     create_if_not_exists index(:tbl_pages, [:is_deleted, :is_admin])
+
+    create_if_not_exists unique_index(:tbl_programs, [:code])
+    create_if_not_exists index(:tbl_programs, [:is_active])
+
+    create_if_not_exists unique_index(:tbl_courses, [:code])
+    create_if_not_exists index(:tbl_courses, [:is_active])
+
+    create_if_not_exists unique_index(:tbl_program_courses, [:program_id, :course_id, :year, :semester])
+    create_if_not_exists index(:tbl_program_courses, [:program_id])
+    create_if_not_exists index(:tbl_program_courses, [:course_id])
+    create_if_not_exists index(:tbl_program_courses, [:is_active])
   end
 
   def alter_tables() do
