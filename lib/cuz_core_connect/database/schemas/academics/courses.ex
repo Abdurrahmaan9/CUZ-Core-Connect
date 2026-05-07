@@ -9,8 +9,7 @@ defmodule CuzCoreConnect.Academics.Courses do
     field :credits, :integer, default: 3
     field :is_active, :boolean, default: true
 
-    has_many :program_courses, CuzCoreConnect.Academic.ProgramCourse
-    has_many :programs, through: [:program_courses, :program]
+    has_many :program_courses, CuzCoreConnect.Academics.ProgramCourse, foreign_key: :course_id
     timestamps()
   end
 

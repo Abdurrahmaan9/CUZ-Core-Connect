@@ -5,7 +5,7 @@ defmodule CuzCoreConnect.Academic do
   import Ecto.Query, warn: false
   alias CuzCoreConnect.Repo
   alias CuzCoreConnect.Academics.Programs, as: Program
-  alias CuzCoreConnect.Academic.ProgramCourse
+  alias CuzCoreConnect.Academics.ProgramCourse
   alias CuzCoreConnect.Academic.StudentProgram
   alias CuzCoreConnect.Academic.LecturerCourse
   alias CuzCoreConnect.Academic.LecturerProgram
@@ -41,7 +41,7 @@ defmodule CuzCoreConnect.Academic do
 
   # Program Course functions
   def list_program_courses(program_id) do
-    from(pc in ProgramCourse,
+    from(pc in CuzCoreConnect.Academics.ProgramCourse,
       where: pc.program_id == ^program_id,
       preload: [:course],
       order_by: [asc: :year, asc: :semester, asc: :id]
@@ -49,33 +49,33 @@ defmodule CuzCoreConnect.Academic do
     |> Repo.all()
   end
 
-  def get_program_course!(id), do: Repo.get!(ProgramCourse, id)
+  def get_program_course!(id), do: Repo.get!(CuzCoreConnect.Academics.ProgramCourse, id)
 
   def create_program_course(attrs \\ %{}) do
-    %ProgramCourse{}
-    |> ProgramCourse.changeset(attrs)
+    %CuzCoreConnect.Academics.ProgramCourse{}
+    |> CuzCoreConnect.Academics.ProgramCourse.changeset(attrs)
     |> Repo.insert()
   end
 
-  def update_program_course(%ProgramCourse{} = program_course, attrs) do
+  def update_program_course(%CuzCoreConnect.Academics.ProgramCourse{} = program_course, attrs) do
     program_course
-    |> ProgramCourse.changeset(attrs)
+    |> CuzCoreConnect.Academics.ProgramCourse.changeset(attrs)
     |> Repo.update()
   end
 
-  def delete_program_course(%ProgramCourse{} = program_course) do
+  def delete_program_course(%CuzCoreConnect.Academics.ProgramCourse{} = program_course) do
     Repo.delete(program_course)
   end
 
-  def change_program_course(%ProgramCourse{} = program_course, attrs \\ %{}) do
-    ProgramCourse.changeset(program_course, attrs)
+  def change_program_course(%CuzCoreConnect.Academics.ProgramCourse{} = program_course, attrs \\ %{}) do
+    CuzCoreConnect.Academics.ProgramCourse.changeset(program_course, attrs)
   end
 
   # Helper functions
   def list_courses_not_in_program(program_id) do
     # First, get all course IDs that are already in the program
     assigned_course_ids =
-      from(pc in ProgramCourse,
+      from(pc in CuzCoreConnect.Academics.ProgramCourse,
         where: pc.program_id == ^program_id,
         select: pc.course_id
       )
@@ -110,7 +110,7 @@ defmodule CuzCoreConnect.Academic do
   def list_lecturer_courses(user_id, program_id) do
     # First, get all program courses for the given program
     program_courses =
-      from(pc in ProgramCourse,
+      from(pc in CuzCoreConnect.Academics.ProgramCourse,
         where: pc.program_id == ^program_id,
         preload: [:course],
         order_by: [asc: :year, asc: :semester, asc: :id]
@@ -188,7 +188,7 @@ defmodule CuzCoreConnect.Academic do
   end
 
   def get_courses_by_program_and_semester(program_id, year, semester) do
-    from(pc in ProgramCourse,
+    from(pc in CuzCoreConnect.Academics.ProgramCourse,
       where: pc.program_id == ^program_id and pc.year == ^year and pc.semester == ^semester,
       preload: [:course],
       order_by: [asc: :is_core, asc: :id]
@@ -420,7 +420,6 @@ defmodule CuzCoreConnect.Academic do
   def get_course!(id) do
     Course
     |> Repo.get!(id)
-    |> Repo.preload([:programs, program_courses: :program])
   end
 
   @doc """
@@ -493,7 +492,7 @@ defmodule CuzCoreConnect.Academic do
   """
   def list_available_courses(program_id) do
     assigned_course_ids =
-      from(pc in ProgramCourse,
+      from(pc in CuzCoreConnect.Academics.ProgramCourse,
         where: pc.program_id == ^program_id,
         select: pc.course_id
       )
@@ -511,7 +510,7 @@ defmodule CuzCoreConnect.Academic do
   Gets courses by program, year, and semester.
   """
   def get_courses_by_program_and_semester(program_id, year, semester) do
-    from(pc in ProgramCourse,
+    from(pc in CuzCoreConnect.Academics.ProgramCourse,
       where: pc.program_id == ^program_id and pc.year == ^year and pc.semester == ^semester,
       where: pc.is_active == true,
       preload: [:course],
