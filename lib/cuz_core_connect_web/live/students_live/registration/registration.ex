@@ -169,7 +169,7 @@ defmodule CuzCoreConnectWeb.Student.Registration.RegistrationLive do
             <% end %>
           </div>
           <span class={[
-            "ml-2 text-sm font-medium hidden sm:inline",
+            "ml-2 text-sm hidden inline",
             (is_current || is_complete) && "text-base-content",
             !is_current && !is_complete && "text-base-content/40"
           ]}>

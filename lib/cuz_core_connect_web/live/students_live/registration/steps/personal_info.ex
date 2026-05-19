@@ -118,11 +118,7 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.PersonalInfo do
         </div>
       <% end %>
 
-      <div class="mt-8 flex justify-between">
-        <.link navigate="/" class="btn btn-ghost">
-          ← Dashboard
-        </.link>
-
+      <div class="mt-8 flex justify-end">
         <button
           type="button"
           phx-click="next"
