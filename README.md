@@ -34,7 +34,7 @@ CUZ-Core-Connect solves the complexity of student course registration by providi
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/Abdurrahmaan9/CUZ-Core-Connect
    cd CUZ-Core-Connect
    ```
 
@@ -1202,14 +1202,14 @@ mix test --include pending
 
 ### Development Team Contact
 
-- **Project Lead**: [Contact Information]
+- **Project Lead**: abdurrahmaanchimalo5@gmail.com - Abdulramaan : hniyomen@gmail.com - Honore
 - **Questions**: Email or project discussion board
 
 ---
 
 ## 📄 License
 
-[Specify your license here - e.g., MIT, Apache 2.0, etc.]
+MIT
 
 ---
 
