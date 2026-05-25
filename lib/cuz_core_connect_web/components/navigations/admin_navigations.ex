@@ -48,35 +48,53 @@ defmodule CuzCoreConnectWeb.Navigations.Admin do
             label="Dashboard"
           />
 
-          <.navigation_link
+          <.dropdown_menu
+            active={@current_page in [:students_overview, :students_registered, :students_pending]}
+            id="students-management-menu"
+            icon="academic-cap"
+            label="Students"
+          >
+            <.dropdown_item
+              href="/admin/student"
+              active={@current_page == :students_overview}
+            >
+              Overview
+            </.dropdown_item>
+            <.dropdown_item
             href="/admin/student/registered"
             active={@current_page == :students_registered}
-            icon="academic-cap"
-            label="Registered Students"
-          />
-
-          <.navigation_link
-            href="/admin/student/pending"
-            active={@current_page == :students_pending}
-            icon="clock"
-            label="Pending Registrations"
-          />
+            >
+              Registered
+            </.dropdown_item>
+            <.dropdown_item
+              href="/admin/student/pending"
+              active={@current_page == :students_pending}
+            >
+              Pending Registrations
+            </.dropdown_item>
+          </.dropdown_menu>
 
           <div class="divider my-4"></div>
 
-          <.navigation_link
-            href="/admin/student/programs"
-            active={@current_page == :programs}
+          <.dropdown_menu
+            active={@current_page in [:programmes_management, :courses_management]}
+            id="programe-course-management-menu"
             icon="book-open"
-            label="Program Management"
-          />
-
-          <.navigation_link
-            href="/admin/student/courses"
-            active={@current_page == :courses}
-            icon="book-open"
-            label="Course Management"
-          />
+            label="Management"
+          >
+            <.dropdown_item
+              href="/admin/programmes"
+              active={@current_page == :programmes_management}
+            >
+              Programmes
+            </.dropdown_item>
+            <.dropdown_item
+            href="/admin/courses"
+            active={@current_page == :courses_management}
+            >
+              Courses
+            </.dropdown_item>
+          </.dropdown_menu>
 
           <div class="divider my-4"></div>
 
@@ -97,6 +115,32 @@ defmodule CuzCoreConnectWeb.Navigations.Admin do
             icon="presentation-chart-bar"
             label="Performance Analytics"
           />
+
+          <div class="divider my-4"></div>
+
+          <div class="menu-title">
+            <span class="text-sm font-medium text-base-content/70">System Management</span>
+          </div>
+
+          <.dropdown_menu
+            active={@current_page in [:internal_users, :external_users]}
+            id="users-management-menu"
+            icon="user-group"
+            label="User Accounts"
+          >
+            <.dropdown_item
+              href="/admin/user-accounts/internal"
+              active={@current_page == :internal_users}
+            >
+              Internal
+            </.dropdown_item>
+            <.dropdown_item
+            href="/admin/user-accounts/external"
+            active={@current_page == :external_users}
+            >
+              External/Students
+            </.dropdown_item>
+          </.dropdown_menu>
 
           <div class="divider my-4"></div>
 

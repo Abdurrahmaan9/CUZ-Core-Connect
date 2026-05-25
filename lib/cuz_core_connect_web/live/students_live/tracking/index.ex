@@ -161,15 +161,15 @@ defmodule CuzCoreConnectWeb.Student.Tracking.Index do
                   </div>
                 </div>
 
-    <!-- Program Details -->
+    <!-- Programme Details -->
                 <%= if @registration.student_program_details do %>
                   <div class="bg-primary/10 rounded-lg p-4 sm:p-6">
                     <h3 class="text-base sm:text-lg font-semibold text-base-content mb-3 sm:mb-4 flex items-center">
-                      <.icon name="hero-academic-cap" class="w-4 h-4 sm:w-5 sm:h-5 mr-2" /> Program Details
+                      <.icon name="hero-academic-cap" class="w-4 h-4 sm:w-5 sm:h-5 mr-2" /> Programme Details
                     </h3>
                     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                       <div>
-                        <span class="text-xs sm:text-sm font-medium text-base-content/70">Program:</span>
+                        <span class="text-xs sm:text-sm font-medium text-base-content/70">Programme:</span>
                         <p class="text-sm sm:text-base text-base-content font-medium break-words">
                           {@registration.student_program_details["program_name"]}
                         </p>

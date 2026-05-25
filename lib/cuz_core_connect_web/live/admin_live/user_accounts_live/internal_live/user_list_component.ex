@@ -1,4 +1,4 @@
-defmodule CuzCoreConnectWeb.UserListComponent do
+defmodule CuzCoreConnectWeb.Admin.UserAccounts.Internal.ListComponent do
   use CuzCoreConnectWeb, :live_component
 
   @impl true
@@ -71,7 +71,7 @@ defmodule CuzCoreConnectWeb.UserListComponent do
                   </td>
                   <td>
                     <div class="flex space-x-2">
-                      <.link href={~p"/admin/users/#{user.id}/edit"} class="btn btn-xs btn-primary">Edit</.link>
+                      <.link href={~p"/admin/user-accounts/internal/#{user.id}/edit"} class="btn btn-xs btn-primary">Edit</.link>
                       <button
                         phx-click="delete_user"
                         phx-value-id={user.id}

@@ -1,7 +1,7 @@
-defmodule CuzCoreConnectWeb.Helps.PaginationComponent do
+defmodule CuzCoreConnectWeb.Datatable.PaginationComponent do
   @moduledoc false
   use CuzCoreConnectWeb, :live_component
-  import CuzCoreConnectWeb.Helps.DataTable
+  import CuzCoreConnectWeb.SortTable.DataTable
 
   @distance 5
 
@@ -16,49 +16,77 @@ defmodule CuzCoreConnectWeb.Helps.PaginationComponent do
 
   def render(assigns) do
     ~H"""
-    <div class="flex justify-between items-center py-4 px-3 text-xs">
-      <div>
-        <span>
-          Showing <%= if @total_entries != 0, do: (@page_number - 1) * @page_size + 1, else: 0 %> to <%= if @page_number *
-                                                                                                              @page_size >
-                                                                                                              @total_entries,
-                                                                                                            do:
-                                                                                                              @total_entries,
-                                                                                                            else:
-                                                                                                              @page_number *
-                                                                                                                @page_size %> of <%= @total_entries %> entries
-        </span>
+    <div class="px-6 py-4 flex items-center justify-between">
+      <div class="flex-1 flex justify-between sm:hidden">
+        {prev_link_mobile(assigns, @params, @page_number)}
+        {next_link_mobile(assigns, @params, @page_number, @total_pages)}
       </div>
 
-      <div>
-        <ul id={assigns[:id] || "pagination"} class="flex space-x-2">
-          <%= if @total_pages > 1 do %>
-            <li class="page-item">
-              <%= prev_link(assigns, @params, @page_number) %>
-            </li>
+      <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+        <div>
+          <p class="text-sm text-gray-700">
+            Showing
+            <span class="font-medium">
+              {if @total_entries != 0, do: (@page_number - 1) * @page_size + 1, else: 0}
+            </span>
+            -
+            <span class="font-medium">
+              {if @page_number * @page_size > @total_entries,
+                do: @total_entries,
+                else: @page_number * @page_size}
+            </span>
+            of <span class="font-medium">{@total_entries}</span>
+            results
+          </p>
+        </div>
+
+        <div>
+          <nav
+            class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px"
+            aria-label="Pagination"
+          >
+            {prev_link(assigns, @params, @page_number)}
 
             <%= for num <- start_page(@page_number)..end_page(@page_number, @total_pages) do %>
-              <li class={"page-item #{if @page_number == num, do: "whitespace-nowrap gradient-bg text-white"}"}>
-                <.link
-                  patch={"?" <> querystring(@params, page: num)}
-                  class={"page-link px-3 py-1 rounded-sm #{if @page_number == num, do: "whitespace-nowrap gradient-bg text-white ", else: "bg-gray-200"}"}
-                >
-                  <%= num %>
-                </.link>
-              </li>
+              <.link
+                patch={"?" <> querystring(@params, page: num)}
+                aria-current={if @page_number == num, do: "page"}
+                class={[
+                  "relative inline-flex items-center px-4 py-2 border text-sm font-medium",
+                  if @page_number == num do
+                    "z-10 bg-indigo-50 border-indigo-500 text-indigo-600"
+                  else
+                    "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                  end
+                ]}
+              >
+                {num}
+              </.link>
             <% end %>
 
-            <li class="page-item">
-              <%= next_link(assigns, @params, @page_number, @total_pages) %>
-            </li>
-          <% end %>
-        </ul>
+            {next_link(assigns, @params, @page_number, @total_pages)}
+          </nav>
+        </div>
       </div>
     </div>
     """
   end
 
-  defp pagination_assigns([]) do
+  defp pagination_assigns(%{
+         page_number: page_number,
+         page_size: page_size,
+         total_entries: total_entries,
+         total_pages: total_pages
+       }) do
+    [
+      page_number: page_number,
+      page_size: page_size,
+      total_entries: total_entries,
+      total_pages: total_pages
+    ]
+  end
+
+  defp pagination_assigns(_) do
     [
       page_number: 1,
       page_size: 10,
@@ -67,121 +95,108 @@ defmodule CuzCoreConnectWeb.Helps.PaginationComponent do
     ]
   end
 
-  defp pagination_assigns(%Scrivener.Page{} = pagination) do
-    [
-      page_number: pagination.page_number,
-      page_size: pagination.page_size,
-      total_entries: pagination.total_entries,
-      total_pages: pagination.total_pages
-    ]
-  end
-
-  defp pagination_assigns(list) when is_list(list) do
-    # When receiving a plain list (like filtered entries), we can't provide pagination info
-    # since we don't have the original pagination metadata
-    [
-      page_number: 1,
-      page_size: 10,
-      total_entries: length(list),
-      total_pages: 1
-    ]
-  end
-
-  defp pagination_assigns(nil) do
-    [
-      page_number: 1,
-      page_size: 10,
-      total_entries: 0,
-      total_pages: 0
-    ]
-  end
-
-  defp prev_link(assigns, conn, current_page) do
-    assigns = assign(assigns, :conn, conn)
-    assigns = assign(assigns, :current_pg, current_page)
+  defp prev_link_mobile(assigns, conn, current_page) do
     if current_page != 1 do
+      patch = "?" <> querystring(conn, page: current_page - 1)
+      assigns = assign(assigns, :patch, patch)
+
       ~H"""
-      <.link patch={"?" <> querystring(@conn, page: @current_pg - 1)} class="page-link">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          class="flex-shrink-0 size-6 "
-        >
-          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
-        </svg>
+      <.link
+        patch={@patch}
+        class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+      >
+        Previous
       </.link>
       """
     else
       ~H"""
-      <.link patch="#" class="page-link btn-disabled">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          class="flex-shrink-0 size-6 "
-        >
-          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
-        </svg>
+      <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-300 bg-white">
+        Previous
+      </span>
+      """
+    end
+  end
+
+  defp next_link_mobile(assigns, conn, current_page, num_pages) do
+    if current_page != num_pages do
+      patch = "?" <> querystring(conn, page: current_page - num_pages)
+      assigns = assign(assigns, :patch, patch)
+
+      ~H"""
+      <.link
+        patch={@patch}
+        class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+      >
+        Next
       </.link>
+      """
+    else
+      ~H"""
+      <span class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-300 bg-white">
+        Next
+      </span>
+      """
+    end
+  end
+
+  defp prev_link(assigns, conn, current_page) do
+    if current_page != 1 do
+      patch = "?" <> querystring(conn, page: current_page - 1)
+      assigns = assign(assigns, patch: patch)
+
+      ~H"""
+      <.link
+        patch={@patch}
+        class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+      >
+        <span class="sr-only">Previous</span>
+        <i class="fas fa-chevron-left"></i>
+      </.link>
+      """
+    else
+      ~H"""
+      <span class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-300">
+        <span class="sr-only">Previous</span>
+        <i class="fas fa-chevron-left"></i>
+      </span>
       """
     end
   end
 
   defp next_link(assigns, conn, current_page, num_pages) do
-    assigns = assign(assigns, :conn, conn)
-    assigns = assign(assigns, :current_pg, current_page)
     if current_page != num_pages do
+      patch = "?" <> querystring(conn, page: current_page + 1)
+      assigns = assign(assigns, patch: patch)
+
       ~H"""
-      <.link patch={"?" <> querystring(@conn, page: @current_pg + 1)} class="page-link">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          class="flex-shrink-0 size-6 "
-        >
-          <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
-        </svg>
+      <.link
+        patch={@patch}
+        class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+      >
+        <span class="sr-only">Next</span>
+        <i class="fas fa-chevron-right"></i>
       </.link>
       """
     else
       ~H"""
-      <.link patch="#" class="page-link btn-disabled">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          class="flex-shrink-0 size-6 "
-        >
-          <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
-        </svg>
-      </.link>
+      <span class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-300">
+        <span class="sr-only">Next</span>
+        <i class="fas fa-chevron-right"></i>
+      </span>
       """
     end
   end
 
-  defp start_page(current_page) when current_page - @distance <= 0, do: 1
-  defp start_page(current_page), do: current_page - @distance
+  def start_page(current_page) when current_page - @distance <= 0, do: 1
+  def start_page(current_page), do: current_page - @distance
 
-  defp end_page(current_page, 0), do: current_page
+  def end_page(current_page, 0), do: current_page
 
-  defp end_page(current_page, total)
+  def end_page(current_page, total)
       when current_page <= @distance and @distance * 2 <= total do
     @distance * 2
   end
 
-  defp end_page(current_page, total) when current_page + @distance >= total, do: total
-  defp end_page(current_page, _total), do: current_page + @distance - 1
+  def end_page(current_page, total) when current_page + @distance >= total, do: total
+  def end_page(current_page, _total), do: current_page + @distance - 1
 end

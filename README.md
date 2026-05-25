@@ -15,7 +15,7 @@ CUZ-Core-Connect solves the complexity of student course registration by providi
 - **Role-based access control** — Different dashboards and capabilities for students, academics, finance, HOD, and administrators
 - **Real-time status tracking** — Students can track their registration progress at any time
 - **Integrated payment tracking** — Link payment receipts to registrations for seamless finance workflows
-- **Program & course management** — Administrators can manage academic programs and courses
+- **Programme & course management** — Administrators can manage academic programmes and courses
 - **Email notifications** — Automated communications at each approval stage
 
 ---
@@ -71,8 +71,8 @@ CUZ-Core-Connect solves the complexity of student course registration by providi
 
 ### For Students
 - **Self-registration** — Create an account and register for courses
-- **Program selection** — Browse and select academic programs
-- **Course enrollment** — Choose courses within selected programs
+- **Programme selection** — Browse and select academic programmes
+- **Course enrollment** — Choose courses within selected programmes
 - **Payment tracking** — Upload and track payment receipts
 - **Status monitoring** — Real-time visibility into approval progress
 - **Registration confirmation** — Receive confirmation once all approvals complete
@@ -100,8 +100,8 @@ CUZ-Core-Connect solves the complexity of student course registration by providi
 
 ### For Administrators
 - **User management** — Create, edit, and manage user accounts and roles
-- **Program management** — Create and manage academic programs
-- **Course management** — Define courses and assign them to programs
+- **Programme management** — Create and manage academic programmes
+- **Course management** — Define courses and assign them to programmes
 - **System configuration** — Configure system-wide settings
 - **Admin dashboard** — Comprehensive admin panel at `/admin`
 
@@ -122,10 +122,10 @@ CUZ-Core-Connect solves the complexity of student course registration by providi
 2. **Begin Registration** (Student Dashboard)
    - Log in to your account
    - Navigate to "New Registration"
-   - Select academic program (e.g., "Bachelor of Science in Computer Science")
+   - Select academic programme (e.g., "Bachelor of Science in Computer Science")
 
 3. **Select Courses**
-   - Browse courses available in your program
+   - Browse courses available in your programme
    - Select required courses and electives
    - Review total course load
 
@@ -161,11 +161,11 @@ CUZ-Core-Connect solves the complexity of student course registration by providi
 
 2. **View Pending Registrations**
    - Dashboard displays all registrations awaiting academic approval
-   - See student name, selected program, courses, and submission date
+   - See student name, selected programme, courses, and submission date
 
 3. **Review Course Selections**
    - Click on a registration to view full details
-   - Review course selections for program requirements compliance
+   - Review course selections for programme requirements compliance
    - Check student eligibility (prerequisites, etc.)
 
 4. **Approve or Request Changes**
@@ -227,7 +227,7 @@ CUZ-Core-Connect solves the complexity of student course registration by providi
 
 2. **View Department Registrations**
    - See all registrations from students in your department
-   - Filter by academic program or approval status
+   - Filter by academic programme or approval status
 
 3. **Review & Approve**
    - Review academic and finance approvals already given
@@ -242,7 +242,7 @@ CUZ-Core-Connect solves the complexity of student course registration by providi
 
 ### Admin Dashboard Workflow
 
-**Example Journey: An administrator setting up programs and managing users**
+**Example Journey: An administrator setting up programmes and managing users**
 
 1. **Log In** (Admin Role)
    - Use account with "admin" role
@@ -257,30 +257,30 @@ CUZ-Core-Connect solves the complexity of student course registration by providi
    - Edit existing users or reset passwords
    - Deactivate accounts as needed
 
-3. **Manage Programs**
-   - Navigate to "Programs" section
-   - Create new academic programs:
-     - Program name, code, description
+3. **Manage Programmes**
+   - Navigate to "Programmes" section
+   - Create new academic programmes:
+     - Programme name, code, description
      - Number of years
-   - Edit or archive programs
+   - Edit or archive programmes
    - View associated courses
 
 4. **Manage Courses**
    - Navigate to "Courses" section
    - Create new courses:
      - Course code, name, credits, description
-   - Assign courses to programs
+   - Assign courses to programmes
    - Edit course details
 
 5. **View All Registrations**
    - See all student registrations in the system
-   - Filter by status, program, date range
+   - Filter by status, programme, date range
    - Manually update registration status if needed (for corrections)
 
 **Key Pages for Admins:**
 - Admin dashboard: `http://localhost:4000/admin`
 - Users management: `http://localhost:4000/admin/users`
-- Programs management: `http://localhost:4000/admin/programs`
+- Programmes management: `http://localhost:4000/admin/programmes`
 - Courses management: `http://localhost:4000/admin/courses`
 - Registrations management: `http://localhost:4000/admin/registrations`
 
@@ -355,7 +355,7 @@ lib/
 │   ├── students/                  # Student registration logic
 │   ├── academics/                 # Academic approval workflows
 │   ├── finance/                   # Finance & payment workflows
-│   ├── programs/                  # Program & course management
+│   ├── programmes/                  # Programme & course management
 │   ├── notifications/             # Email & notification system
 │   ├── repo.ex                    # Database repository
 │   └── application.ex             # OTP application setup
@@ -448,7 +448,7 @@ Phoenix templates use HEEx (HTML + Elixir embedded code) with support for coloca
 - `id` — Primary key
 - `tracking_number` — Unique registration tracking identifier
 - `student_id` — Foreign key to user (student)
-- `program_id` — Foreign key to program selected
+- `program_id` — Foreign key to programme selected
 - `payment_status` — (pending, approved, rejected)
 - `academics_status` — (pending, approved, rejected)
 - `hod_status` — (pending, approved, rejected)
@@ -458,12 +458,12 @@ Phoenix templates use HEEx (HTML + Elixir embedded code) with support for coloca
 - `payment_receipt_path` — Path to uploaded payment receipt
 - `created_at`, `updated_at`
 
-**`tbl_programs`** — Academic programs (degrees, certificates)
+**`tbl_programs`** — Academic programmes (degrees, certificates)
 - `id` — Primary key
-- `name` — Program name (e.g., "Bachelor of Science in Computer Science")
-- `code` — Program code (e.g., "BSC_CS")
-- `description` — Program description
-- `years` — Number of years in program
+- `name` — Programme name (e.g., "Bachelor of Science in Computer Science")
+- `code` — Programme code (e.g., "BSC_CS")
+- `description` — Programme description
+- `years` — Number of years in programme
 - `created_at`, `updated_at`
 
 **`tbl_courses`** — Course definitions
@@ -474,17 +474,17 @@ Phoenix templates use HEEx (HTML + Elixir embedded code) with support for coloca
 - `description` — Course description
 - `created_at`, `updated_at`
 
-**`program_courses`** — Junction table linking programs to courses
-- `program_id` — Foreign key to program
+**`program_courses`** — Junction table linking programmes to courses
+- `program_id` — Foreign key to programme
 - `course_id` — Foreign key to course
-- `required` — Boolean: is this course required for the program?
+- `required` — Boolean: is this course required for the programme?
 
 **Entity Relationships:**
 ```
 User (student role)
   ↓ (has_many)
 Registration
-  ├─→ Program (belongs_to)
+  ├─→ Programme (belongs_to)
   └─→ Courses (many_to_many through registration_courses)
 ```
 
@@ -651,21 +651,21 @@ end
 
 1. Log in with your email and password
 2. On your dashboard, click **"Start New Registration"**
-3. Choose your **Academic Program** from the dropdown:
+3. Choose your **Academic Programme** from the dropdown:
    - Bachelor of Science in Computer Science
    - Bachelor of Science in Information Technology
    - Bachelor of Arts in Business Administration
-   - (Or other available programs)
+   - (Or other available programmes)
 4. Click **"Next"** or **"Continue"**
 
 #### Step 3: Select Your Courses
 
-1. You'll see a list of **Required Courses** and **Elective Courses** for your program
+1. You'll see a list of **Required Courses** and **Elective Courses** for your programme
 2. All required courses are pre-selected
 3. Choose your **electives** from the available options:
    - Check the box next to each elective you want to take
    - You can only select the number of electives allowed
-4. Review your total **credit hours** (should match program requirements)
+4. Review your total **credit hours** (should match programme requirements)
 5. Click **"Confirm Selection"** or **"Next"**
 
 #### Step 4: Submit Payment Receipt
@@ -724,7 +724,7 @@ end
 1. On the dashboard, you'll see a **list of pending registrations** awaiting academic approval
 2. Each row shows:
    - **Student Name**
-   - **Program Selected**
+   - **Programme Selected**
    - **Courses** (count or list)
    - **Status**: "Awaiting Academic Review"
    - **Submitted Date**
@@ -734,12 +734,12 @@ end
 1. Click on a registration row or **"View Details"** button
 2. A **detail panel** will open showing:
    - Student information (name, email, ID if available)
-   - **Selected Program**
+   - **Selected Programme**
    - **Courses Selected** (with credits and prerequisites)
    - **Payment Status** (showing if payment was approved)
    - **Notes** from previous stages
 3. Verify:
-   - ✅ Courses match the program curriculum
+   - ✅ Courses match the programme curriculum
    - ✅ Student has met course prerequisites
    - ✅ Course load is reasonable for the student's level
    - ✅ No course conflicts or scheduling issues
@@ -748,7 +748,7 @@ end
 
 **To Approve:**
 1. Click **"Approve Registration"** button
-2. (Optional) Add notes such as: "Approved - course selection meets program requirements"
+2. (Optional) Add notes such as: "Approved - course selection meets programme requirements"
 3. Click **"Confirm Approval"**
 4. Status changes to "Academically Approved"
 5. Registration moves to the **next approval stage** (Finance)
@@ -767,7 +767,7 @@ end
 #### Step 5: Bulk Management (Optional)
 
 1. Use **filters** at the top to find registrations:
-   - By program
+   - By programme
    - By submission date
    - By student name
 2. Select multiple registrations using checkboxes
@@ -846,7 +846,7 @@ end
 2. Navigate to [`http://localhost:4000/admin`](http://localhost:4000/admin)
 3. You'll see the **Admin Dashboard** with options:
    - Users
-   - Programs
+   - Programmes
    - Courses
    - Registrations
 
@@ -888,32 +888,32 @@ end
 2. Click **"Reset Password"**
 3. User receives email with password reset link
 
-#### Step 3: Manage Programs
+#### Step 3: Manage Programmes
 
-1. Click **"Programs"** or **"Manage Programs"**
-2. You'll see a **list of academic programs**
+1. Click **"Programmes"** or **"Manage Programmes"**
+2. You'll see a **list of academic programmes**
 
-**Create a New Program:**
-1. Click **"+ New Program"** or **"Add Program"**
-2. Fill in program details:
+**Create a New Programme:**
+1. Click **"+ New Programme"** or **"Add Programme"**
+2. Fill in programme details:
    - **Name**: Bachelor of Science in Computer Science
    - **Code**: BSC_CS (used internally)
-   - **Description**: Program description for students
-   - **Years**: 4 (duration of program)
-3. Click **"Create Program"**
+   - **Description**: Programme description for students
+   - **Years**: 4 (duration of programme)
+3. Click **"Create Programme"**
 
-**Edit a Program:**
-1. Click on the program or **"Edit"** button
+**Edit a Programme:**
+1. Click on the programme or **"Edit"** button
 2. Modify details
-3. Click **"Update Program"**
+3. Click **"Update Programme"**
 
-**Assign Courses to Program:**
-1. Click on a program
+**Assign Courses to Programme:**
+1. Click on a programme
 2. Scroll to **"Courses"** section
 3. Click **"+ Add Course"**
 4. Select courses from dropdown
 5. Mark if **"Required"** (yes/no)
-6. Click **"Add to Program"**
+6. Click **"Add to Programme"**
 
 #### Step 4: Manage Courses
 
@@ -941,7 +941,7 @@ end
 2. You'll see **all registrations** in the system
 3. Use **filters**:
    - By registration status (pending, approved, rejected, etc.)
-   - By program
+   - By programme
    - By date range
    - By student
 4. Click a registration to **view full details**
@@ -983,8 +983,8 @@ Admin Routes (/admin/*):
 ├── GET  /admin                      → Admin dashboard
 ├── GET  /admin/users                → User management
 ├── POST /admin/users                → Create user
-├── GET  /admin/programs             → Program management
-├── POST /admin/programs             → Create program
+├── GET  /admin/programmes             → Programme management
+├── POST /admin/programmes             → Create programme
 ├── GET  /admin/courses              → Course management
 ├── POST /admin/courses              → Create course
 ├── GET  /admin/registrations        → Registration management

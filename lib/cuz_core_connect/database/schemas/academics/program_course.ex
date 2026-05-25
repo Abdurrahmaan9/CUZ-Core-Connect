@@ -8,7 +8,7 @@ defmodule CuzCoreConnect.Academics.ProgramCourse do
     field :is_core, :boolean, default: false
     field :is_active, :boolean, default: true
 
-    belongs_to :program, CuzCoreConnect.Academics.Programs, foreign_key: :program_id
+    belongs_to :programme, CuzCoreConnect.Academics.Programmes, foreign_key: :program_id
     belongs_to :course, CuzCoreConnect.Academics.Courses, foreign_key: :course_id
 
     timestamps()

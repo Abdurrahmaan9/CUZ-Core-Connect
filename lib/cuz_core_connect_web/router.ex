@@ -76,26 +76,43 @@ defmodule CuzCoreConnectWeb.Router do
       scope "/admin" do
 
         live "/dashboard", AdminLiveIndex, :index
-        scope "/users" do
-          live "/", Backend.UserManagement.Index, :index
-          live "/new", Backend.UserManagement.Index, :new
-          live "/:id/edit", Backend.UserManagement.Index, :edit
-        end
 
         scope "/student" do
-          live "/pending", Academics.Students.Index, :index
+          live "/", Academics.Students
+          live "/pending", Academics.Students.PendingRegistration, :index
+          live "/registered", Academics.Students.Registered
+        end
 
-          scope "/programs" do
-            live "/", Admin.AcademicManagement.Programs.Index, :index
-            live "/new", Admin.AcademicManagement.Programs.Index, :new
-            live "/:id/edit", Admin.AcademicManagement.Programs.Index, :edit
-          end
+        scope "/programmes" do
+          live "/", Admin.AcademicManagement.Programmes.Index, :index
+          live "/new", Admin.AcademicManagement.Programmes.Index, :new
+          live "/:id/edit", Admin.AcademicManagement.Programmes.Index, :edit
+        end
 
-          scope "/courses" do
-            live "/", Admin.AcademicManagement.Courses.Index, :index
-            live "/new", Admin.AcademicManagement.Courses.Index, :new
-            live "/:id/edit", Admin.AcademicManagement.Courses.Index, :edit
-          end
+        scope "/courses" do
+          live "/", Admin.AcademicManagement.Courses.Index, :index
+          live "/new", Admin.AcademicManagement.Courses.Index, :new
+          live "/:id/edit", Admin.AcademicManagement.Courses.Index, :edit
+        end
+
+        scope "/messages" do
+          live "/", Admin.Messages
+        end
+
+        scope "/announcements" do
+          live "/", Admin.Announcements
+        end
+
+        scope "/user-accounts" do
+          live "/internal", Admin.UserAccounts.Internal, :index
+
+          live "/internal/new", Admin.UserAccounts.Internal, :new
+          live "/internal/:id/edit", Admin.UserAccounts.Internal, :edit
+
+          live "/external", Admin.UserAccounts.External, :index
+
+          live "/external/new", Admin.UserAccounts.External, :new
+          live "/external/:id/edit", Admin.UserAccounts.External, :edit
         end
       end
     end

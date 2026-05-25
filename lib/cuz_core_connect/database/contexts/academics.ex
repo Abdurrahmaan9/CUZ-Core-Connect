@@ -1,10 +1,10 @@
 defmodule CuzCoreConnect.Academic do
   @moduledoc """
-  The Academic context handles program, course, and student relationships.
+  The Academic context handles programme, course, and student relationships.
   """
   import Ecto.Query, warn: false
   alias CuzCoreConnect.Repo
-  alias CuzCoreConnect.Academics.Programs, as: Program
+  alias CuzCoreConnect.Academics.Programmes, as: Programme
   alias CuzCoreConnect.Academics.ProgramCourse
   alias CuzCoreConnect.Academic.StudentProgram
   alias CuzCoreConnect.Academic.LecturerCourse
@@ -12,34 +12,34 @@ defmodule CuzCoreConnect.Academic do
   alias CuzCoreConnect.Academics.Courses, as: Course
   alias CuzCoreConnect.Accounts.User
 
-  # ====================== Program functions =================================
+  # ====================== Programme functions =================================
   def list_programs do
-    Repo.all(Program)
+    Repo.all(Programme)
   end
 
-  def get_program!(id), do: Repo.get!(Program, id)
+  def get_program!(id), do: Repo.get!(Programme, id)
 
   def create_program(attrs \\ %{}) do
-    %Program{}
-    |> Program.changeset(attrs)
+    %Programme{}
+    |> Programme.changeset(attrs)
     |> Repo.insert()
   end
 
-  def update_program(%Program{} = program, attrs) do
-    program
-    |> Program.changeset(attrs)
+  def update_program(%Programme{} = programme, attrs) do
+    programme
+    |> Programme.changeset(attrs)
     |> Repo.update()
   end
 
-  def delete_program(%Program{} = program) do
-    Repo.delete(program)
+  def delete_program(%Programme{} = programme) do
+    Repo.delete(programme)
   end
 
-  def change_program(%Program{} = program, attrs \\ %{}) do
-    Program.changeset(program, attrs)
+  def change_program(%Programme{} = programme, attrs \\ %{}) do
+    Programme.changeset(programme, attrs)
   end
 
-  # Program Course functions
+  # Programme Course functions
   def list_program_courses(program_id) do
     from(pc in CuzCoreConnect.Academics.ProgramCourse,
       where: pc.program_id == ^program_id,
@@ -73,7 +73,7 @@ defmodule CuzCoreConnect.Academic do
 
   # Helper functions
   def list_courses_not_in_program(program_id) do
-    # First, get all course IDs that are already in the program
+    # First, get all course IDs that are already in the programme
     assigned_course_ids =
       from(pc in CuzCoreConnect.Academics.ProgramCourse,
         where: pc.program_id == ^program_id,
@@ -92,23 +92,23 @@ defmodule CuzCoreConnect.Academic do
 
 
   @doc """
-  Lists all programs for a specific lecturer.
+  Lists all programmes for a specific lecturer.
   """
   def list_lecturer_programs(user_id) do
     from(up in Register.Academic.LecturerProgram,
       where: up.user_id == ^user_id,
-      preload: [:program],
+      preload: [:programme],
       order_by: [desc: :is_primary, asc: :id]
     )
     |> Repo.all()
-    |> Enum.map(& &1.program)
+    |> Enum.map(& &1.programme)
   end
 
   @doc """
-  Lists all courses for a specific lecturer in a specific program.
+  Lists all courses for a specific lecturer in a specific programme.
   """
   def list_lecturer_courses(user_id, program_id) do
-    # First, get all program courses for the given program
+    # First, get all programme courses for the given programme
     program_courses =
       from(pc in CuzCoreConnect.Academics.ProgramCourse,
         where: pc.program_id == ^program_id,
@@ -118,12 +118,12 @@ defmodule CuzCoreConnect.Academic do
       |> Repo.all()
 
     # In a real application, you might want to filter these based on the lecturer's permissions
-    # For now, we'll return all courses in the program
+    # For now, we'll return all courses in the programme
     Enum.map(program_courses, & &1.course)
   end
 
   @doc """
-  Assigns a program to a lecturer.
+  Assigns a programme to a lecturer.
   """
   # def assign_lecturer_to_program(user_id, program_id, attrs \\ %{}) do
   #   %Register.Academic.LecturerProgram{}
@@ -134,7 +134,7 @@ defmodule CuzCoreConnect.Academic do
   # end
 
   @doc """
-  Removes a program assignment from a lecturer.
+  Removes a programme assignment from a lecturer.
   """
   # def remove_lecturer_from_program(user_id, program_id) do
   #   from(lp in LecturerProgram, where: lp.user_id == ^user_id and lp.program_id == ^program_id)
@@ -143,34 +143,34 @@ defmodule CuzCoreConnect.Academic do
   # end
 
   @doc """
-  Lists all lecturers with their assigned programs.
+  Lists all lecturers with their assigned programmes.
   """
   # def list_lecturers_with_programs do
   #   from(u in Register.Accounts.User,
   #     where: u.role == "lecturer",
   #     left_join: lp in assoc(u, :lecturer_programs),
-  #     left_join: p in assoc(lp, :program),
-  #     preload: [lecturer_programs: {lp, program: p}],
+  #     left_join: p in assoc(lp, :programme),
+  #     preload: [lecturer_programs: {lp, programme: p}],
   #     order_by: [asc: u.last_name, asc: u.first_name]
   #   )
   #   |> Repo.all()
   # end
 
   @doc """
-  Gets a lecturer with their assigned programs.
+  Gets a lecturer with their assigned programmes.
   """
   def get_lecturer_with_programs(user_id) do
     from(u in Register.Accounts.User,
       where: u.id == ^user_id and u.role == "lecturer",
       left_join: lp in assoc(u, :lecturer_programs),
-      left_join: p in assoc(lp, :program),
-      preload: [lecturer_programs: {lp, program: p}]
+      left_join: p in assoc(lp, :programme),
+      preload: [lecturer_programs: {lp, programme: p}]
     )
     |> Repo.one()
   end
 
   @doc """
-  Lists all programs not assigned to a lecturer.
+  Lists all programmes not assigned to a lecturer.
   """
   def list_unassigned_programs(user_id) do
     assigned_program_ids =
@@ -180,7 +180,7 @@ defmodule CuzCoreConnect.Academic do
       )
       |> Repo.all()
 
-    from(p in Program,
+    from(p in Programme,
       where: p.id not in ^assigned_program_ids,
       order_by: [asc: :name]
     )
@@ -196,11 +196,11 @@ defmodule CuzCoreConnect.Academic do
     |> Repo.all()
   end
 
-  # ===================== Student Program functions ==================================
+  # ===================== Student Programme functions ==================================
   # def list_student_programs(student_id) do
   #   from(sp in StudentProgram,
   #     where: sp.student_id == ^student_id,
-  #     preload: [:program],
+  #     preload: [:programme],
   #     order_by: [desc: :is_active, desc: :enrollment_date]
   #   )
   #   |> Repo.all()
@@ -216,7 +216,7 @@ defmodule CuzCoreConnect.Academic do
   #   |> Repo.all()
   # end
 
-  # def get_student_program!(id), do: Repo.get!(StudentProgram, id) |> Repo.preload([:student, :program])
+  # def get_student_program!(id), do: Repo.get!(StudentProgram, id) |> Repo.preload([:student, :programme])
 
   # def create_student_program(attrs \\ %{}) do
   #   %StudentProgram{}
@@ -239,7 +239,7 @@ defmodule CuzCoreConnect.Academic do
   # end
 
   # @doc """
-  # Returns all active courses assigned to a student through their active program enrollments
+  # Returns all active courses assigned to a student through their active programme enrollments
   # """
   # def list_student_courses(student_id) do
   #   from(sp in StudentProgram,
@@ -247,7 +247,7 @@ defmodule CuzCoreConnect.Academic do
   #     on:
   #       pc.program_id == sp.program_id and
   #         pc.semester == sp.semester,
-  #     join: p in Program, on: p.id == sp.program_id,
+  #     join: p in Programme, on: p.id == sp.program_id,
   #     join: c in Course, on: c.id == pc.course_id,
   #     where:
   #       sp.student_id == ^student_id and
@@ -259,7 +259,7 @@ defmodule CuzCoreConnect.Academic do
   #       course: c,
   #       year: pc.year,
   #       semester: pc.semester,
-  #       program: p,
+  #       programme: p,
   #       academic_year: sp.academic_year
   #     }
   #   )
@@ -267,14 +267,14 @@ defmodule CuzCoreConnect.Academic do
   # end
 
   # @doc """
-  #   Returns all active courses assigned to a student through their active program enrollments
+  #   Returns all active courses assigned to a student through their active programme enrollments
   #   including courses from other semesters
   # """
   # def list_all_student_courses(student_id) do
   #   from(sp in StudentProgram,
   #     join: pc in ProgramCourse,
   #     on: pc.program_id == sp.program_id,
-  #     join: p in Program, on: p.id == sp.program_id,
+  #     join: p in Programme, on: p.id == sp.program_id,
   #     join: c in Course, on: c.id == pc.course_id,
   #     where:
   #       sp.student_id == ^student_id and
@@ -285,7 +285,7 @@ defmodule CuzCoreConnect.Academic do
   #       course: c,
   #       year: pc.year,
   #       semester: pc.semester,
-  #       program: p,
+  #       programme: p,
   #       academic_year: sp.academic_year
   #     }
   #   )
@@ -349,7 +349,7 @@ defmodule CuzCoreConnect.Academic do
   # end
 
   # @doc """
-  # Lists all courses for a specific lecturer in a specific program.
+  # Lists all courses for a specific lecturer in a specific programme.
   # """
   # @doc """
   # Lists all courses assigned to a specific lecturer.
@@ -488,7 +488,7 @@ defmodule CuzCoreConnect.Academic do
   end
 
   @doc """
-  Lists courses not assigned to a specific program.
+  Lists courses not assigned to a specific programme.
   """
   def list_available_courses(program_id) do
     assigned_course_ids =
@@ -507,7 +507,7 @@ defmodule CuzCoreConnect.Academic do
   end
 
   @doc """
-  Gets courses by program, year, and semester.
+  Gets courses by programme, year, and semester.
   """
   def get_courses_by_program_and_semester(program_id, year, semester) do
     from(pc in CuzCoreConnect.Academics.ProgramCourse,

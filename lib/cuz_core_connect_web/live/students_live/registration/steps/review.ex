@@ -22,8 +22,8 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Review do
       <%!-- Summary cards --%>
       <div class="mt-6 space-y-4">
 
-        <%!-- Program --%>
-        <.review_row label="Program" value={@registration.program_name} />
+        <%!-- Programme --%>
+        <.review_row label="Programme" value={@registration.program_name} />
 
         <%!-- Semester --%>
         <.review_row

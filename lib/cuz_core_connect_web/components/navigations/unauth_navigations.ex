@@ -17,12 +17,12 @@ defmodule CuzCoreConnectWeb.Navigations.Unauth do
         <!-- Desktop Navigation -->
         <div class="hidden md:flex items-center space-x-6">
           <ul class="flex items-center space-x-6">
-            <li><a href="/#about" class="font-medium rounded-sm px-1 py-0.5 hover:bg-base-300">About</a></li>
+            <li><a href="/#about" class="font-medium rounded-sm px-1 py-0.5 hover:text-primary transition-colors duration-300">About</a></li>
             <li>
-              <a href="/#developers" class="font-medium rounded-sm px-1 py-0.5 hover:bg-base-300">Developers</a>
+              <a href="/#developers" class="font-medium rounded-sm px-1 py-0.5 hover:text-primary transition-colors duration-300">Developers</a>
             </li>
             <li>
-              <a href="/#help-center" class="font-medium rounded-sm px-1 py-0.5 hover:bg-base-300">Help Center</a>
+              <a href="/#help-center" class="font-medium rounded-sm px-1 py-0.5 hover:text-primary transition-colors duration-300">Help Center</a>
             </li>
           </ul>
           <div class="flex items-center space-x-3">

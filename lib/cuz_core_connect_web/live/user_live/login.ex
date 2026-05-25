@@ -25,7 +25,7 @@ defmodule CuzCoreConnectWeb.UserLive.Login do
                   <% else %>
                     Don't have an account? <.link
                       navigate={~p"/users/register"}
-                      class="font-semibold text-brand hover:underline"
+                      class="font-semibold text-brand hover:underline text-primary"
                       phx-no-format
                     >Sign up</.link> for an account now.
                   <% end %>
@@ -76,14 +76,14 @@ defmodule CuzCoreConnectWeb.UserLive.Login do
                   type="checkbox"
                 />
 
-                <.button
+                <.link
                   navigate="#"
                   class="fieldset mb-2"
                 >
-                  <span class="label underline text-orange-600 hover:text-orange-700 transition-colors duration-300">
+                  <span class="label hover:underline text-primary transition-colors duration-300">
                     Forgot password?
                   </span>
-                </.button>
+                </.link>
               </div>
               <.button class="btn btn-primary w-full">
                 Log in <span aria-hidden="true">→</span>
@@ -147,25 +147,14 @@ defmodule CuzCoreConnectWeb.UserLive.Login do
                   </p>
                 </div>
               </div>
-              <%!-- <div class="flex items-start space-x-4 hover:translate-x-2 transition-transform duration-300">
-                <div class="flex-shrink-0 bg-orange-600 rounded-lg p-2 shadow-md">
-                  <.icon name="hero-document-check" class="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 class="font-medium">Results & Transcripts</h3>
-                  <p>
-                    Access your exam results, request official transcripts, and view your academic record.
-                  </p>
-                </div>
-              </div> --%>
               <div class="flex items-start space-x-4">
                 <div class="flex-shrink-0 bg-primary rounded-lg p-2 shadow-md">
                   <.icon name="hero-credit-card" class="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h3 class="font-medium">Fee Payments</h3>
+                  <h3 class="font-medium">Fee Payment Validation</h3>
                   <p class="text-sm text-base-content/60">
-                    Pay tuition and campus fees securely online — no queues, no paperwork.
+                    Pay tuition and Validate securely online — no queues, no paperwork, digital stamps.
                   </p>
                 </div>
               </div>

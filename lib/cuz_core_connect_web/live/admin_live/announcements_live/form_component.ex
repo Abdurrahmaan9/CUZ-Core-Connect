@@ -1,4 +1,4 @@
-defmodule CuzCoreConnectWeb.Admin.AcademicManagement.Programmes.FormComponent do
+defmodule CuzCoreConnectWeb.Admin.Announcements.FormComponent do
   use CuzCoreConnectWeb, :live_component
 
   alias CuzCoreConnect.Academic
@@ -27,7 +27,7 @@ defmodule CuzCoreConnectWeb.Admin.AcademicManagement.Programmes.FormComponent do
         <.input field={@form[:is_active]} type="checkbox" label="Active" />
 
         <div class="flex justify-end space-x-2">
-          <.link patch={~p"/admin/student/programmes"}>
+          <.link patch={~p"/admin/announcements"}>
             <.button>Cancel</.button>
           </.link>
 

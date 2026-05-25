@@ -42,8 +42,8 @@ defmodule CuzCoreConnectWeb.UserLive.LearnMore do
               <div class="flex gap-4 p-4 bg-base-100 rounded-xl border border-base-200">
                 <div class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-semibold flex-shrink-0">1</div>
                 <div class="flex-1">
-                  <h3 class="font-semibold text-base-content mb-1">Choose Your Program</h3>
-                  <p class="text-sm text-base-content/70">Select your academic program from the available options. This determines which courses you can register for.</p>
+                  <h3 class="font-semibold text-base-content mb-1">Choose Your Programme</h3>
+                  <p class="text-sm text-base-content/70">Select your academic programme from the available options. This determines which courses you can register for.</p>
                   <div class="mt-3">
                     <.link navigate="/registration" class="btn btn-primary btn-sm">
                       Start Registration
@@ -94,7 +94,7 @@ defmodule CuzCoreConnectWeb.UserLive.LearnMore do
                       <.icon name="hero-lifebuoy" class="w-5 h-5 text-primary" />
                       <h3 class="font-medium text-base-content">Academic Support</h3>
                     </div>
-                    <p class="text-sm text-base-content/70">Contact our academic advisors for program guidance and registration assistance.</p>
+                    <p class="text-sm text-base-content/70">Contact our academic advisors for programme guidance and registration assistance.</p>
                     <div class="mt-2">
                       <a href="mailto:support@cuz.coreconnect.edu" class="text-sm text-primary hover:underline">support@cuz.coreconnect.edu</a>
                     </div>
@@ -120,7 +120,7 @@ defmodule CuzCoreConnectWeb.UserLive.LearnMore do
                     <h3 class="font-semibold text-base-content mb-2">Registration Tips</h3>
                     <ul class="space-y-2 text-base-content/60">
                       <li>• Have your student ID ready</li>
-                      <li>• Know your academic program</li>
+                      <li>• Know your academic programme</li>
                       <li>• Check course prerequisites</li>
                       <li>• Review credit requirements</li>
                     </ul>

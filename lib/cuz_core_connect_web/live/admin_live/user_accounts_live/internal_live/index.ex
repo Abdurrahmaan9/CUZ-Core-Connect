@@ -1,4 +1,4 @@
-defmodule CuzCoreConnectWeb.Backend.UserManagement.Index do
+defmodule CuzCoreConnectWeb.Admin.UserAccounts.Internal do
   use CuzCoreConnectWeb, :live_view
 
   alias CuzCoreConnect.Accounts
@@ -9,8 +9,8 @@ defmodule CuzCoreConnectWeb.Backend.UserManagement.Index do
   def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> assign(:page_title, "User Management")
-     |> assign(:current_page, :user_management)
+     |> assign(:page_title, "Internal User Management")
+     |> assign(:current_page, :internal_users)
      |> assign(:users, list_users())
      |> assign(:form, to_form(%{}))}
   end
@@ -38,7 +38,7 @@ defmodule CuzCoreConnectWeb.Backend.UserManagement.Index do
       _ ->
         socket
         |> put_flash(:error, "User not found")
-        |> redirect(to: ~p"/admin/users")
+        |> redirect(to: ~p"/admin/user-accounts/internal")
     end
   end
 
@@ -55,7 +55,7 @@ defmodule CuzCoreConnectWeb.Backend.UserManagement.Index do
         {:noreply,
          socket
          |> put_flash(:info, "User created successfully")
-         |> push_navigate(to: ~p"/admin/users")}
+         |> push_navigate(to: ~p"/admin/user-accounts/internal")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply,
@@ -70,7 +70,7 @@ defmodule CuzCoreConnectWeb.Backend.UserManagement.Index do
     {:noreply,
      socket
      |> put_flash(:info, "User updated successfully")
-     |> push_navigate(to: ~p"/admin/users")}
+     |> push_navigate(to: ~p"/admin/user-accounts/internal")}
   end
 
   @impl true
@@ -113,7 +113,7 @@ defmodule CuzCoreConnectWeb.Backend.UserManagement.Index do
                 <.link href={~p"/admin/dashboard"} class="btn btn-ghost btn-sm">
                   Back to Dashboard
                 </.link>
-                <.link href={~p"/admin/users/new"} class="btn btn-primary btn-sm">Add User</.link>
+                <.link href={~p"/admin/user-accounts/internal/new"} class="btn btn-primary btn-sm">Add User</.link>
               </div>
             </div>
           </div>
@@ -124,7 +124,7 @@ defmodule CuzCoreConnectWeb.Backend.UserManagement.Index do
           <%= case @live_action do %>
             <% :new -> %>
               <.live_component
-                module={CuzCoreConnectWeb.UserFormComponent}
+                module={__MODULE__.FormComponent}
                 id="user-form"
                 user={@user}
                 changeset={@changeset}
@@ -132,7 +132,7 @@ defmodule CuzCoreConnectWeb.Backend.UserManagement.Index do
               />
             <% :edit -> %>
               <.live_component
-                module={CuzCoreConnectWeb.UserFormComponent}
+                module={__MODULE__.FormComponent}
                 id="user-form-edit"
                 user={@user}
                 changeset={@changeset}
@@ -140,7 +140,7 @@ defmodule CuzCoreConnectWeb.Backend.UserManagement.Index do
               />
             <% _ -> %>
               <.live_component
-                module={CuzCoreConnectWeb.UserListComponent}
+                module={__MODULE__.ListComponent}
                 id="user-list"
                 users={@users}
                 current_user={@current_scope.user}

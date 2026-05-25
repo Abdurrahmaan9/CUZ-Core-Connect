@@ -4,14 +4,14 @@ defmodule CuzCoreConnectWeb.Student.Registration.RegistrationLive do
   alias CuzCoreConnect.Registration
   alias CuzCoreConnectWeb.Student.Registration.Steps.Courses
   alias CuzCoreConnectWeb.Student.Registration.Steps.PersonalInfo
-  alias CuzCoreConnectWeb.Student.Registration.Steps.Programs
+  alias CuzCoreConnectWeb.Student.Registration.Steps.Programmes
   alias CuzCoreConnectWeb.Student.Registration.Steps.Receipts
   alias CuzCoreConnectWeb.Student.Registration.Steps.Review
   alias CuzCoreConnectWeb.Student.Registration.Steps.Semesters
 
   @steps [
     :personal_info,
-    :program,
+    :programme,
     :semester,
     :courses,
     :receipts,
@@ -20,7 +20,7 @@ defmodule CuzCoreConnectWeb.Student.Registration.RegistrationLive do
 
   @step_labels %{
     personal_info: "Personal Info",
-    program: "Program",
+    programme: "Programme",
     semester: "Semester",
     courses: "Courses",
     receipts: "Receipts",
@@ -89,8 +89,8 @@ defmodule CuzCoreConnectWeb.Student.Registration.RegistrationLive do
             <%= case @current_step do %>
               <% :personal_info -> %>
                 <.live_component module={PersonalInfo} id="step-personal-info" registration={@registration} />
-              <% :program -> %>
-                <.live_component module={Programs} id="step-program" registration={@registration} />
+              <% :programme -> %>
+                <.live_component module={Programmes} id="step-programme" registration={@registration} />
               <% :semester -> %>
                 <.live_component module={Semesters} id="step-semester" registration={@registration} />
               <% :courses -> %>

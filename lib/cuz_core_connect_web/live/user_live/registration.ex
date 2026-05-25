@@ -20,7 +20,7 @@ defmodule CuzCoreConnectWeb.UserLive.Registration do
                 Register for an account
                 <:subtitle>
                   Already registered?
-                  <.link navigate={~p"/users/log-in"} class="font-semibold text-brand hover:underline">
+                  <.link navigate={~p"/users/log-in"} class="font-semibold text-brand hover:underline text-primary">
                     Log in
                   </.link>
                   to your account now.
@@ -85,25 +85,14 @@ defmodule CuzCoreConnectWeb.UserLive.Registration do
                   </p>
                 </div>
               </div>
-              <%!-- <div class="flex items-start space-x-4">
-                <div class="flex-shrink-0 bg-primary rounded-lg p-2 shadow-md">
-                  <.icon name="hero-document-check" class="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <h3 class="font-medium">Results & Records</h3>
-                  <p class="text-sm text-base-content/60">
-                    View your grades, download transcripts, and track your academic standing whenever you need them.
-                  </p>
-                </div>
-              </div> --%>
               <div class="flex items-start space-x-4">
                 <div class="flex-shrink-0 bg-primary rounded-lg p-2 shadow-md">
                   <.icon name="hero-credit-card" class="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h3 class="font-medium">Fee Payments</h3>
+                  <h3 class="font-medium">Fee Payment Validation</h3>
                   <p class="text-sm text-base-content/60">
-                    Pay tuition and campus fees securely online, anytime — skip the queues and the paperwork.
+                    Pay tuition and Validate securely online — no queues, no paperwork, digital stamps.
                   </p>
                 </div>
               </div>

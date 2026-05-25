@@ -7,15 +7,12 @@ defmodule CuzCoreConnectWeb.Admin.AcademicManagement.Courses.Index do
 
   @impl true
   def mount(_params, _session, socket) do
-    current_scope = socket.assigns[:current_scope]
-
     {:ok,
      socket
      |> stream(:courses, Academic.list_courses())
      |> assign(
        page_title: "Courses",
-       current_page: :admin_courses,
-       current_scope: current_scope
+       current_page: :courses_management
      )}
   end
 

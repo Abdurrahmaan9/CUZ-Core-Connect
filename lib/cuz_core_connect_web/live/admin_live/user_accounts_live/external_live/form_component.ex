@@ -1,4 +1,4 @@
-defmodule CuzCoreConnectWeb.UserFormComponent do
+defmodule CuzCoreConnectWeb.Admin.UserAccounts.External.FormComponent do
   use CuzCoreConnectWeb, :live_component
 
   @impl true
@@ -82,7 +82,7 @@ defmodule CuzCoreConnectWeb.UserFormComponent do
           </div>
 
           <div class="flex justify-end space-x-3">
-            <.link href={~p"/admin/users"} class="btn btn-ghost">Cancel</.link>
+            <.link href={~p"/admin/user-accounts/external"} class="btn btn-ghost">Cancel</.link>
             <.button type="submit" class="btn btn-primary">
               {if @user.id, do: "Update User", else: "Create User"}
             </.button>

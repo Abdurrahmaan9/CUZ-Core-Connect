@@ -1,4 +1,4 @@
-defmodule CuzCoreConnect.Academics.Programs do
+defmodule CuzCoreConnect.Academics.Programmes do
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -16,8 +16,8 @@ defmodule CuzCoreConnect.Academics.Programs do
   end
 
   @doc false
-  def changeset(program, attrs) do
-    program
+  def changeset(programme, attrs) do
+    programme
     |> cast(attrs, [:name, :code, :description, :duration_years, :is_active])
     |> validate_required([:name, :code])
     |> unique_constraint(:code)

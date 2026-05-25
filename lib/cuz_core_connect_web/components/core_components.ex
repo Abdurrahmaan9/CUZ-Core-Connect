@@ -476,7 +476,7 @@ defmodule CuzCoreConnectWeb.CoreComponents do
           <div class="text-sm font-medium text-gray-900">{registration.student_names}</div>
           <div class="text-sm text-gray-500">{registration.student_email}</div>
         </:col>
-        <:col :let={registration} label="Program">{registration.program}</:col>
+        <:col :let={registration} label="Programme">{registration.programme}</:col>
         <:action :let={registration}>
           <.link navigate={~p"/registrations/\#{registration.id}"} class="text-indigo-600 hover:text-indigo-900">
             View
@@ -795,7 +795,7 @@ defmodule CuzCoreConnectWeb.CoreComponents do
     <div
       phx-click={JS.navigate(@href)}
       class={[
-        "flex items-center px-1 py-3 text-sm font-medium rounded-r transition-all duration-200 group cursor-pointer",
+        "flex items-center px-1 py-3 text-sm font-medium transition-all duration-200 group cursor-pointer",
         if(@active,
           do: "bg-primary/20 border-l-2 border-orange-500",
           else:
@@ -822,7 +822,7 @@ defmodule CuzCoreConnectWeb.CoreComponents do
       <button
         phx-click={toggle_dropdown("##{@id}")}
         class={[
-          "w-full flex items-center justify-between px-1 py-3 text-sm font-medium rounded-md transition-all duration-200 group cursor-pointer ",
+          "w-full flex items-center justify-between px-2 py-3 text-sm font-medium transition-all duration-200 group cursor-pointer ",
           if(@active,
             do: "bg-primary/20 border-l-2 border-orange-500",
             else:
@@ -871,7 +871,7 @@ defmodule CuzCoreConnectWeb.CoreComponents do
       phx-click={JS.navigate(@href)}
       href={@href}
       class={[
-        "flex items-center cursor-pointer px-2 py-1 text-sm font-medium rounded-md transition-all duration-200",
+        "flex items-center cursor-pointer px-2 py-1 text-sm font-medium transition-all duration-200",
         if(@active,
           do: "bg-primary/20",
           else: "hover:bg-secondary/50"
@@ -1329,6 +1329,41 @@ defmodule CuzCoreConnectWeb.CoreComponents do
     </div>
     <!-- END: Pagination -->
     """
+  end
+
+  @doc """
+  Format the System Date to a human readable form.
+  """
+  def format_display_datetime(d, _show_seconds? \\ false)
+  def format_display_datetime(d, _show_seconds?) when d in [nil, ""], do: "—"
+
+  def format_display_datetime(%NaiveDateTime{} = dt, show_seconds?),
+    do: format_dt(dt, show_seconds?)
+
+  def format_display_datetime(%DateTime{} = dt, show_seconds?),
+    do: format_dt(DateTime.to_naive(dt), show_seconds?)
+
+  def format_display_datetime(d, show_seconds?) when is_binary(d) do
+    cond do
+      match?({:ok, _, _}, DateTime.from_iso8601(d)) ->
+        {:ok, dt, _} = DateTime.from_iso8601(d)
+        {:ok, DateTime.to_naive(dt)}
+
+      match?({:ok, _}, NaiveDateTime.from_iso8601(d)) ->
+        NaiveDateTime.from_iso8601(d)
+
+      true ->
+        :error
+    end
+    |> case do
+      {:ok, dt} -> format_dt(dt, show_seconds?)
+      _ -> d
+    end
+  end
+
+  def format_display_datetime(_, _), do: "—"
+  defp format_dt(dt, show_seconds?) do
+    Calendar.strftime(dt, if(show_seconds?, do: "%Y %b %d - %H:%M:%S", else: "%Y %b %d - %H:%M"))
   end
 
   @doc """
