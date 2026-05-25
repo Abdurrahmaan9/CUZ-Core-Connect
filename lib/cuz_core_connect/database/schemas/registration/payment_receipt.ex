@@ -10,7 +10,7 @@ defmodule CuzCoreConnect.Students.PaymentReceipt do
     field :uploaded_by_student_id, :string # for auditing
 
     belongs_to :student_registration,
-      CuzCoreConnect.Students.Registration
+      CuzCoreConnect.Registrations.Registration
 
     timestamps(type: :utc_datetime)
   end

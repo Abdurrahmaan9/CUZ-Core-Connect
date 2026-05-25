@@ -1,8 +1,8 @@
 defmodule CuzCoreConnect.Registration do
   alias CuzCoreConnect.Repo
-  alias CuzCoreConnect.Students.Registration
+  alias CuzCoreConnect.Registrations.Registration
   import Ecto.Query
-  import Scrivener.Config
+
   @pagination [page_size: 10]
 
   def changeset(registration, attrs) do

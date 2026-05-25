@@ -34,6 +34,88 @@ defmodule CuzCoreConnectWeb.CoreComponents do
   alias CuzCoreConnectWeb.Utilities.Pagination
   alias CuzCoreConnectWeb.Utilities.Sorting
 
+    @doc """
+  Renders a modal.
+
+  ## Examples
+
+      <.modal id="confirm-modal">
+        This is a modal.
+      </.modal>
+
+  JS commands may be passed to the `:on_cancel` to configure
+  the closing/cancel event, for example:
+
+      <.modal id="confirm" on_cancel={JS.navigate(~p"/posts")}>
+        This is another modal.
+      </.modal>
+
+  """
+
+  attr :id, :string, required: true
+  attr :show, :boolean, default: false
+  attr :width, :string, default: "w-full max-w-3xl"
+  attr :height, :string, default: "max-h-[90vh]"
+  attr :on_cancel, JS, default: %JS{}
+  slot :inner_block, required: false
+  slot :title, required: true, doc: "Modal title that will display"
+  # slot :footer, doc: "Optional footer slot for custom footer content"
+
+  def modal(assigns) do
+    ~H"""
+    <div
+      id={@id}
+      phx-mounted={@show && show(@id)}
+      phx-remove={hide(@id)}
+      data-cancel={@on_cancel}
+      class={["relative z-100", !@show && "hidden"]}
+    >
+      <div
+        id={"#{@id}-bg"}
+        class="bg-black/50 fixed inset-0 transition-opacity backdrop-blur-sm"
+        aria-hidden="true"
+      />
+      <div
+        class="fixed inset-0 overflow-y-auto"
+        aria-labelledby={"#{@id}-title"}
+        aria-describedby={"#{@id}-description"}
+        role="dialog"
+        aria-modal="true"
+        tabindex="0"
+      >
+        <div class="flex min-h-full items-center justify-center">
+          <div class={["p-1 sm:p-3 lg:py-4", @width, @height]}>
+            <.focus_wrap
+              id={"#{@id}-container"}
+              phx-window-keydown={JS.exec("data-cancel", to: "##{@id}")}
+              phx-key="escape"
+              class={[
+                "shadow-zinc-700/10 ring-zinc-700/10 relative rounded-lg bg-base-100 overflow-hidden shadow-lg ring-1 transition",
+                !@show && "hidden"
+              ]}
+            >
+              <div class="bg-base-300 px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                <h3 class="text-lg font-semibold">{render_slot(@title)}</h3>
+                <button
+                  phx-click={JS.exec("data-cancel", to: "##{@id}")}
+                  type="button"
+                  class="-m-3 flex-none p-3 opacity-20 hover:opacity-40"
+                  aria-label={gettext("close")}
+                >
+                  <.icon name="hero-x-mark" class="h-5 w-5 text-base" />
+                </button>
+              </div>
+              <div id={"#{@id}-content"}>
+                {render_slot(@inner_block)}
+              </div>
+            </.focus_wrap>
+          </div>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
   @doc """
   Renders flash notices.
 
@@ -923,6 +1005,110 @@ defmodule CuzCoreConnectWeb.CoreComponents do
     <span class={[@name, @class]} />
     """
   end
+
+  @doc """
+  Confirmation modal
+
+  ## Example of implementation
+    <button phx-click={show("confirmation-modal")} class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+                Show Modal
+    </button>
+
+    This one works with phx-submit put it inside a form and it will trigger the on_confirm event
+
+    <.confirmation_modal
+          id="confirmation-modal"
+          show={false}
+          title="Confirm Submission"
+          message="Please review your data before submitting"
+          icon="warning"
+          on_cancel="close_modal"
+        />
+
+    This one works with phx-click
+
+    <.confirmation_modal
+      id="confirmation-modal"
+      show={false}
+      title="Approve for Shortlisting"
+      message="Are you sure you want to approve this applicant for shortlisting?"
+      icon="warning"
+      on_confirm="update_approval_status"
+      on_confirm_params={%{"status" => "approved"}}
+      on_cancel="close_modal"
+    />
+  """
+
+  attr :id, :string, required: true
+  attr :button_type, :string, default: "submit"
+  attr :show, :boolean, default: false, doc: "Controls modal visibility"
+  attr :title, :string, required: true, doc: "Modal title"
+  attr :message, :string, required: true, doc: "Modal message"
+  attr :icon, :string, default: "warning", values: ["warning", "success"], doc: "Icon type"
+  attr :confirm_text, :string, default: nil, doc: "Custom confirm button text"
+  attr :cancel_text, :string, default: "Cancel", doc: "Custom cancel button text"
+  attr :on_confirm, :string, default: "submit-data", doc: "Event name for confirm action"
+  attr :on_confirm_params, :map, default: %{}
+  attr :target, :string, default: nil
+  attr :on_cancel, JS
+
+  def confirmation_modal(assigns) do
+    ~H"""
+    <div
+      id={@id}
+      phx-mounted={@show && show(@id)}
+      phx-remove={hide(@id)}
+      data-cancel={assigns[:on_cancel] || hide(@id)}
+      class="fixed inset-0 z-50 hidden overflow-y-auto"
+    >
+      <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 sm:p-0">
+        <div class="fixed inset-0 backdrop-blur-sm"></div>
+        <div class="inline-block bg-white rounded-lg text-left overflow-hidden shadow-xl sm:my-8 sm:max-w-sm sm:w-full relative z-10">
+          <div class="p-6 text-center">
+            <div class={[
+              "rounded-full flex items-center justify-center mb-4",
+              @icon == "warning" && "bg-yellow-100",
+              @icon == "success" && "bg-green-100",
+              @icon not in ["warning", "success"] && "bg-blue-100"
+            ]}>
+              <.icon :if={@icon == "warning"} name="hero-exclamation-circle" class=" w-12 h-12" />
+              <.icon :if={@icon != "warning"} name="hero-check-circle" class=" w-12 h-12" />
+            </div>
+            <h3 class="text-lg font-bold text-gray-900 mb-2">{@title}</h3>
+            <p class="text-sm text-gray-500">{@message}</p>
+          </div>
+
+          <div class="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-between gap-3">
+            <.button
+              phx-click={JS.exec("data-cancel", to: "##{@id}")}
+              type="button"
+              class="px-5 py-2 text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-lg font-medium text-sm transition-colors"
+            >
+              {@cancel_text}
+            </.button>
+            <.button
+              phx-click={hide(@id) |> JS.push(@on_confirm, value: @on_confirm_params)}
+              type={@button_type}
+              phx-target={@target}
+              class={[
+                "px-5 py-2 text-white rounded-lg font-medium text-sm transition-colors",
+                @icon == "warning" && "bg-yellow-500 hover:bg-yellow-600",
+                @icon == "success" && "bg-green-600 hover:bg-green-700",
+                @icon not in ["warning", "success"] && "bg-blue-600 hover:bg-blue-700"
+              ]}
+            >
+              {confirm_button_text(assigns)}
+            </.button>
+          </div>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  defp confirm_button_text(%{confirm_text: text}) when not is_nil(text), do: text
+  defp confirm_button_text(%{icon: "warning"}), do: "Yes"
+  defp confirm_button_text(_assigns), do: "Approve Memo"
 
   @doc """
   Renders a dropdown component with Alpine.js.

@@ -8,7 +8,7 @@ defmodule CuzCoreConnect.Pages.Page do
     field :actions, {:array, :string}, default: ["view", "create", "edit", "export", "delete"]
     field :description, :string
     field :is_admin, :boolean, default: false
-    field :is_deleted, :boolean, default: false
+    field :deleted_at, :naive_datetime
 
     timestamps(type: :utc_datetime)
   end

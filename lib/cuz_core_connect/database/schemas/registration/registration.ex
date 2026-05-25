@@ -1,4 +1,4 @@
-defmodule CuzCoreConnect.Students.Registration do
+defmodule CuzCoreConnect.Registrations.Registration do
   use Ecto.Schema
   import Ecto.Changeset
 
@@ -21,6 +21,8 @@ defmodule CuzCoreConnect.Students.Registration do
     field :registration_status, :string, default: "PENDING"
     has_many :payment_receipts, CuzCoreConnect.Students.PaymentReceipt, foreign_key: :student_registration_id
 
+    belongs_to :workflow, CuzCoreConnect.Registrations.RegistrationWorkflow
+
     timestamps(type: :utc_datetime)
   end
 
@@ -28,6 +30,7 @@ defmodule CuzCoreConnect.Students.Registration do
     registration
     |> cast(attrs,
     [
+    :workflow_id,
     :student_id,
     :student_names,
     :student_email,
@@ -62,7 +65,7 @@ defmodule CuzCoreConnect.Students.Registration do
       :financial_status,
       :registration_status
       ])
-      
+
     |> validate_email()
   end
 

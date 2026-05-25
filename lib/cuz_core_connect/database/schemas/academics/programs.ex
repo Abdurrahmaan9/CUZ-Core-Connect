@@ -2,7 +2,7 @@ defmodule CuzCoreConnect.Academics.Programmes do
   use Ecto.Schema
   import Ecto.Changeset
 
-  schema "tbl_programs" do
+  schema "tbl_programmes" do
     field :name, :string
     field :code, :string
     field :description, :string

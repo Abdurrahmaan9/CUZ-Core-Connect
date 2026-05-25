@@ -22,7 +22,7 @@ defmodule CuzCoreConnect.Repo.Migrations.MainSystemTables do
       add :actions, {:array, :string}, default: ["view", "create", "edit", "export", "delete"]
       add :is_admin, :boolean
       add :description, :text
-      add :is_deleted, :boolean
+      add :deleted_at, :naive_datetime
 
       timestamps()
     end
@@ -65,6 +65,17 @@ defmodule CuzCoreConnect.Repo.Migrations.MainSystemTables do
       timestamps()
     end
 
+    create_if_not_exists table(:tbl_registration_workflows) do
+      add :name, :string
+      add :status, :string
+      add :flow, {:array, :map}
+      add :description, :string
+      add :is_active, :boolean, default: true
+      add :deleted_at, :naive_datetime
+
+      timestamps()
+    end
+
     create_if_not_exists table(:tbl_registration) do
       add :student_id, :string, null: false
       add :student_names, :string, null: false
@@ -83,8 +94,22 @@ defmodule CuzCoreConnect.Repo.Migrations.MainSystemTables do
       add :hod_status, :string, null: false
       add :financial_status, :string, null: false
       add :registration_status, :string, null: false
+      add :workflow_id, references(:tbl_registration_workflows, on_delete: :nilify_all)
 
       timestamps(type: :utc_datetime)
+    end
+
+    create_if_not_exists table(:tbl_registration_approvals) do
+      add :status, :string
+      add :can_reject, :boolean, default: false
+      add :comment, :string
+      add :actioned_at, :utc_datetime
+      add :action_type, :string
+      add :registration_id, references(:tbl_registration, on_delete: :delete_all), null: false
+      add :actionar_id, references(:tbl_users, on_delete: :nilify_all)
+      add :is_reassigned, :boolean, default: false
+
+      timestamps()
     end
 
     create_if_not_exists table(:tbl_payment_receipts) do
@@ -101,7 +126,7 @@ defmodule CuzCoreConnect.Repo.Migrations.MainSystemTables do
       timestamps(type: :utc_datetime)
     end
 
-    create_if_not_exists table(:tbl_programs) do
+    create_if_not_exists table(:tbl_programmes) do
       add :name, :string, null: false
       add :code, :string, null: false
       add :description, :string
@@ -122,7 +147,7 @@ defmodule CuzCoreConnect.Repo.Migrations.MainSystemTables do
     end
 
     create_if_not_exists table(:tbl_program_courses) do
-      add :program_id, references(:tbl_programs, on_delete: :delete_all), null: false
+      add :program_id, references(:tbl_programmes, on_delete: :delete_all), null: false
       add :course_id, references(:tbl_courses, on_delete: :delete_all), null: false
       add :year, :integer, null: false
       add :semester, :integer, null: false
@@ -145,12 +170,12 @@ defmodule CuzCoreConnect.Repo.Migrations.MainSystemTables do
     create_if_not_exists index(:tbl_registration, [:approval_level])
     create_if_not_exists index(:tbl_registration, [:payment_status])
 
-    create_if_not_exists index(:tbl_pages, [:is_deleted])
+    create_if_not_exists index(:tbl_pages, [:deleted_at])
     create_if_not_exists index(:tbl_pages, [:is_admin])
-    create_if_not_exists index(:tbl_pages, [:is_deleted, :is_admin])
+    create_if_not_exists index(:tbl_pages, [:deleted_at, :is_admin])
 
-    create_if_not_exists unique_index(:tbl_programs, [:code])
-    create_if_not_exists index(:tbl_programs, [:is_active])
+    create_if_not_exists unique_index(:tbl_programmes, [:code])
+    create_if_not_exists index(:tbl_programmes, [:is_active])
 
     create_if_not_exists unique_index(:tbl_courses, [:code])
     create_if_not_exists index(:tbl_courses, [:is_active])

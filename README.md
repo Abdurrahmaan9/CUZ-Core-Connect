@@ -458,7 +458,7 @@ Phoenix templates use HEEx (HTML + Elixir embedded code) with support for coloca
 - `payment_receipt_path` — Path to uploaded payment receipt
 - `created_at`, `updated_at`
 
-**`tbl_programs`** — Academic programmes (degrees, certificates)
+**`tbl_programmes`** — Academic programmes (degrees, certificates)
 - `id` — Primary key
 - `name` — Programme name (e.g., "Bachelor of Science in Computer Science")
 - `code` — Programme code (e.g., "BSC_CS")
