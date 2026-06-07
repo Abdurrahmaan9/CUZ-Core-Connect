@@ -347,7 +347,7 @@ defmodule CuzCoreConnectWeb.Plugs.UserAuth do
   end
 
   def signed_in_path(%Plug.Conn{assigns: %{current_scope: %{user: %{user_role: "hod"}}}}) do
-    "/Hod/dashboard"
+    "/hod/dashboard"
   end
 
   def signed_in_path(%Plug.Conn{assigns: %{current_scope: %{user: %{user_role: "retention"}}}}) do
@@ -379,7 +379,7 @@ defmodule CuzCoreConnectWeb.Plugs.UserAuth do
   end
 
   def signed_in_path_for_user(%Accounts.User{user_role: "hod"}) do
-    "/Hod/dashboard"
+    "/hod/dashboard"
   end
 
   def signed_in_path_for_user(%Accounts.User{user_role: "retention"}) do

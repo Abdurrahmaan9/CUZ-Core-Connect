@@ -43,7 +43,7 @@ defmodule CuzCoreConnectWeb.Navigations.User do
         <nav class="flex-1 px-4 py-8 space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-orange-500/20 scrollbar-track-transparent border-t border-orange-500/10">
           <.navigation_link
             href="/student/dashboard"
-            active={@current_page == :student_dashboard}
+            active={@current_page == :dashboard}
             icon="chart-pie"
             label="Dashboard"
           />
@@ -208,12 +208,10 @@ defmodule CuzCoreConnectWeb.Navigations.User do
                 <CuzCoreConnectWeb.Layouts.theme_toggle />
               </div>
 
-              <div class="divider"></div>
-
               <.link
                 href={~p"/users/log-out"}
-                method="delete"
-                class="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                method="DELETE"
+                class="border-t border-gray-400/30 mt-4 flex items-center px-4 py-2 rounded-t-0 rounded-b rounded-md text-sm text-red-600 hover:bg-red-50 transition-colors"
               >
                 <.icon name="hero-arrow-right-start-on-rectangle" class="w-5 h-5 mr-3" /> Logout
               </.link>

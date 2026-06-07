@@ -133,7 +133,7 @@ defmodule CuzCoreConnectWeb.Router do
         {CuzCoreConnectWeb.Plugs.UserAuth, :ensure_academics_role}
       ] do
       scope "/academics" do
-        live "/dashboard", StudentLive.Dashboard.Index, :index
+        live "/dashboard", AcademicsLive.Dashboard.Index, :index
       end
     end
 
@@ -143,7 +143,7 @@ defmodule CuzCoreConnectWeb.Router do
         {CuzCoreConnectWeb.Plugs.UserAuth, :ensure_finance_role}
       ] do
       scope "/finance" do
-        live "/dashboard", StudentLive.Dashboard.Index, :index
+        live "/dashboard", FinanceLive.Dashboard.Index, :index
       end
     end
 
@@ -153,7 +153,7 @@ defmodule CuzCoreConnectWeb.Router do
         {CuzCoreConnectWeb.Plugs.UserAuth, :ensure_hod_role}
       ] do
       scope "/hod" do
-        live "/dashboard", StudentLive.Dashboard.Index, :index
+        live "/dashboard", HODLive.Dashboard.Index, :index
       end
     end
 
