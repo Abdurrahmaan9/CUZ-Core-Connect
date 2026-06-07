@@ -103,69 +103,6 @@ defmodule CuzCoreConnectWeb.Layouts do
   end
 
   @doc """
-  Renders admin layout with sidebar for non-admin users.
-
-  This layout includes a sidebar with navigation for managing students,
-  courses, reports, and communication features.
-
-  ## Examples
-
-      <Layouts.user flash={@flash} current_scope={@current_scope}>
-        <h1>User Dashboard Content</h1>
-      </Layouts.user>
-
-  """
-
-  attr :flash, :map, required: true, doc: "the map of flash messages"
-  attr :page_title, :string, required: true, doc: "the title thats going to display"
-  attr :current_page, :atom, required: true, doc: "the active page"
-
-  attr :current_scope, :map,
-    default: nil,
-    doc: "the current [scope](https://hexdocs.pm/phoenix/scopes.html)"
-
-  slot :inner_block, required: true
-
-  def admin(assigns) do
-    ~H"""
-    <header class="h-18 fixed top-0 bg-base-100/90 backdrop-blur-lg left-64 right-0 p-4 inset-x-0 z-50 flex justify-between shadow-md">
-      <CuzCoreConnectWeb.Navigations.Admin.top_nav
-        current_scope={@current_scope}
-        page_title={@page_title}
-      />
-    </header>
-
-    <div class="pt-16 flex min-h-screen w-full">
-      <CuzCoreConnectWeb.Navigations.Admin.side_nav
-        current_user={@current_scope.user}
-        current_page={@current_page}
-      />
-      <main class="w-full p-6 md:ml-64">
-        <div class="min-h-screen">
-          <.flash_group flash={@flash} />
-          <div class="mx-auto max-w-full space-y-4 p-4">
-            {render_slot(@inner_block)}
-          </div>
-        </div>
-      </main>
-      <%= if @current_scope && @current_scope.user do %>
-      <.live_component
-        module={CuzCoreConnectWeb.Components.SessionTimerComponent}
-        id="session-timer-admin"
-      />
-    <% end %>
-    </div>
-
-    <!-- Overlay for mobile sidebar -->
-    <div
-      id="sidebar-overlay"
-      class="fixed inset-0 bg-black/50 z-30 hidden lg:hidden"
-      phx-click={JS.toggle(to: "#sidebar") |> JS.toggle(to: "#sidebar-overlay")}
-    ></div>
-    """
-  end
-
-  @doc """
   Shows the flash group with standard titles and content.
 
   ## Examples

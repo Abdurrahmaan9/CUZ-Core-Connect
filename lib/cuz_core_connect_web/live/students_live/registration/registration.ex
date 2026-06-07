@@ -1,7 +1,7 @@
 defmodule CuzCoreConnectWeb.Student.Registration.RegistrationLive do
   use CuzCoreConnectWeb, :live_view
 
-  alias CuzCoreConnect.Registration
+  alias CuzCoreConnect.Registrations
   alias CuzCoreConnectWeb.Student.Registration.Steps.Courses
   alias CuzCoreConnectWeb.Student.Registration.Steps.PersonalInfo
   alias CuzCoreConnectWeb.Student.Registration.Steps.Programmes
@@ -223,11 +223,11 @@ defmodule CuzCoreConnectWeb.Student.Registration.RegistrationLive do
         registration_data
     end
 
-    case Registration.create_registration(socket.assigns.current_scope, registration_data) do
+    case Registrations.create_registration(socket.assigns.current_scope, registration_data) do
       {:ok, registration} ->
         # Handle uploaded receipts
         consume_uploaded_entries(socket, :receipt, fn %{path: path}, entry ->
-          Registration.create_payment_receipt(%{
+          Registrations.create_payment_receipt(%{
             original_filename: entry.client_name,
             storage_key: path,
             content_type: entry.client_type,

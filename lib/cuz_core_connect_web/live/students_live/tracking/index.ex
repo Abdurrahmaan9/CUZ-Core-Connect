@@ -1,7 +1,7 @@
 defmodule CuzCoreConnectWeb.Student.Tracking.Index do
   use CuzCoreConnectWeb, :live_view
 
-  alias CuzCoreConnect.Registration
+  alias CuzCoreConnect.Registrations
 
   @impl true
   def mount(_params, _session, socket) do
@@ -288,7 +288,7 @@ defmodule CuzCoreConnectWeb.Student.Tracking.Index do
 
   # Private helper functions
   defp search_registration(socket, tracking_number) do
-    case Registration.get_registration_by_tracking_number(tracking_number) do
+    case Registrations.get_registration_by_tracking_number(tracking_number) do
       nil ->
         {:noreply,
          socket

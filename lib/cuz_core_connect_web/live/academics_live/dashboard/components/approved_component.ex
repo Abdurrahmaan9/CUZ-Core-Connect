@@ -1,0 +1,59 @@
+defmodule CuzCoreConnectWeb.AcademicsLive.Dashboard.ApprovedComponent do
+  use CuzCoreConnectWeb, :live_component
+
+  alias CuzCoreConnect.Registrations
+
+  @impl true
+  def update(assigns, socket) do
+    registrations = Registrations.list_by_academics_status("APPROVED")
+    {:ok, socket |> assign(assigns) |> assign(:registrations, registrations)}
+  end
+
+  @impl true
+  def render(assigns) do
+    ~H"""
+    <div>
+      <h2 class="text-lg font-semibold mb-4">Academically Approved Registrations</h2>
+      <%= if Enum.empty?(@registrations) do %>
+        <div class="border-2 border-dashed border-base-300 rounded-xl p-12 text-center">
+          <p class="text-base-content/50">No approved registrations yet.</p>
+        </div>
+      <% else %>
+        <div class="overflow-x-auto rounded-xl border border-base-300">
+          <table class="table w-full">
+            <thead>
+              <tr class="bg-base-200/60">
+                <th>Student</th>
+                <th>Tracking #</th>
+                <th>Approved At</th>
+                <th>Overall Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <%= for reg <- @registrations do %>
+                <tr class="hover:bg-base-200/30">
+                  <td>
+                    <div class="font-medium">{reg.student_names}</div>
+                    <div class="text-xs text-base-content/50">{reg.student_email}</div>
+                  </td>
+                  <td class="font-mono text-sm">{reg.tracking_number}</td>
+                  <td class="text-sm">{Calendar.strftime(reg.updated_at, "%b %d, %Y")}</td>
+                  <td>
+                    <span class={"badge badge-sm #{status_badge(reg.registration_status)}"}>
+                      {reg.registration_status}
+                    </span>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% end %>
+    </div>
+    """
+  end
+
+  defp status_badge("APPROVED"), do: "badge-success"
+  defp status_badge("PENDING"), do: "badge-warning"
+  defp status_badge(_), do: "badge-neutral"
+end

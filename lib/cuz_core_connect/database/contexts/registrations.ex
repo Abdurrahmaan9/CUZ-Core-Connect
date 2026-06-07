@@ -1,10 +1,80 @@
-defmodule CuzCoreConnect.Registration do
+defmodule CuzCoreConnect.Registrations do
   alias CuzCoreConnect.Repo
   alias CuzCoreConnect.Registrations.Registration
   import Ecto.Query
 
   @pagination [page_size: 10]
 
+  def list_pending_for_academics do
+    Repo.all(from r in Registration,
+      where: r.accademics_status == "PENDING" and r.payment_status == "APPROVED" and is_nil(r.deleted_at),
+      order_by: [asc: r.inserted_at])
+  end
+
+  def list_pending_for_finance do
+    Repo.all(from r in Registration,
+      where: r.payment_status == "PENDING" and is_nil(r.deleted_at),
+      order_by: [asc: r.inserted_at])
+  end
+
+  def list_pending_for_hod do
+    Repo.all(from r in Registration,
+      where: r.hod_status == "PENDING"
+        and r.accademics_status == "APPROVED"
+        and r.payment_status == "APPROVED"
+        and is_nil(r.deleted_at),
+      order_by: [asc: r.inserted_at])
+  end
+
+  def list_pending_for_retention do
+    Repo.all(from r in Registration,
+      where: r.retention_status == "PENDING"
+        and r.hod_status == "APPROVED"
+        and r.accademics_status == "APPROVED"
+        and r.payment_status == "APPROVED"
+        and is_nil(r.deleted_at),
+      order_by: [asc: r.inserted_at])
+  end
+
+  def list_registrations_by_student(user_id) do
+    Repo.all(from r in Registration,
+      where: r.student_id == ^to_string(user_id),
+      order_by: [desc: r.inserted_at])
+  end
+
+  def list_by_academics_status(status) do
+    Repo.all(from r in Registration, where: r.accademics_status == ^status)
+  end
+
+  def list_by_payment_status(status) do
+    Repo.all(from r in Registration, where: r.payment_status == ^status)
+  end
+
+  def count_by_academics_status(status) do
+    Repo.aggregate(from(r in Registration, where: r.accademics_status == ^status), :count)
+  end
+
+  def count_by_payment_status(status) do
+    Repo.aggregate(from(r in Registration, where: r.payment_status == ^status), :count)
+  end
+
+  def count_by_hod_status(status) do
+    Repo.aggregate(from(r in Registration, where: r.hod_status == ^status), :count)
+  end
+
+  def count_by_retention_status(status) do
+    Repo.aggregate(from(r in Registration, where: r.retention_status == ^status), :count)
+  end
+
+  def count_approved_today_by(field) do
+    today = Date.utc_today()
+    Repo.aggregate(
+      from(r in Registration,
+        where: fragment("DATE(?)", field(r, ^field)) == ^today
+          and field(r, ^field) == "APPROVED"),
+      :count
+    )
+  end
 
   def migrate_pending_registrations_workflow(old_id, new_id) do
     Repo.update_all(

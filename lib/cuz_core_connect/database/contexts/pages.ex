@@ -1,6 +1,6 @@
 defmodule CuzCoreConnect.Pages do
   alias CuzCoreConnect.Repo
-  alias CuzCoreConnect.Pages.Page
+  alias CuzCoreConnect.Pages.{Page, UserPageAccess}
   import Ecto.Query, warn: false
 
   def all_pages() do
@@ -152,6 +152,94 @@ defmodule CuzCoreConnect.Pages do
     |> order_by([p], asc: p.name)
     # |> preload(:department)
     |> Repo.all()
+  end
+
+  def list_pages_for_role(role) do
+    Repo.all(from p in Page, where: p.role == ^role, order_by: p.name)
+  end
+
+  # ── Assign default role pages to a newly registered user ─────────────────
+
+  def assign_default_pages_for_user(user) do
+    role = user.user_role
+    pages = list_pages_for_role(role)
+
+    Repo.transaction(fn ->
+      Enum.each(pages, fn page ->
+        %UserPageAccess{}
+        |> UserPageAccess.changeset(%{
+          user_id: user.id,
+          page_id: page.id,
+          actions: page.actions
+        })
+        |> Repo.insert!(
+          on_conflict: :nothing,
+          conflict_target: [:user_id, :page_id]
+        )
+      end)
+    end)
+  end
+
+  # ── Fetch a user's page access (preloaded with page data) ─────────────────
+
+  def get_user_page_access(user_id) do
+    Repo.all(
+      from upa in UserPageAccess,
+        join: p in assoc(upa, :page),
+        where: upa.user_id == ^user_id,
+        preload: [page: p]
+    )
+  end
+
+  # ── Build a map of %{page_name => [actions]} for fast lookup ──────────────
+
+  def build_access_map(user_id) do
+    user_id
+    |> get_user_page_access()
+    |> Map.new(fn upa -> {upa.page.name, upa.actions} end)
+  end
+
+  # ── Admin: override a user's actions for a specific page ─────────────────
+
+  def update_user_page_actions(user_id, page_id, actions) do
+    case Repo.get_by(UserPageAccess, user_id: user_id, page_id: page_id) do
+      nil ->
+        %UserPageAccess{}
+        |> UserPageAccess.changeset(%{user_id: user_id, page_id: page_id, actions: actions})
+        |> Repo.insert()
+
+      existing ->
+        existing
+        |> UserPageAccess.changeset(%{actions: actions})
+        |> Repo.update()
+    end
+  end
+
+  # ── Admin: grant/revoke a page entirely ──────────────────────────────────
+
+  def grant_page_access(user_id, page_id, actions \\ ["view"]) do
+    %UserPageAccess{}
+    |> UserPageAccess.changeset(%{user_id: user_id, page_id: page_id, actions: actions})
+    |> Repo.insert(on_conflict: {:replace, [:actions]}, conflict_target: [:user_id, :page_id])
+  end
+
+  def revoke_page_access(user_id, page_id) do
+    Repo.delete_all(
+      from upa in UserPageAccess,
+        where: upa.user_id == ^user_id and upa.page_id == ^page_id
+    )
+  end
+
+  # ── Helpers for LiveView checks ───────────────────────────────────────────
+
+  def can_access_page?(access_map, page_name) do
+    Map.has_key?(access_map, page_name)
+  end
+
+  def can_perform?(access_map, page_name, action) do
+    access_map
+    |> Map.get(page_name, [])
+    |> Enum.member?(to_string(action))
   end
 
   @doc """

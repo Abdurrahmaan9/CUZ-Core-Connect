@@ -12,6 +12,7 @@ defmodule CuzCoreConnect.Accounts.User do
     field :user_role, :string, default: "student"
     field :status, :string, default: "PENDING"
     field :is_active, :boolean, default: false
+    field :deleted_at, :naive_datetime
 
     timestamps(type: :utc_datetime)
   end
@@ -29,7 +30,7 @@ defmodule CuzCoreConnect.Accounts.User do
   """
   def email_changeset(user, attrs, opts \\ []) do
     user
-    |> cast(attrs, [:email, :user_role, :status, :is_active, :username])
+    |> cast(attrs, [:email, :user_role, :status, :is_active, :username, :deleted_at])
     |> validate_email(opts)
   end
 
@@ -41,7 +42,7 @@ defmodule CuzCoreConnect.Accounts.User do
   def registration_changeset(user, attrs, opts \\ []) do
     user
     |> cast(attrs, [:email, :password, :user_role, :status, :is_active, :username])
-    |> validate_inclusion(:user_role, ~w(admin academics finance hod student))
+    |> validate_inclusion(:user_role, ~w(admin academics finance hod student retention))
     |> validate_email(opts)
     |> validate_required([:email, :password, :username])
     |> validate_length(:password, min: 8, max: 24)

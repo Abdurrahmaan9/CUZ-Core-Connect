@@ -1,403 +1,291 @@
 defmodule CuzCoreConnect.Pages.PageSeeds do
-  @moduledoc """
-  Seeds for the `Page` schema.
-  """
-
   alias CuzCoreConnect.Pages.Page
   alias CuzCoreConnect.Repo
 
-  # def plant do
-  #   [
-  #     %Page{name: "transactions"},
-  #     %Page{name: "merchant profiles"},
-  #     %Page{name: "payment links"},
-  #     %Page{name: "accounts management"},
-  #     %Page{name: "reports transactions"},
-  #     %Page{name: "reports analytics"},
-  #     %Page{name: "api credentials"},
-  #     %Page{name: "api webhooks"},
-  #     %Page{name: "api docs"},
-  #     %Page{name: "test number selection"},
-  #     %Page{name: "settings business"},
-  #     %Page{name: "settings payments"},
-  #     %Page{name: "settings notifications"},
-  #   ]
-  #   |> Enum.each(fn page ->
-  #     Repo.insert!(page)
-  #   end)
-  # end
+  @all_actions ~w(view create edit delete)
 
   def plant do
     Repo.delete_all(Page)
 
-    (merchant_pages() ++ admin_pages())
-    # admin_pages()
+    all_pages()
     |> Enum.each(fn attrs ->
-      case Repo.get_by(Page,
-             name: attrs.name,
-             description: attrs.description,
-             is_admin: attrs.is_admin
-           ) do
+      case Repo.get_by(Page, name: attrs.name, role: attrs.role) do
         nil ->
-          %Page{}
-          |> Page.changeset(attrs)
-          |> Repo.insert!()
-
-          IO.puts("✓ Inserted page: #{attrs.name}")
+          %Page{} |> Page.changeset(attrs) |> Repo.insert!()
+          IO.puts("✓ Inserted [#{attrs.role}] #{attrs.name}")
 
         existing ->
-          existing
-          |> Page.changeset(attrs)
-          |> Repo.update!()
-
-          IO.puts("↺ Updated page: #{attrs.name}")
+          existing |> Page.changeset(attrs) |> Repo.update!()
+          IO.puts("↺ Updated  [#{attrs.role}] #{attrs.name}")
       end
     end)
   end
 
-  defp merchant_pages do
+  defp all_pages do
+    admin_pages() ++
+    academics_pages() ++
+    finance_pages() ++
+    hod_pages() ++
+    retention_pages() ++
+    student_pages()
+  end
+
+  # ── Admin ─────────────────────────────────────────────────────────────────
+  # Admin gets ALL routes. No sidebar restriction — they see everything.
+
+  defp admin_pages do
     [
       %{
-        name: "dashboard",
-        description: "Merchant main dashboard",
-        is_admin: false,
+        name: "admin_dashboard",
+        description: "Admin main dashboard",
+        role: "admin",
+        actions: @all_actions,
+        paths: ["/admin/dashboard"]
+      },
+      %{
+        name: "student_registrations",
+        description: "View and manage all student registrations",
+        role: "admin",
+        actions: @all_actions,
         paths: [
-          "/merchant/dashboard"
+          "/admin/student",
+          "/admin/student/pending",
+          "/admin/student/registered"
         ]
       },
       %{
-        name: "merchant_profiles",
-        description: "Merchant profiles management",
-        is_admin: false,
+        name: "programmes",
+        description: "Academic programme management",
+        role: "admin",
+        actions: @all_actions,
         paths: [
-          "/merchant/profiles",
-          "/merchant/profiles/new",
-          "/merchant/profiles/:id",
-          "/merchant/profiles/:id/edit",
-          "/merchant/profiles/:id/documents"
+          "/admin/programmes",
+          "/admin/programmes/new",
+          "/admin/programmes/:id/edit"
         ]
       },
       %{
-        name: "payment_links",
-        description: "Payment links management",
-        is_admin: false,
+        name: "courses",
+        description: "Course management",
+        role: "admin",
+        actions: @all_actions,
         paths: [
-          "/merchant/payment-links"
+          "/admin/courses",
+          "/admin/courses/new",
+          "/admin/courses/:id/edit"
         ]
       },
       %{
-        name: "transactions_reports",
-        description: "Transaction reports",
-        is_admin: false,
+        name: "reports_attendance",
+        description: "Attendance reports",
+        role: "admin",
+        actions: ~w(view export),
+        paths: ["/admin/reports/attendance"]
+      },
+      %{
+        name: "reports_performance",
+        description: "Performance analytics",
+        role: "admin",
+        actions: ~w(view export),
+        paths: ["/admin/reports/performance"]
+      },
+      %{
+        name: "messages",
+        description: "Messaging",
+        role: "admin",
+        actions: ~w(view create delete),
+        paths: ["/admin/messages"]
+      },
+      %{
+        name: "announcements",
+        description: "Announcements",
+        role: "admin",
+        actions: ~w(view create edit delete),
+        paths: ["/admin/announcements"]
+      },
+      %{
+        name: "internal_accounts",
+        description: "Internal user account management",
+        role: "admin",
+        actions: @all_actions,
         paths: [
-          "/merchant/reports/transactions"
+          "/admin/user-accounts/internal",
+          "/admin/user-accounts/internal/new",
+          "/admin/user-accounts/internal/:id/edit"
         ]
       },
       %{
-        name: "analytics_reports",
-        description: "Analytics reports",
-        is_admin: false,
+        name: "external_accounts",
+        description: "External user account management",
+        role: "admin",
+        actions: @all_actions,
         paths: [
-          "/merchant/reports/analytics"
+          "/admin/user-accounts/external",
+          "/admin/user-accounts/external/new",
+          "/admin/user-accounts/external/:id/edit"
         ]
       },
       %{
-        name: "accounts_management",
-        description: "User accounts management",
-        is_admin: false,
+        name: "registration_workflows",
+        description: "Registration workflow configuration",
+        role: "admin",
+        actions: @all_actions,
         paths: [
-          "/merchant/security/accounts-management"
-        ]
-      },
-      %{
-        name: "roles_and_permissions",
-        description: "Roles and permissions management",
-        is_admin: false,
-        paths: [
-          "/merchant/security/roles-permissions"
-        ]
-      },
-      %{
-        name: "webhooks",
-        description: "Webhook integrations",
-        is_admin: false,
-        paths: [
-          "/merchant/api/webhooks"
-        ]
-      },
-      %{
-        name: "documentations",
-        description: "API documentation",
-        is_admin: false,
-        paths: [
-          "/merchant/api/docs"
-        ]
-      },
-      %{
-        name: "test_numbers",
-        description: "Phone simulator test numbers",
-        is_admin: false,
-        paths: [
-          "/merchant/test-numbers",
-          "/merchant/test-numbers/:id"
-        ]
-      },
-      %{
-        name: "business_settings",
-        description: "Business information settings",
-        is_admin: false,
-        paths: [
-          "/merchant/settings/business"
-        ]
-      },
-      %{
-        name: "payments_settings",
-        description: "Payment method settings",
-        is_admin: false,
-        paths: [
-          "/merchant/settings/payments"
-        ]
-      },
-      %{
-        name: "notifications_settings",
-        description: "Notification preferences",
-        is_admin: false,
-        paths: [
-          "/merchant/settings/notifications"
+          "/admin/workflows/registration",
+          "/admin/workflows/registration/:id/edit"
         ]
       }
     ]
   end
 
-  defp admin_pages do
+  # ── Academics ─────────────────────────────────────────────────────────────
+
+  defp academics_pages do
     [
       %{
-        name: "merchant_profiles",
-        description: "Admin merchant management",
-        is_admin: true,
+        name: "academics_dashboard",
+        description: "Academics main dashboard",
+        role: "academics",
+        actions: ~w(view),
+        paths: ["/academics/dashboard"]
+      },
+      %{
+        name: "academics_pending_review",
+        description: "Registrations pending academic review",
+        role: "academics",
+        actions: ~w(view create edit),
+        paths: ["/academics/dashboard?tab=pending"]
+      },
+      %{
+        name: "academics_approved",
+        description: "Academically approved registrations",
+        role: "academics",
+        actions: ~w(view export),
+        paths: ["/academics/dashboard?tab=approved"]
+      }
+    ]
+  end
+
+  # ── Finance ───────────────────────────────────────────────────────────────
+
+  defp finance_pages do
+    [
+      %{
+        name: "finance_dashboard",
+        description: "Finance main dashboard",
+        role: "finance",
+        actions: ~w(view),
+        paths: ["/finance/dashboard"]
+      },
+      %{
+        name: "finance_pending_payments",
+        description: "Payments pending verification",
+        role: "finance",
+        actions: ~w(view create edit),
+        paths: ["/finance/dashboard?tab=pending"]
+      },
+      %{
+        name: "finance_verified",
+        description: "Verified payments",
+        role: "finance",
+        actions: ~w(view export),
+        paths: ["/finance/dashboard?tab=approved"]
+      }
+    ]
+  end
+
+  # ── HOD ───────────────────────────────────────────────────────────────────
+
+  defp hod_pages do
+    [
+      %{
+        name: "hod_dashboard",
+        description: "HOD main dashboard",
+        role: "hod",
+        actions: ~w(view),
+        paths: ["/hod/dashboard"]
+      },
+      %{
+        name: "hod_pending_review",
+        description: "Registrations pending HOD approval",
+        role: "hod",
+        actions: ~w(view create edit),
+        paths: ["/hod/dashboard?tab=pending"]
+      },
+      %{
+        name: "hod_approved",
+        description: "HOD approved registrations",
+        role: "hod",
+        actions: ~w(view export),
+        paths: ["/hod/dashboard?tab=approved"]
+      }
+    ]
+  end
+
+  # ── Retention ─────────────────────────────────────────────────────────────
+
+  defp retention_pages do
+    [
+      %{
+        name: "retention_dashboard",
+        description: "Retention main dashboard",
+        role: "retention",
+        actions: ~w(view),
+        paths: ["/retention/dashboard"]
+      },
+      %{
+        name: "retention_final_review",
+        description: "Final retention review queue",
+        role: "retention",
+        actions: ~w(view create edit),
+        paths: ["/retention/dashboard?tab=pending"]
+      },
+      %{
+        name: "retention_completed",
+        description: "Completed registrations",
+        role: "retention",
+        actions: ~w(view export),
+        paths: ["/retention/dashboard?tab=approved"]
+      }
+    ]
+  end
+
+  # ── Student ───────────────────────────────────────────────────────────────
+
+  defp student_pages do
+    [
+      %{
+        name: "student_dashboard",
+        description: "Student main dashboard",
+        role: "student",
+        actions: ~w(view),
+        paths: ["/student/dashboard"]
+      },
+      %{
+        name: "student_my_registrations",
+        description: "View my registrations",
+        role: "student",
+        actions: ~w(view),
+        paths: ["/student/dashboard?tab=my_registrations"]
+      },
+      %{
+        name: "student_new_registration",
+        description: "Submit a new registration",
+        role: "student",
+        actions: ~w(view create),
         paths: [
-          "/admin/merchants",
-          "/admin/merchants/new",
-          "/admin/merchants/:id",
-          "/admin/merchants/:id/edit",
-          "/admin/merchants/:id/settings",
-          "/admin/merchants/:id/analytics",
-          "/admin/merchants/:id/settlements",
-          "/admin/merchants/:merchant_id/settlements/:id"
+          "/student/dashboard?tab=new_registration",
+          "/student/registrations/new"
         ]
       },
       %{
-        name: "merchant_review",
-        actions: [
-          "manager_approve",
-          "compliance_approve",
-          "security_approve",
-          "view",
-          "create",
-          "edit",
-          "export",
-          "delete"
-        ],
-        description: "Merchant KYC review",
-        is_admin: true,
+        name: "student_registration_tracking",
+        description: "Track registration by tracking number",
+        role: "student",
+        actions: ~w(view),
         paths: [
-          "/admin/merchant-review",
-          "/admin/merchant-review/:id"
-        ]
-      },
-      %{
-        name: "settlements",
-        description: "Settlements management",
-        is_admin: true,
-        paths: [
-          "/admin/settlements"
-        ]
-      },
-      %{
-        name: "transactions_reports",
-        description: "Transaction reports",
-        is_admin: true,
-        paths: [
-          "/admin/reports/transactions"
-        ]
-      },
-      %{
-        name: "analytics_reports",
-        description: "Analytics reports",
-        is_admin: true,
-        paths: [
-          "/admin/reports/analytics"
-        ]
-      },
-      %{
-        name: "session_logs",
-        description: "User session logs",
-        is_admin: true,
-        paths: [
-          "/admin/logs/session",
-          "/admin/logs/session/:id"
-        ]
-      },
-      %{
-        name: "access_logs",
-        description: "Access logs",
-        is_admin: true,
-        paths: [
-          "/admin/logs/access",
-          "/admin/logs/access/:id"
-        ]
-      },
-      %{
-        name: "api_logs",
-        description: "API request logs",
-        is_admin: true,
-        paths: [
-          "/admin/logs/api"
-        ]
-      },
-      %{
-        name: "system_logs",
-        description: "System logs",
-        is_admin: true,
-        paths: [
-          "/admin/logs/dashboard"
-        ]
-      },
-      %{
-        name: "payment_configs_mtn",
-        description: "MTN payment configuration",
-        is_admin: true,
-        paths: [
-          "/admin/payment-configs/mtn"
-        ]
-      },
-      %{
-        name: "payment_configs_airtel",
-        description: "Airtel payment configuration",
-        is_admin: true,
-        paths: [
-          "/admin/payment-configs/airtel"
-        ]
-      },
-      %{
-        name: "payment_configs_zamtel",
-        description: "Zamtel payment configuration",
-        is_admin: true,
-        paths: [
-          "/admin/payment-configs/zamtel"
-        ]
-      },
-      %{
-        name: "payment_configs_card",
-        description: "Card payment configuration",
-        is_admin: true,
-        paths: [
-          "/admin/payment-configs/card"
-        ]
-      },
-      %{
-        name: "payment_configs_bank",
-        description: "Bank payment configuration",
-        is_admin: true,
-        paths: [
-          "/admin/payment-configs/bank"
-        ]
-      },
-      %{
-        name: "woocommerce_documentation",
-        description: "WooCommerce documentation management",
-        is_admin: true,
-        paths: [
-          "/admin/woocommerce/documentation",
-          "/admin/woocommerce/documentation/new",
-          "/admin/woocommerce/documentation/:id/edit"
-        ]
-      },
-      %{
-        name: "woocommerce_plugins",
-        description: "WooCommerce plugin management",
-        is_admin: true,
-        paths: [
-          "/admin/woocommerce/plugins",
-          "/admin/woocommerce/plugins/new",
-          "/admin/woocommerce/plugins/:id/edit"
-        ]
-      },
-      %{
-        name: "api_management",
-        description: "CuzCoreConnect API documentation management",
-        is_admin: true,
-        paths: [
-          "/admin/api/documentation",
-          "/admin/api/documentation/new",
-          "/admin/api/documentation/:id/edit"
-        ]
-      },
-      %{
-        name: "internal_accounts_management",
-        description: "Admin/Internal user accounts management",
-        is_admin: true,
-        paths: [
-          "/admin/accounts-management/internal"
-        ]
-      },
-      %{
-        name: "external_accounts_management",
-        description: "External user accounts management",
-        is_admin: true,
-        paths: [
-          "/admin/accounts-management/external"
-        ]
-      },
-      %{
-        name: "roles_and_permissions",
-        description: "Admin roles and permissions",
-        is_admin: true,
-        paths: [
-          "/admin/security/roles-permissions"
-        ]
-      },
-      %{
-        name: "audits",
-        description: "System audit logs",
-        is_admin: true,
-        paths: [
-          "/admin/security/audit"
-        ]
-      },
-      %{
-        name: "system_settings",
-        description: "General system settings",
-        is_admin: true,
-        paths: [
-          "/admin/settings/system"
-        ]
-      },
-      %{
-        name: "merchant_profile_types",
-        description: "Merchant profile type settings",
-        is_admin: true,
-        paths: [
-          "/admin/profile-types",
-          "/admin/profile-types/new",
-          "/admin/profile-types/:id",
-          "/admin/profile-types/:id/edit"
-        ]
-      },
-      %{
-        name: "settlements_work_flows",
-        description: "Settlement workflow configuration",
-        is_admin: true,
-        paths: [
-          "/admin/settings/settlements-work-flows"
-        ]
-      },
-      %{
-        name: "test_numbers",
-        description: "Phone simulator test numbers",
-        is_admin: true,
-        paths: [
-          "/admin/test-numbers"
+          "/registration/tracking",
+          "/registration/tracking/:tracking_number"
         ]
       }
     ]

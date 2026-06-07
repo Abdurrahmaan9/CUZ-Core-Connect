@@ -2,7 +2,7 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow do
   use CuzCoreConnectWeb, :live_view
 
   alias CuzCoreConnect.Workflows
-  alias CuzCoreConnect.Registration
+  alias CuzCoreConnect.Registrations
   alias CuzCoreConnect.Workflows.RegistrationWorkflow
   alias CuzCoreConnectWeb.Datatable.{
     Pagination,
@@ -215,7 +215,7 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow do
   def handle_event("confirm_switch_restart", _params, socket) do
     %{new_id: new_id, old_id: old_id} = socket.assigns.confirm_switch_flow
 
-    Registration.migrate_pending_registrations_workflow(old_id, new_id)
+    Registrations.migrate_pending_registrations_workflow(old_id, new_id)
 
     do_activate_flow(socket |> assign(:confirm_switch_flow, nil), new_id)
   end
@@ -247,7 +247,7 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.admin flash={@flash} current_scope={@current_scope} page_title={@page_title} current_page={@current_page}>
+    <Layouts.user flash={@flash} current_scope={@current_scope} page_title={@page_title} current_page={@current_page}>
       <div id="registrations">
         <div class="bg-gray-50/20 rounded-lg shadow-md overflow-hidden mb-6">
           <div class="p-4 border-b border-gray-200 flex justify-between items-center">
@@ -464,7 +464,7 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow do
           </div>
         </:footer>
       </.modal>
-    </Layouts.admin>
+    </Layouts.user>
     """
   end
 end

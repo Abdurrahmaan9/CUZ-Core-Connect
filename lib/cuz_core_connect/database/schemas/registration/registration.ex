@@ -19,6 +19,7 @@ defmodule CuzCoreConnect.Registrations.Registration do
     field :hod_status, :string, default: "PENDING"
     field :financial_status, :string, default: "PENDING"
     field :registration_status, :string, default: "PENDING"
+    field :deleted_at, :naive_datetime
     has_many :payment_receipts, CuzCoreConnect.Students.PaymentReceipt, foreign_key: :student_registration_id
 
     belongs_to :workflow, CuzCoreConnect.Workflows.RegistrationWorkflow
@@ -44,7 +45,8 @@ defmodule CuzCoreConnect.Registrations.Registration do
     :accademics_status,
     :hod_status,
     :financial_status,
-    :registration_status
+    :registration_status,
+    :deleted_at
     ])
     |> put_active_workflow()
     |> validate_required([

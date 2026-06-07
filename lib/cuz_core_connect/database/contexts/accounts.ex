@@ -73,6 +73,40 @@ defmodule CuzCoreConnect.Accounts do
   end
 
   @doc """
+  Gets internal users ordered by creation date.
+
+  ## Examples
+
+      iex> list_all_internal_users()
+      [%User{}, ...]
+
+  """
+  def list_all_internal_users do
+    User
+    |> where([f], is_nil(f.deleted_at))
+    |> where([f], f.user_role != "student")
+    |> order_by(desc: :inserted_at)
+    |> Repo.all()
+  end
+
+  @doc """
+  Gets external users ordered by creation date.
+
+  ## Examples
+
+      iex> list_all_external_users()
+      [%User{}, ...]
+
+  """
+  def list_all_external_users do
+    User
+    |> where([f], is_nil(f.deleted_at))
+    |> where([f], f.user_role == "student")
+    |> order_by(desc: :inserted_at)
+    |> Repo.all()
+  end
+
+  @doc """
   Gets a single user.
 
   Raises `Ecto.NoResultsError` if the User does not exist.
@@ -109,6 +143,14 @@ defmodule CuzCoreConnect.Accounts do
     %User{}
     |> User.registration_changeset(Map.put(attrs, "password", password))
     |> Repo.insert()
+    |> case do
+      {:ok, user} ->
+        # Inherit all pages for their role
+        CuzCoreConnect.Pages.assign_default_pages_for_user(user)
+        {:ok, user}
+        # ... rest of your success handling
+        {:error, r} -> {:error, r}
+    end
     # |> IO.inspect()
   end
 

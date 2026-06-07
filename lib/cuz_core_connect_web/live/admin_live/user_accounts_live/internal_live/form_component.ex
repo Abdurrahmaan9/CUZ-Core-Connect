@@ -4,16 +4,18 @@ defmodule CuzCoreConnectWeb.Admin.UserAccounts.Internal.FormComponent do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="bg-base-100 shadow-lg rounded-box">
-      <div class="px-4 py-5 sm:p-6">
-        <div class="mb-6">
-          <h3 class="text-lg font-semibold text-base-content">
-            {if @user.id, do: "Edit User", else: "Create New User"}
-          </h3>
-          <p class="mt-1 text-sm text-base-content/70">
-            {if @user.id, do: "Update user information and permissions", else: "Fill in the form below to create a new user account"}
-          </p>
-        </div>
+    <div id={@id}>
+      <.modal id={"#{@id}-modal"} show on_cancel={JS.push("cancel_form_component", target: @myself) |> JS.exec("phx-remove", to: "##{@id}-modal")}>
+        <:title>
+          <div class="mb-6">
+            <h3 class="text-lg font-semibold text-base-content">
+              {if @user.id, do: "Edit User", else: "Create New User"}
+            </h3>
+            <p class="mt-1 text-sm text-base-content/70">
+              {if @user.id, do: "Update user information and permissions", else: "Fill in the form below to create a new user account"}
+            </p>
+          </div>
+        </:title>
 
         <.form
           :let={f}
@@ -21,7 +23,7 @@ defmodule CuzCoreConnectWeb.Admin.UserAccounts.Internal.FormComponent do
           id="user-form"
           phx-submit={if @user.id, do: "update_user", else: "create_user"}
           phx-target={@myself}
-          class="space-y-6"
+          class="p-6"
         >
           <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <div>
@@ -88,7 +90,8 @@ defmodule CuzCoreConnectWeb.Admin.UserAccounts.Internal.FormComponent do
             </.button>
           </div>
         </.form>
-      </div>
+        
+      </.modal>
     </div>
     """
   end
@@ -104,4 +107,12 @@ defmodule CuzCoreConnectWeb.Admin.UserAccounts.Internal.FormComponent do
     send(self(), {:update_user, user_params, socket.assigns.user.id})
     {:noreply, socket}
   end
+
+  @impl true
+  def handle_event("cancel_form_component", _, socket) do
+    notify_parent(:cancel_form_component, "Form closed")
+    {:noreply, socket}
+  end
+
+  defp notify_parent(key, msg), do: send(self(), {__MODULE__, {key, msg}})
 end

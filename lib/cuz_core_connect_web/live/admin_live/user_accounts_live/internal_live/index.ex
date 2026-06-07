@@ -11,6 +11,8 @@ defmodule CuzCoreConnectWeb.Admin.UserAccounts.Internal do
      socket
      |> assign(:page_title, "Internal User Management")
      |> assign(:current_page, :internal_users)
+     |> assign(:show_user_page_access_component, false)
+     |> assign(:user, nil)
      |> assign(:users, list_users())
      |> assign(:form, to_form(%{}))}
   end
@@ -74,7 +76,31 @@ defmodule CuzCoreConnectWeb.Admin.UserAccounts.Internal do
   end
 
   @impl true
-  def handle_info({:delete_user, id}, socket) do
+  def handle_info({CuzCoreConnectWeb.Admin.UserPageAccessComponent, {key, msg}}, socket) do
+    socket =
+      case key do
+        :error ->
+          socket
+          |> put_flash(:error, msg)
+
+        :success ->
+          socket
+          |> put_flash(:info, msg)
+
+        _ ->
+          socket
+          |> put_flash(:info, msg)
+      end
+
+    {:noreply,
+     socket
+      |> assign(:show_user_page_access_component, false)
+      |> assign(:user, nil)
+    }
+  end
+
+  @impl true
+  def handle_event("delete_user", %{"id" => id}, socket) do
     case Accounts.get_user!(id) do
       %User{} = _user ->
         # Here you would implement user deletion logic
@@ -91,15 +117,31 @@ defmodule CuzCoreConnectWeb.Admin.UserAccounts.Internal do
     end
   end
 
+  @impl true
+  def handle_event("edit_user_page_access", %{"id" => id}, socket) do
+    case Accounts.get_user!(id) do
+      %User{} = user ->
+        {:noreply,
+         socket
+         |> assign(:show_user_page_access_component, true)
+         |> assign(:user, user)}
+
+      _ ->
+        {:noreply,
+         socket
+         |> put_flash(:error, "User not found")}
+    end
+  end
+
   # Helper functions
   defp list_users do
-    Accounts.list_all_users()
+    Accounts.list_all_internal_users()
   end
 
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.admin flash={@flash} current_scope={@current_scope} page_title={@page_title} current_page={@current_page}>
+    <Layouts.user flash={@flash} current_scope={@current_scope} page_title={@page_title} current_page={@current_page}>
       <div class="min-h-screen bg-base-100">
         <!-- Admin Header -->
         <div class="bg-base-200 border-b border-base-300">
@@ -139,16 +181,109 @@ defmodule CuzCoreConnectWeb.Admin.UserAccounts.Internal do
                 current_user={@current_scope.user}
               />
             <% _ -> %>
-              <.live_component
-                module={__MODULE__.ListComponent}
-                id="user-list"
-                users={@users}
-                current_user={@current_scope.user}
-              />
+              <div class="bg-base-100 shadow-lg rounded-box">
+                <div class="px-4 py-5 sm:p-6">
+                  <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-lg font-semibold text-base-content">All Users</h3>
+                    <div class="flex items-center space-x-2">
+                      <input
+                        type="text"
+                        placeholder="Search users..."
+                        class="input input-bordered input-sm w-full max-w-xs"
+                      />
+                      <button class="btn btn-outline btn-sm">Search</button>
+                    </div>
+                  </div>
+
+                  <div class="overflow-hidden shadow ring-1 ring-base-300 md:rounded-lg">
+                    <table class="table table-zebra w-full">
+                      <thead>
+                        <tr>
+                          <th class="text-left text-xs font-medium text-base-content/70">User</th>
+                          <th class="text-left text-xs font-medium text-base-content/70">Role</th>
+                          <th class="text-left text-xs font-medium text-base-content/70">Status</th>
+                          <th class="text-left text-xs font-medium text-base-content/70">Created</th>
+                          <th class="text-left text-xs font-medium text-base-content/70">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <%= for user <- @users do %>
+                          <tr>
+                            <td>
+                              <div class="flex items-center space-x-3">
+                                <div class="avatar placeholder">
+                                  <div class="bg-neutral text-neutral-content rounded-full w-10 h-10">
+                                    <span class="text-sm font-medium">
+                                      {String.first(user.email)}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div>
+                                  <div class="text-sm font-medium text-base-content">{user.email}</div>
+                                  <div class="text-sm text-base-content/50">ID: {user.id}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td>
+                              <div class={"badge badge-sm " <>
+                                case user.user_role do
+                                  "admin" -> "badge-primary"
+                                  "academics" -> "badge-info"
+                                  "finance" -> "badge-success"
+                                  "hod" -> "badge-warning"
+                                  "student" -> "badge-secondary"
+                                  _ -> "badge-neutral"
+                                end}>
+                                {user.user_role}
+                              </div>
+                            </td>
+                            <td>
+                              <div class={"badge badge-sm " <>
+                                if(user.is_active, do: "badge-success", else: "badge-error")}>
+                                {if(user.is_active, do: "Active", else: "Inactive")}
+                              </div>
+                            </td>
+                            <td class="text-sm text-base-content/70">
+                              {format_display_datetime(user.inserted_at)}
+                            </td>
+                            <td>
+                              <div class="flex space-x-2">
+                                <.link href={~p"/admin/user-accounts/internal/#{user.id}/edit"} class="btn btn-xs btn-primary">Edit</.link>
+                                <button
+                                  phx-click="edit_user_page_access"
+                                  phx-value-id={user.id}
+                                  class="btn btn-xs btn-error"
+                                >
+                                  privileges
+                                </button>
+                                <button
+                                  phx-click="delete_user"
+                                  phx-value-id={user.id}
+                                  class="btn btn-xs btn-error"
+                                  onclick="return confirm('Are you sure you want to delete this user?')"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        <% end %>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
           <% end %>
         </div>
       </div>
-    </Layouts.admin>
+
+      <.live_component
+        :if={@show_user_page_access_component && not is_nil(@user)}
+        module={CuzCoreConnectWeb.Admin.UserPageAccessComponent}
+        id={"page-access-#{@user.id}"}
+        user={@user}
+      />
+    </Layouts.user>
     """
   end
 end

@@ -1,18 +1,18 @@
-defmodule CuzCoreConnectWeb.StudentLive.Dashboard.Index do
+defmodule CuzCoreConnectWeb.RetentionLive.Dashboard.Index do
   use CuzCoreConnectWeb, :live_view
 
   @impl true
   def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> assign(:page_title, "Student Dashboard")
-     |> assign(:current_page, :student_dashboard)
+     |> assign(:page_title, "Retention Dashboard")
+     |> assign(:current_page, :retention_dashboard)
      |> assign(:active_tab, "overview")}
   end
 
   @impl true
   def handle_params(%{"tab" => tab}, _url, socket)
-      when tab in ["overview", "my_registrations", "new_registration"] do
+      when tab in ["overview", "pending", "approved"] do
     {:noreply, assign(socket, :active_tab, tab)}
   end
 
@@ -20,16 +20,16 @@ defmodule CuzCoreConnectWeb.StudentLive.Dashboard.Index do
 
   @impl true
   def handle_event("switch_tab", %{"tab" => tab}, socket) do
-    {:noreply, push_patch(socket, to: ~p"/student/dashboard?tab=#{tab}")}
+    {:noreply, push_patch(socket, to: ~p"/retention/dashboard?tab=#{tab}")}
   end
 
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_scope={@current_scope} page_title={@page_title}>
+    <Layouts.user flash={@flash} current_scope={@current_scope} page_title={@page_title} current_page={@current_page}>
       <div class="border-b border-base-300 mb-6">
         <nav class="flex space-x-8 px-4">
-          <%= for {label, tab} <- [{"Overview", "overview"}, {"My Registrations", "my_registrations"}, {"New Registration", "new_registration"}] do %>
+          <%= for {label, tab} <- [{"Overview", "overview"}, {"Final Review", "pending"}, {"Completed", "approved"}] do %>
             <button
               phx-click="switch_tab"
               phx-value-tab={tab}
@@ -48,27 +48,23 @@ defmodule CuzCoreConnectWeb.StudentLive.Dashboard.Index do
         <%= case @active_tab do %>
           <% "overview" -> %>
             <.live_component
-              module={CuzCoreConnectWeb.StudentLive.Dashboard.OverviewComponent}
-              id="student-overview"
+              module={CuzCoreConnectWeb.RetentionLive.Dashboard.OverviewComponent}
+              id="retention-overview"
               current_scope={@current_scope}
             />
-          <% "my_registrations" -> %>
+          <% "pending" -> %>
             <.live_component
-              module={CuzCoreConnectWeb.StudentLive.Dashboard.MyRegistrationsComponent}
-              id="student-registrations"
+              module={CuzCoreConnectWeb.RetentionLive.Dashboard.PendingRegistrationsComponent}
+              id="retention-pending"
               current_scope={@current_scope}
             />
-          <% "new_registration" -> %>
-            <.live_component
-              module={CuzCoreConnectWeb.StudentLive.Dashboard.NewRegistrationComponent}
-              id="student-new-registration"
-              current_scope={@current_scope}
-            />
+          <% "approved" -> %>
+            <p class="text-base-content/50 py-12 text-center">Completed registrations list here</p>
           <% _ -> %>
             <p class="text-center py-12 text-base-content/50">Tab not found</p>
         <% end %>
       </div>
-    </Layouts.app>
+    </Layouts.user>
     """
   end
 end

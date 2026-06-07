@@ -163,7 +163,7 @@ defmodule CuzCoreConnectWeb.Router do
         {CuzCoreConnectWeb.Plugs.UserAuth, :ensure_retention_role}
       ] do
       scope "/retention" do
-        live "/dashboard", StudentLive.Dashboard.Index, :index
+        live "/dashboard", RetentionLive.Dashboard.Index, :index
       end
     end
 
@@ -174,6 +174,7 @@ defmodule CuzCoreConnectWeb.Router do
       ] do
       scope "/student" do
         live "/dashboard", StudentLive.Dashboard.Index, :index
+        live "/registrations/new", Student.Registration.RegistrationLive
 
         # live "/pending", Academics.Students.Index, :index
       end

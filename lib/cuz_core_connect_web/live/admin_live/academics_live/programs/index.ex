@@ -55,7 +55,7 @@ defmodule CuzCoreConnectWeb.Admin.AcademicManagement.Programmes.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.admin flash={@flash} current_scope={@current_scope} page_title={@page_title} current_page={@current_page}>
+    <Layouts.user flash={@flash} current_scope={@current_scope} page_title={@page_title} current_page={@current_page}>
       <.header>
         Programmes
         <:subtitle>Manage academic programmes in the system</:subtitle>
@@ -121,7 +121,7 @@ defmodule CuzCoreConnectWeb.Admin.AcademicManagement.Programmes.Index do
         </div>
       </div>
     </div>
-    </Layouts.admin>
+    </Layouts.user>
     """
   end
 end

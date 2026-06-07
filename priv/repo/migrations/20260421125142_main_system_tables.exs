@@ -18,10 +18,10 @@ defmodule CuzCoreConnect.Repo.Migrations.MainSystemTables do
 
     create_if_not_exists table(:tbl_pages) do
       add :name, :string, null: false
-      add :paths, {:array, :string}, default: []
-      add :actions, {:array, :string}, default: ["view", "create", "edit", "export", "delete"]
-      add :is_admin, :boolean
       add :description, :text
+      add :paths, {:array, :string}, default: []
+      add :actions, {:array, :string}, default: []
+      add :role, :string, null: false, default: "admin"
       add :deleted_at, :naive_datetime
 
       timestamps()
@@ -35,7 +35,15 @@ defmodule CuzCoreConnect.Repo.Migrations.MainSystemTables do
       add :user_role, :string, default: "student"
       add :status, :string
       add :is_active, :boolean, default: false
+      add :deleted_at, :naive_datetime
 
+      timestamps(type: :utc_datetime)
+    end
+
+    create table(:tbl_user_page_access) do
+      add :user_id, references(:tbl_users, on_delete: :delete_all), null: false
+      add :page_id, references(:tbl_pages, on_delete: :delete_all), null: false
+      add :actions, {:array, :string}, default: []
       timestamps(type: :utc_datetime)
     end
 
@@ -94,6 +102,7 @@ defmodule CuzCoreConnect.Repo.Migrations.MainSystemTables do
       add :hod_status, :string, null: false
       add :financial_status, :string, null: false
       add :registration_status, :string, null: false
+      add :deleted_at, :naive_datetime
       add :workflow_id, references(:tbl_registration_workflows, on_delete: :nilify_all)
 
       timestamps(type: :utc_datetime)
@@ -171,8 +180,8 @@ defmodule CuzCoreConnect.Repo.Migrations.MainSystemTables do
     create_if_not_exists index(:tbl_registration, [:payment_status])
 
     create_if_not_exists index(:tbl_pages, [:deleted_at])
-    create_if_not_exists index(:tbl_pages, [:is_admin])
-    create_if_not_exists index(:tbl_pages, [:deleted_at, :is_admin])
+    create_if_not_exists index(:tbl_pages, [:role])
+    create_if_not_exists index(:tbl_pages, [:deleted_at, :role])
 
     create_if_not_exists unique_index(:tbl_programmes, [:code])
     create_if_not_exists index(:tbl_programmes, [:is_active])
@@ -189,6 +198,9 @@ defmodule CuzCoreConnect.Repo.Migrations.MainSystemTables do
       where: "is_active = true",
       name: :one_active_registration_workflow
     )
+
+    create_if_not_exists unique_index(:tbl_user_page_access, [:user_id, :page_id])
+    create_if_not_exists index(:tbl_user_page_access, [:user_id])
   end
 
   def alter_tables() do

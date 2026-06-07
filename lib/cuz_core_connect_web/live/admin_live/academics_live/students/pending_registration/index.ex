@@ -1,7 +1,7 @@
 defmodule CuzCoreConnectWeb.Academics.Students.PendingRegistration do
   use CuzCoreConnectWeb, :live_view
 
-  alias CuzCoreConnect.Registration
+  alias CuzCoreConnect.Registrations
   alias CuzCoreConnect.Repo
   alias CuzCoreConnectWeb.Datatable.Pagination
 
@@ -54,7 +54,7 @@ defmodule CuzCoreConnectWeb.Academics.Students.PendingRegistration do
   end
 
   defp fetch_registrations(socket, params) do
-    data = Registration.list_pending_registrations(Pagination.fetch_current_filters(socket))
+    data = Registrations.list_pending_registrations(Pagination.fetch_current_filters(socket))
 
     {
       :noreply,
@@ -104,7 +104,7 @@ defmodule CuzCoreConnectWeb.Academics.Students.PendingRegistration do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.admin flash={@flash} current_scope={@current_scope} page_title={@page_title} current_page={@current_page}>
+    <Layouts.user flash={@flash} current_scope={@current_scope} page_title={@page_title} current_page={@current_page}>
       <div class="mb-3">
         <h1 class="text-base font-bold tracking-wide text-slate-800">Pending Registrations</h1>
         <p class="mt-1 text-xs text-slate-500">
@@ -175,7 +175,7 @@ defmodule CuzCoreConnectWeb.Academics.Students.PendingRegistration do
           pagination_data={@data}
         />
       <% end %>
-    </Layouts.admin>
+    </Layouts.user>
 
     """
   end

@@ -55,7 +55,7 @@ defmodule CuzCoreConnectWeb.AdminLiveIndex do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.admin
+    <Layouts.user
       flash={@flash}
       current_scope={@current_scope}
       page_title={@page_title}
@@ -132,7 +132,7 @@ defmodule CuzCoreConnectWeb.AdminLiveIndex do
             </div>
         <% end %>
       </div>
-    </Layouts.admin>
+    </Layouts.user>
     """
   end
 end
