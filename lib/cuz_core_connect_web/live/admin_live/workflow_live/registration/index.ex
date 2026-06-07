@@ -4,7 +4,7 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow do
   alias CuzCoreConnect.Workflows
   alias CuzCoreConnect.Registration
   alias CuzCoreConnect.Workflows.RegistrationWorkflow
-  alias CuzCoreConnectWeb.{
+  alias CuzCoreConnectWeb.Datatable.{
     Pagination,
     PaginationComponent,
   }
@@ -20,7 +20,7 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow do
     {:ok,
      socket
      |> assign(:page_title, "Registration Work Flows")
-     |> assign(:current_page, :registration_workflows)
+     |> assign(:current_page, :workflows_registration)
      |> assign(:show_registration_formcomponent, false)
      |> assign(:registration_workflow, :nil)
      |> assign(:all_flows_tab, true)

@@ -1,4 +1,4 @@
-defmodule CuzCoreConnectWeb.SortTable.DataTable do
+defmodule CuzCoreConnectWeb.Datatable.SortTable do
   @moduledoc """
   Utilities for sortable data tables with pagination support.
 

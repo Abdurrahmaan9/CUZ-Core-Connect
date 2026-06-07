@@ -172,7 +172,7 @@ defmodule CuzCoreConnectWeb.Navigations.Admin do
           <.navigation_link
             href="/admin/announcements"
             active={@current_page == :announcements}
-            icon="chat-megaphone"
+            icon="megaphone"
             label="Announcements"
           />
         </nav>

@@ -6,8 +6,8 @@ defmodule CuzCoreConnectWeb.Admin.Announcements do
     {:ok,
      socket
      |> assign(
-       page_title: "Programmes",
-       current_page: :admin_programs
+       page_title: "Announcements",
+       current_page: :announcements
      )}
   end
 

@@ -1,7 +1,7 @@
-defmodule CuzCoreConnectWeb.PaginationComponent do
+defmodule CuzCoreConnectWeb.Datatable.PaginationComponent do
   @moduledoc false
   use CuzCoreConnectWeb, :live_component
-  import CuzCoreConnectWeb.SortTable.DataTable
+  import CuzCoreConnectWeb.Datatable.SortTable
 
   @distance 5
 

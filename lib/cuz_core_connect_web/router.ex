@@ -95,6 +95,11 @@ defmodule CuzCoreConnectWeb.Router do
           live "/:id/edit", Admin.AcademicManagement.Courses.Index, :edit
         end
 
+        scope "/reports" do
+          live "/attendance", Admin.Reports.Attendance
+          live "/performance", Admin.Reports.Performance
+        end
+
         scope "/messages" do
           live "/", Admin.Messages
         end

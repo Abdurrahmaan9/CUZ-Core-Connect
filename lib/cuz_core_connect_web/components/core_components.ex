@@ -1145,6 +1145,7 @@ defmodule CuzCoreConnectWeb.CoreComponents do
     |> JS.toggle_class("rotate-90", to: "#{menu_id}-chevron")
   end
 
+
   @doc """
   Renders a [Heroicon](https://heroicons.com).
 
@@ -1155,20 +1156,49 @@ defmodule CuzCoreConnectWeb.CoreComponents do
   You can customize the size and colors of the icons by setting
   width, height, and background color classes.
 
-  Icons are extracted from the `deps/heroicons` directory and bundled within
-  your compiled app.css by the plugin in `assets/vendor/heroicons.js`.
+  Icons are extracted from the `priv/icons/hero- <> *.svg` directory.
 
   ## Examples
 
       <.icon name="hero-x-mark" />
       <.icon name="hero-arrow-path" class="ml-1 size-3 motion-safe:animate-spin" />
   """
+  @icons_path Path.join(:code.priv_dir(:cuz_core_connect), "icons")
+
+  @icons @icons_path
+         |> File.ls!()
+         |> Enum.filter(&String.ends_with?(&1, ".svg"))
+         |> Enum.sort()
+         |> Enum.map(fn file ->
+           name = String.replace_suffix(file, ".svg", "")
+           path = Path.join(@icons_path, file)
+           {name, File.read!(path)}
+         end)
+         |> Map.new()
+
   attr :name, :string, required: true
   attr :class, :any, default: "size-4"
 
   def icon(%{name: "hero-" <> _} = assigns) do
+    if is_nil(Map.get(@icons, assigns.name)), do: IO.inspect(assigns.name)
+
+    assigns =
+      assign(assigns, :svg, Map.get(@icons, assigns.name))
+
     ~H"""
-    <span class={[@name, @class]} />
+    <%= if @svg do %>
+      <span
+        class={[
+          @class,
+          "inline-flex items-center justify-center shrink-0 [&>svg]:pointer-events-none"
+        ]}
+        aria-hidden="true"
+      >
+        {Phoenix.HTML.raw(@svg)}
+      </span>
+    <% else %>
+      .
+    <% end %>
     """
   end
 

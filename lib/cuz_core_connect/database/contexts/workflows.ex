@@ -2,7 +2,7 @@ defmodule CuzCoreConnect.Workflows do
   import Ecto.Query, warn: false
 
   alias CuzCoreConnect.Repo
-  alias CuzCoreConnectWeb.Pagination
+  alias CuzCoreConnectWeb.Datatable.Pagination
   alias CuzCoreConnect.Workflows.RegistrationWorkflow
 
   def get_active_registration_flow do
