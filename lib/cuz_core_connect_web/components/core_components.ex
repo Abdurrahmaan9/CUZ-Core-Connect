@@ -59,7 +59,7 @@ defmodule CuzCoreConnectWeb.CoreComponents do
   attr :on_cancel, JS, default: %JS{}
   slot :inner_block, required: false
   slot :title, required: true, doc: "Modal title that will display"
-  # slot :footer, doc: "Optional footer slot for custom footer content"
+  slot :footer, doc: "Optional footer slot for custom footer content"
 
   def modal(assigns) do
     ~H"""
@@ -94,7 +94,7 @@ defmodule CuzCoreConnectWeb.CoreComponents do
                 !@show && "hidden"
               ]}
             >
-              <div class="bg-base-300 px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+              <div class="bg-base-300 px-6 py-4 border-b border-gray-200/20 flex items-center justify-between">
                 <h3 class="text-lg font-semibold">{render_slot(@title)}</h3>
                 <button
                   phx-click={JS.exec("data-cancel", to: "##{@id}")}
@@ -108,11 +108,55 @@ defmodule CuzCoreConnectWeb.CoreComponents do
               <div id={"#{@id}-content"}>
                 {render_slot(@inner_block)}
               </div>
+              <div :if={@footer != []} id={"#{@id}-footer"} class="bg-base-300 px-6 py-4 border-t border-gray-200/20 flex items-center justify-between">
+                {render_slot(@footer)}
+              </div>
             </.focus_wrap>
           </div>
         </div>
       </div>
     </div>
+    """
+  end
+
+
+  @doc """
+  Display a coppy button, to capture text to system clipboard.
+
+  ## Examples
+
+      <.copy_button label="LABEL" value="TEXT" />
+  """
+  attr :id, :string, required: true
+  attr :value, :string, required: true
+  attr :label, :string, default: nil
+  attr :class, :string, default: ""
+
+  def copy_button(assigns) do
+    ~H"""
+    <button
+      id={@id}
+      type="button"
+      phx-hook="CopyToClipboard"
+      data-value={@value}
+      title={if @label, do: "Copy #{@label}", else: "Copy"}
+      class={[
+        "px-2 py-2 text-gray-500 hover:text-gray-700 transition",
+        @class
+      ]}
+    >
+      <span class="icon-copy">
+        <.icon name="hero-document-duplicate" class="w-5 h-5" />
+      </span>
+
+      <span class="icon-check text-green-600">
+        <.icon name="hero-check" class="w-5 h-5" />
+      </span>
+
+      <%= if @label do %>
+        <span class="text-xs font-medium">{@label}</span>
+      <% end %>
+    </button>
     """
   end
 
@@ -264,7 +308,8 @@ defmodule CuzCoreConnectWeb.CoreComponents do
   attr :multiple, :boolean, default: false, doc: "the multiple flag for select inputs"
   attr :class, :any, default: nil, doc: "the input class to use over defaults"
   attr :error_class, :any, default: nil, doc: "the input error class to use over defaults"
-
+  attr :select_search, :boolean, default: false, doc: "adds a search bar to search through the options list"
+  # attr :markdown, :boolean, default: false, doc: "the markdown flag determins whether to add the text formartting tools on the textarea input type"
   attr :rest, :global,
     include: ~w(accept autocomplete capture cols disabled form list max maxlength min minlength
                 multiple pattern placeholder readonly required rows size step)
@@ -319,11 +364,13 @@ defmodule CuzCoreConnectWeb.CoreComponents do
     """
   end
 
-  def input(%{type: "select"} = assigns) do
+    def input(%{type: "select"} = assigns) do
     ~H"""
     <div class="fieldset mb-2">
       <label>
-        <span :if={@label} class="label mb-1">{@label}</span>
+        <span :if={@label} class="label mb-1">
+          {@label}<span :if={Map.has_key?(@rest, :required) and @rest.required} class="text-red-500">*</span>
+        </span>
         <select
           id={@id}
           name={@name}
@@ -340,11 +387,110 @@ defmodule CuzCoreConnectWeb.CoreComponents do
     """
   end
 
+  def input(%{type: "select"} = assigns) do
+    assigns =
+      assigns
+      |> assign_new(:id, fn ->
+        "select-#{:erlang.unique_integer([:positive])}"
+      end)
+
+    ~H"""
+    <div>
+      <span :if={@label} class="label mb-1">
+        {@label}<span :if={Map.has_key?(@rest, :required) and @rest.required} class="text-red-500">*</span>
+      </span>
+      <%= if (@select_search or length(@options) >= 8) and !@multiple do %>
+        <div
+          id={"#{@id}-searchable-wrapper"}
+          phx-hook="SearchableSelect"
+          class="relative w-full"
+          data-dropdown-id={"#{@id}-dropdown"}
+        >
+          <!-- Display Input -->
+          <div class="relative">
+            <input
+              type="text"
+              id={"#{@id}-display"}
+              readonly
+              value={get_display_value(@options, @value)}
+              placeholder={@prompt || "-- Select an option --"}
+              phx-click={
+                JS.remove_class("hidden", to: "##{@id}-dropdown") |> JS.focus(to: "##{@id}-search")
+              }
+              class={[@class || "w-full select", @errors != [] && (@error_class || "select-error")]}
+            />
+
+            <i class="fa fa-chevron-down pointer-events-none absolute right-3 top-3 text-xs text-gray-500"></i>
+          </div>
+
+    <!-- Hidden Input for Form Submission -->
+          <input :if={not (Map.has_key?(@rest, :readonly) and @rest.readonly)} type="hidden" name={@name} value={@value}/>
+
+    <!-- Dropdown -->
+          <div
+            :if={not (Map.has_key?(@rest, :readonly) and @rest.readonly)}
+            id={"#{@id}-dropdown"}
+            class="hidden absolute z-10 w-full bg-white border border-gray-200 rounded-md shadow-md"
+          >
+            <!-- Search Input -->
+            <div class="p-2 border-b border-gray-200">
+              <input
+                type="text"
+                id={"#{@id}-search"}
+                phx-debounce="300"
+                placeholder="Type to search options..."
+                class="w-full text-sm px-2 py-1 rounded-md focus:outline-none focus:ring-0 focus:border-zinc-400"
+              />
+            </div>
+
+    <!-- Options List -->
+            <div class="max-h-60 overflow-y-auto p-2" id={"#{@id}-options-list"}>
+              <%= for {label, value} <- normalize_options([{@prompt, ""}] ++ @options) do %>
+                <div
+                  phx-click={
+                    JS.dispatch("searchable-select:change",
+                      detail: %{value: value, label: label, id: @id}
+                    )
+                    |> JS.add_class("hidden", to: "##{@id}-dropdown")
+                  }
+                  phx-value-option={value}
+                  data-label={label}
+                  class={[
+                    "px-2 py-1 rounded-sm text-sm text-gray-800 hover:bg-blue-200 hover:text-gray-900 cursor-pointer",
+                    "#{@value}" == "#{value}" && " bg-blue-500 text-white hover:text-white hover:bg-blue-500"
+                  ]}
+                >
+                  {label}
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% else %>
+        <select
+          id={@id}
+          name={@name}
+          class={"mt-2 block w-full rounded-md border border-gray-300 bg-white shadow-sm focus:border-zinc-400 focus:ring-0 sm:text-sm #{if(Map.has_key?(@rest, :readonly) and @rest.readonly, do: "cursor-not-allowed pointer-events-none", else: "")}"}
+          multiple={@multiple}
+          {@rest}
+        >
+          <option :if={@prompt} value="">{@prompt}</option>
+          {Phoenix.HTML.Form.options_for_select(@options, @value)}
+        </select>
+      <% end %>
+      <.error :for={msg <- @errors}>{msg}</.error>
+    </div>
+    """
+  end
+
+
   def input(%{type: "textarea"} = assigns) do
     ~H"""
     <div class="fieldset mb-2">
       <label>
-        <span :if={@label} class="label mb-1">{@label}</span>
+        <span :if={@label} class="label mb-1">
+          {@label}<span :if={Map.has_key?(@rest, :required) and @rest.required} class="text-red-500">*</span>
+        </span>
         <textarea
           id={@id}
           name={@name}
@@ -434,7 +580,9 @@ defmodule CuzCoreConnectWeb.CoreComponents do
     ~H"""
     <div class="fieldset mb-2">
       <label>
-        <span :if={@label} class="label mb-1">{@label}</span>
+        <span :if={@label} class="label mb-1">
+          {@label}<span :if={Map.has_key?(@rest, :required) and @rest.required} class="text-red-500">*</span>
+        </span>
         <input
           type={@type}
           name={@name}
@@ -450,6 +598,24 @@ defmodule CuzCoreConnectWeb.CoreComponents do
       <.error :for={msg <- @errors}>{msg}</.error>
     </div>
     """
+  end
+
+  defp get_display_value(_options, value) when is_nil(value) or value == "", do: ""
+
+  defp get_display_value(options, value) do
+    options
+    |> normalize_options()
+    |> Enum.find_value("", fn {label, opt_value} ->
+      if to_string(opt_value) == to_string(value), do: label
+    end)
+  end
+
+  defp normalize_options(options) when is_list(options) do
+    Enum.map(options, fn
+      {label, key} -> {label, key}
+      value when is_binary(value) or is_atom(value) -> {value, value}
+      value -> {to_string(value), value}
+    end)
   end
 
   # Helper used by inputs to generate form errors
@@ -1007,36 +1173,33 @@ defmodule CuzCoreConnectWeb.CoreComponents do
   end
 
   @doc """
-  Confirmation modal
+  <button phx-click={show_modal("confirmation-modal")} class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+              Show Modal
+  </button>
 
-  ## Example of implementation
-    <button phx-click={show("confirmation-modal")} class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-                Show Modal
-    </button>
+  This one works with phx-submit put it inside a form and it will trigger the on_confirm event
 
-    This one works with phx-submit put it inside a form and it will trigger the on_confirm event
+  <.confirmation_modal
+        id="confirmation-modal"
+        show={false}
+        title="Confirm Submission"
+        message="Please review your data before submitting"
+        icon="warning"
+        on_cancel="close_modal"
+      />
 
-    <.confirmation_modal
-          id="confirmation-modal"
-          show={false}
-          title="Confirm Submission"
-          message="Please review your data before submitting"
-          icon="warning"
-          on_cancel="close_modal"
-        />
+  This one works with phx-click
 
-    This one works with phx-click
-
-    <.confirmation_modal
-      id="confirmation-modal"
-      show={false}
-      title="Approve for Shortlisting"
-      message="Are you sure you want to approve this applicant for shortlisting?"
-      icon="warning"
-      on_confirm="update_approval_status"
-      on_confirm_params={%{"status" => "approved"}}
-      on_cancel="close_modal"
-    />
+  <.confirmation_modal
+    id="confirmation-modal"
+    show={false}
+    title="Approve for Shortlisting"
+    message="Are you sure you want to approve this applicant for shortlisting?"
+    icon="warning"
+    on_confirm="update_approval_status"
+    on_confirm_params={%{"status" => "approved"}}
+    on_cancel="close_modal"
+  />
   """
 
   attr :id, :string, required: true

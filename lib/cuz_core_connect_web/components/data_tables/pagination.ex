@@ -1,4 +1,4 @@
-defmodule CuzCoreConnectWeb.Datatable.Pagination do
+defmodule CuzCoreConnectWeb.Pagination do
   @moduledoc false
   use CuzCoreConnectWeb, :live_view
 

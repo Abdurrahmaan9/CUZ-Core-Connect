@@ -142,6 +142,20 @@ defmodule CuzCoreConnectWeb.Navigations.Admin do
             </.dropdown_item>
           </.dropdown_menu>
 
+          <.dropdown_menu
+            active={@current_page in [:workflows_registration]}
+            id="workflow-management-menu"
+            icon="arrows-pointing-out"
+            label="Work-Flows"
+          >
+            <.dropdown_item
+              href="/admin/workflows/registration"
+              active={@current_page == :workflows_registration}
+            >
+              Registration
+            </.dropdown_item>
+          </.dropdown_menu>
+
           <div class="divider my-4"></div>
 
           <div class="menu-title">

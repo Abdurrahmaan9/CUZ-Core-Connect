@@ -114,6 +114,11 @@ defmodule CuzCoreConnectWeb.Router do
           live "/external/new", Admin.UserAccounts.External, :new
           live "/external/:id/edit", Admin.UserAccounts.External, :edit
         end
+
+        scope "/workflows" do
+          live "/registration", Admin.RegistrationWorkflow
+          live "/registration/:id/edit", Admin.RegistrationWorkflow, :edit
+        end
       end
     end
 
@@ -165,7 +170,7 @@ defmodule CuzCoreConnectWeb.Router do
       scope "/student" do
         live "/dashboard", StudentLive.Dashboard.Index, :index
 
-        live "/pending", Academics.Students.Index, :index
+        # live "/pending", Academics.Students.Index, :index
       end
     end
 

@@ -21,7 +21,7 @@ defmodule CuzCoreConnect.Registrations.Registration do
     field :registration_status, :string, default: "PENDING"
     has_many :payment_receipts, CuzCoreConnect.Students.PaymentReceipt, foreign_key: :student_registration_id
 
-    belongs_to :workflow, CuzCoreConnect.Registrations.RegistrationWorkflow
+    belongs_to :workflow, CuzCoreConnect.Workflows.RegistrationWorkflow
 
     timestamps(type: :utc_datetime)
   end

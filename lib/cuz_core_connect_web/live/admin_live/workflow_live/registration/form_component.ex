@@ -1,11 +1,8 @@
 defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow.FormComponent do
   use CuzCoreConnectWeb, :live_component
 
-  alias CuzCoreConnect.Academic
-  alias CuzCoreConnect.Accounts
-
-  alias CuzCoreConnect.Registration
-  alias CuzCoreConnect.Registrations.RegistrationWorkflow
+  alias CuzCoreConnect.Workflows.RegistrationWorkflow
+  alias CuzCoreConnect.Workflows
 
   @user_role_types [
     {"Academic Officer", "academics"},
@@ -28,13 +25,13 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow.FormComponent do
           phx-submit="save"
           phx-change="validate"
           phx-target={@myself}
+          class="p-6"
         >
           <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
             <div>
               <.input
                 field={f[:name]}
-                label="Memo Type"
-                class="w-full border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                label="Registration Type"
                 placeholder="Enter registration type"
                 required
               />
@@ -43,25 +40,28 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow.FormComponent do
               <.input
                 field={f[:description]}
                 label="Description"
-                class="w-full border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="Enter description"
               />
             </div>
-            <div>
+              <div class="md:col-span-4 flex justify-between">
               <.input field={f[:is_active]} label="Active" type="checkbox" />
+                <.button type="button" phx-click="add_step" phx-target={@myself} class="gap-1 flex justify-center items-center mb-2 bg-green-400/30 px-1 rounded rounded-sm">
+                  <.icon name="hero-plus" class="h-4 w-4"/> Step
+                </.button>
             </div>
             <div class="md:col-span-4">
               <% flow =
                 if Map.has_key?(@changeset.changes, :flow), do: @changeset.changes.flow, else: [] %>
               <%= if is_list(flow) and length(flow) > 0 do %>
                 <.inputs_for :let={fp} field={f[:flow]}>
-                  <div class="flow-step bg-gray-100 p-4 rounded-lg border mb-4">
+                  <div class="flow-step bg-gray-100/20 p-4 rounded-lg border border-secondary/20 mb-4">
                     <div class="flex justify-between items-start mb-3">
                       <h4 class="font-bold">STEP: {fp.index + 1}</h4>
                       <.button
                         type="button"
                         phx-click="remove_step"
                         phx-value-index={fp.index}
+                        phx-target={@myself}
                         class="text-red-500 hover:text-red-700"
                       >
                         <i class="fas fa-trash"></i>
@@ -79,13 +79,12 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow.FormComponent do
                       </div>
                       <div class="md:col-span-2">
                         <.input
-                          field={fp[:department_type]}
+                          field={fp[:actionar_type]}
                           type="select"
-                          label="Department/Unit"
+                          label="Department/User Account"
                           options={[
-                            {"Initiator Department", "initiator"},
-                            {"Receiving Department", "receiving"},
-                            {"Specific Department", "specific"}
+                            {"Department", "specific_department"},
+                            {"Specific User", "specific_user"}
                           ]}
                           prompt="-- Select department type --"
                           required
@@ -94,7 +93,7 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow.FormComponent do
                       <%= if "#{fp.index}" in @specific_department do %>
                         <div class="md:col-span-4">
                           <.input
-                            field={fp[:department_id]}
+                            field={fp[:role_key]}
                             type="select"
                             label="Select Specific Department"
                             options={for department <- @specific_department_list, do: department}
@@ -103,17 +102,18 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow.FormComponent do
                           />
                         </div>
                       <% end %>
-                      <div class="md:col-span-4">
-                        <.input
-                          field={fp[:required_titles]}
-                          label="Select Required Titles (select in order of priority)"
-                          type="select"
-                          multiple
-                          phx-hook="MultiSelect"
-                          options={@specific_department_jobs["#{fp.index}"] || @user_role_types}
-                          required
-                        />
-                      </div>
+                      <%= if "#{fp.index}" in @specific_user do %>
+                        <div class="md:col-span-4">
+                          <.input
+                            field={fp[:actioner_id]}
+                            type="select"
+                            label="Select Specific User"
+                            options={for user <- @specific_user_list, do: user}
+                            prompt="-- Select Depatment --"
+                            required
+                          />
+                        </div>
+                      <% end %>
                     </div>
                   </div>
                 </.inputs_for>
@@ -124,16 +124,17 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow.FormComponent do
               <% end %>
             </div>
             <div class="md:col-span-4">
-              <.button type="button" phx-click="add_step" class="mb-2">
-                <.icon name="hero-plus-circle"/> Add Step
-              </.button>
               <!-- Form Actions -->
-              <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
-                <.button type="button" id="cancel-button-2">
+              <div class="flex justify-between space-x-3 pt-6 border-t border-gray-300/20">
+                <.button type="button" id="cancel-button-2" phx-click="cancel_form_component" phx-target={@myself} class="bg-gray-50/75 px-1.5 rounded rounded-sm  text-black">
                   Cancel
                 </.button>
-                <.button type="submit">
-                  Save Memo Flow
+
+                <.button
+                  type="submit"
+                  class="bg-indigo-600 text-white px-2 py-1 rounded-md hover:bg-indigo-700 transition flex items-center"
+                >
+                  Save Registration Flow
                 </.button>
               </div>
             </div>
@@ -145,67 +146,10 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow.FormComponent do
   end
 
   @impl true
-  def update(%{registration_workflow: registration_workflow} = assigns, socket) do
-    registration_flow = %CuzCoreConnect.Registrations.RegistrationWorkflow{flow: []}
+  def update(%{registration_workflow: _registration_workflow} = assigns, socket) do
+    registration_flow = %CuzCoreConnect.Workflows.RegistrationWorkflow{flow: []}
 
-    changeset = CuzCoreConnect.Registrations.RegistrationWorkflow.changeset(registration_flow, %{})
-
-    #     memo_flow = WorkFlows.get_memo_flows_by_id(id)
-
-
-    # # Build the raw params list (including "id" for existing steps)
-    # flow_params =
-    #   memo_flow.flow
-    #   |> Enum.map(fn step ->
-    #     %{
-    #       "id" => step.id,
-    #       "step_no" => step.step_no,
-    #       "description" => step.description,
-    #       "department_type" => step.department_type,
-    #       "required_titles" => step.required_titles,
-    #       "department_id" => step.department_id
-    #     }
-    #   end)
-    #   |> case do
-    #     [] ->
-    #       [
-    #         %{
-    #           "step_no" => 1,
-    #           "description" => "",
-    #           "department_type" => "initiator",
-    #           "required_titles" => [],
-    #           "department_id" => nil
-    #         }
-    #       ]
-
-    #     steps ->
-    #       steps
-    #   end
-
-    # # Build changeset so inputs_for will render these
-    # changeset =
-    #   MemoFlow.changeset(memo_flow, %{"flow" => flow_params})
-    #   |> Map.put(:action, :validate)
-
-    # # Now compute your LiveView assigns in one go
-    # {specific_indices, jobs_by_index, selected_map} = build_specific_assigns(flow_params)
-
-    # socket
-    # |> assign(
-    #   memos: true,
-    #   hr: false,
-    #   recovery: false,
-    #   finance_budget: false,
-    #   finance_payments: false,
-    #   scholarship: false,
-    #   changeset: changeset,
-    #   memo_flow: memo_flow,
-    #   flow_steps: flow_params,
-    #   specific_department: specific_indices,
-    #   specific_department_list: Departments.get_departments_input_list(),
-    #   specific_department_jobs: jobs_by_index,
-    #   selected_departments: selected_map
-    # )
+    changeset = CuzCoreConnect.Workflows.RegistrationWorkflow.changeset(registration_flow, %{})
 
 
     socket =
@@ -214,9 +158,12 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow.FormComponent do
         registrations: true,
         changeset: changeset,
         specific_department: [],
+        specific_user: [],
+        specific_user_list: [],
         specific_department_jobs: %{},
         registration_flow: registration_flow,
-        flow_steps: [%{description: "", department_type: "", required_titles: []}]
+        user_role_types: @user_role_types,
+        flow_steps: [%{description: "", actionar_type: "", required_titles: []}]
       )
 
 
@@ -225,45 +172,30 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow.FormComponent do
      |> assign(assigns)}
   end
 
-
-  def handle_event("validate", %{"registration_flow" => registration_flow_params}, socket) do
+  @impl true
+  def handle_event("validate", %{"registration_workflow" => registration_flow_params}, socket) do
     flow_params = registration_flow_params["flow"] || %{}
 
+    IO.inspect(registration_flow_params, label: "===")
     {specific_indices, jobs_by_index, selected_map} =
       Enum.reduce(flow_params, {[], %{}, %{}}, fn {idx, step_params}, {inds, jobs, sels} ->
         sels =
-          if step_params["department_type"] == "specific" do
-            Map.put(sels, idx, step_params["department_id"] || "")
+          if step_params["actionar_type"] == "specific_department" do
+            Map.put(sels, idx, step_params["role_key"] || "")
           else
             sels
           end
 
         jobs =
-          if step_params["department_type"] == "specific" do
-            dept_id = step_params["department_id"]
+          if step_params["actionar_type"] == "specific_department" do
 
-            titles =
-              if !is_nil(dept_id) && dept_id != "" do
-                case Jobs.list_jobs_by_department_id(dept_id) do
-                  [] ->
-                    []
-
-                  jobs ->
-                    jobs
-                    |> Enum.map(&{&1.title, &1.title})
-                    |> Enum.uniq()
-                end
-              else
-                []
-              end
-
-            Map.put(jobs, idx, titles)
+            Map.put(jobs, idx, @user_role_types)
           else
             Map.delete(jobs, idx)
           end
 
         inds =
-          if step_params["department_type"] == "specific", do: inds ++ [idx], else: inds
+          if step_params["actionar_type"] == "specific_department", do: inds ++ [idx], else: inds
 
         {inds, jobs, sels}
       end)
@@ -271,7 +203,9 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow.FormComponent do
     socket =
       socket
       |> assign(:specific_department, specific_indices)
-      |> assign(:specific_department_list, Departments.get_departments_input_list())
+      |> assign(:specific_user, [])
+      |> assign(:specific_user_list, [])
+      |> assign(:specific_department_list, @user_role_types)
       |> assign(:specific_department_jobs, jobs_by_index)
       |> assign(:selected_departments, selected_map)
 
@@ -283,10 +217,11 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow.FormComponent do
     {:noreply, assign(socket, :changeset, changeset)}
   end
 
+  @impl true
   def handle_event(
         "save",
         %{
-          "registration_flow" => %{
+          "registration_workflow" => %{
             "name" => name,
             "description" => description,
             "is_active" => is_active,
@@ -303,9 +238,10 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow.FormComponent do
         %{
           step_no: step_no,
           description: step_params["description"],
-          department_type: step_params["department_type"],
+          actionar_type: step_params["actionar_type"],
           required_titles: step_params["required_titles"] || [],
-          department_id: step_params["department_id"] || nil
+          role_key: step_params["role_key"] || nil,
+          actioner_id: step_params["actioner_id"] || nil
         }
       end)
 
@@ -316,12 +252,12 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow.FormComponent do
       flow: flow_steps
     }
 
-    case WorkFlows.create_registration_flow(cleaned_params) do
+    case Workflows.create_registration_flow(cleaned_params) do
       {:ok, _registration_flow} ->
         {:noreply,
          socket
-         |> put_flash(:info, "Memo flow created successfully")
-         |> push_navigate(to: ~p"/administration/work_flows/registrations")}
+         |> put_flash(:info, "Registration flow created successfully")
+         |> push_navigate(to: ~p"/admin/workflows/registration")}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, :changeset, changeset)}
@@ -336,8 +272,9 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow.FormComponent do
     new_step = %{
       step_no: step_no,
       description: "",
-      department_type: "",
-      department_id: nil,
+      actionar_type: "",
+      role_key: nil,
+      actioner_id: nil,
       required_titles: []
     }
 
@@ -374,10 +311,7 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow.FormComponent do
      )}
   end
 
-  defp assign_form(socket, %Ecto.Changeset{} = changeset) do
-    assign(socket, :form, to_form(changeset))
-  end
-
+  @impl true
   def handle_event("cancel_form_component", _, socket) do
     notify_parent(:cancel_form_component, "Form closed")
     {:noreply, socket}

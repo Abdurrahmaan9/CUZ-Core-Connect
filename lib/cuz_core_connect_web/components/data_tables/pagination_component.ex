@@ -1,4 +1,4 @@
-defmodule CuzCoreConnectWeb.Datatable.PaginationComponent do
+defmodule CuzCoreConnectWeb.PaginationComponent do
   @moduledoc false
   use CuzCoreConnectWeb, :live_component
   import CuzCoreConnectWeb.SortTable.DataTable

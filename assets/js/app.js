@@ -28,6 +28,8 @@ import { AutoFade } from "./hooks/auto_fade";
 import { CopyToClipboard } from "./hooks/copy_to_clipboard";
 import { PasswordToggle } from "./hooks/password_toggle";
 import { TutorialSpotlight } from "./hooks/tutorial_spotlight";
+import { SearchableSelect } from "./hooks/searchable_select";
+import { MultiSelect } from "./hooks/multi_select";
 
 
 // Define Hooks HERE!
@@ -36,8 +38,9 @@ const Hooks = {
   colocatedHooks,
   CopyToClipboard,
   PasswordToggle,
-  TutorialSpotlight
-
+  TutorialSpotlight,
+  SearchableSelect,
+  MultiSelect,
 };
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {

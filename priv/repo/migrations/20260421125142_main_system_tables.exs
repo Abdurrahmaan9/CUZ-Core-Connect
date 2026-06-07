@@ -184,6 +184,11 @@ defmodule CuzCoreConnect.Repo.Migrations.MainSystemTables do
     create_if_not_exists index(:tbl_program_courses, [:program_id])
     create_if_not_exists index(:tbl_program_courses, [:course_id])
     create_if_not_exists index(:tbl_program_courses, [:is_active])
+
+    create_if_not_exists unique_index(:tbl_registration_workflows, [:is_active],
+      where: "is_active = true",
+      name: :one_active_registration_workflow
+    )
   end
 
   def alter_tables() do
