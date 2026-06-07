@@ -30,7 +30,6 @@ defmodule CuzCoreConnect.Registrations.Registration do
     registration
     |> cast(attrs,
     [
-    :workflow_id,
     :student_id,
     :student_names,
     :student_email,
@@ -47,7 +46,7 @@ defmodule CuzCoreConnect.Registrations.Registration do
     :financial_status,
     :registration_status
     ])
-
+    |> put_active_workflow()
     |> validate_required([
       :student_id,
       :student_names,
@@ -65,8 +64,20 @@ defmodule CuzCoreConnect.Registrations.Registration do
       :financial_status,
       :registration_status
       ])
-
     |> validate_email()
+  end
+
+  defp put_active_workflow(changeset) do
+    # Only assign on insert (when workflow_id not already set)
+    case get_field(changeset, :workflow_id) do
+      nil ->
+        case CuzCoreConnect.Workflows.get_active_registration_flow() do
+          nil -> add_error(changeset, :workflow_id, "No active registration workflow found")
+          workflow -> put_change(changeset, :workflow_id, workflow.id)
+        end
+      _ ->
+        changeset
+    end
   end
 
   def validate_email(changeset) do
@@ -78,5 +89,4 @@ defmodule CuzCoreConnect.Registrations.Registration do
       end
     end)
   end
-
 end

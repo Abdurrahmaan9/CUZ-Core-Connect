@@ -70,7 +70,7 @@ defmodule CuzCoreConnect.Repo.Migrations.MainSystemTables do
       add :status, :string
       add :flow, {:array, :map}
       add :description, :string
-      add :is_active, :boolean, default: true
+      add :is_active, :boolean, default: false
       add :deleted_at, :naive_datetime
 
       timestamps()

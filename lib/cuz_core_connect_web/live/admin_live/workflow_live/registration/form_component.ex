@@ -3,6 +3,7 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow.FormComponent do
 
   alias CuzCoreConnect.Workflows.RegistrationWorkflow
   alias CuzCoreConnect.Workflows
+  alias CuzCoreConnect.NotifySubs
 
   @user_role_types [
     {"Academic Officer", "academics"},
@@ -43,11 +44,11 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow.FormComponent do
                 placeholder="Enter description"
               />
             </div>
-              <div class="md:col-span-4 flex justify-between">
-              <.input field={f[:is_active]} label="Active" type="checkbox" />
-                <.button type="button" phx-click="add_step" phx-target={@myself} class="gap-1 flex justify-center items-center mb-2 bg-green-400/30 px-1 rounded rounded-sm">
-                  <.icon name="hero-plus" class="h-4 w-4"/> Step
-                </.button>
+              <div class="md:col-span-4 flex justify-end">
+              <%!-- <.input field={f[:is_active]} label="Active" type="checkbox" /> --%>
+              <.button type="button" phx-click="add_step" phx-target={@myself} class="gap-1 flex justify-center items-center mb-2 bg-green-400/30 px-1 pr-2 rounded rounded-sm">
+                <.icon name="hero-plus" class="h-4 w-4"/> Step
+              </.button>
             </div>
             <div class="md:col-span-4">
               <% flow =
@@ -146,10 +147,38 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow.FormComponent do
   end
 
   @impl true
-  def update(%{registration_workflow: _registration_workflow} = assigns, socket) do
-    registration_flow = %CuzCoreConnect.Workflows.RegistrationWorkflow{flow: []}
+  def update(%{registration_workflow: registration_workflow, form_mode: _form_mode} = assigns, socket) do
+    flow_params =
+      registration_workflow.flow
+      |> Enum.map(fn step ->
+        %{
+          "step_no" => step.step_no,
+          "description" => step.description,
+          "actionar_type" => step.actionar_type,
+          "required_titles" => step.required_titles,
+          "role_key" => step.role_key,
+          "actioner_id" => step.actioner_id
+        }
+      end)
+      |> case do
+        [] ->
+          [
+            %{
+              "step_no" => 1,
+              "description" => "",
+              "actionar_type" => "initiator",
+              "required_titles" => [],
+              "role_key" => nil,
+              "actioner_id" => nil
+            }
+          ]
 
-    changeset = CuzCoreConnect.Workflows.RegistrationWorkflow.changeset(registration_flow, %{})
+        steps ->
+          steps
+      end
+
+    changeset =
+      RegistrationWorkflow.changeset(registration_workflow, %{"flow" => flow_params})
 
 
     socket =
@@ -161,7 +190,6 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow.FormComponent do
         specific_user: [],
         specific_user_list: [],
         specific_department_jobs: %{},
-        registration_flow: registration_flow,
         user_role_types: @user_role_types,
         flow_steps: [%{description: "", actionar_type: "", required_titles: []}]
       )
@@ -210,7 +238,7 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow.FormComponent do
       |> assign(:selected_departments, selected_map)
 
     changeset =
-      socket.assigns.registration_flow
+      socket.assigns.registration_workflow
       |> RegistrationWorkflow.changeset(registration_flow_params)
       |> Map.put(:action, :validate)
 
@@ -218,49 +246,11 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow.FormComponent do
   end
 
   @impl true
-  def handle_event(
-        "save",
-        %{
-          "registration_workflow" => %{
-            "name" => name,
-            "description" => description,
-            "is_active" => is_active,
-            "flow" => flow_map
-          }
-        },
-        socket
-      ) do
-    flow_steps =
-      flow_map
-      |> Enum.sort_by(fn {k, _} -> String.to_integer(k) end)
-      |> Enum.with_index(1)
-      |> Enum.map(fn {{_key, step_params}, step_no} ->
-        %{
-          step_no: step_no,
-          description: step_params["description"],
-          actionar_type: step_params["actionar_type"],
-          required_titles: step_params["required_titles"] || [],
-          role_key: step_params["role_key"] || nil,
-          actioner_id: step_params["actioner_id"] || nil
-        }
-      end)
-
-    cleaned_params = %{
-      name: name,
-      description: description,
-      is_active: is_active == "true",
-      flow: flow_steps
-    }
-
-    case Workflows.create_registration_flow(cleaned_params) do
-      {:ok, _registration_flow} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, "Registration flow created successfully")
-         |> push_navigate(to: ~p"/admin/workflows/registration")}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign(socket, :changeset, changeset)}
+  def handle_event("save", %{"registration_workflow" => workflow}, socket) do
+    if socket.assigns.form_mode == :edit do
+      save_edit_workflow(workflow, socket)
+    else
+      save_new_workflow(workflow, socket)
     end
   end
 
@@ -315,6 +305,55 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow.FormComponent do
   def handle_event("cancel_form_component", _, socket) do
     notify_parent(:cancel_form_component, "Form closed")
     {:noreply, socket}
+  end
+
+  def save_new_workflow(workflow, socket) do
+    flow_steps =
+      (workflow["flow"] || %{})
+      |> Enum.sort_by(fn {k, _} -> String.to_integer(k) end)
+      |> Enum.with_index(1)
+      |> Enum.map(fn {{_key, step_params}, step_no} ->
+        %{
+          step_no: step_no,
+          description: step_params["description"],
+          actionar_type: step_params["actionar_type"],
+          required_titles: step_params["required_titles"] || [],
+          role_key: step_params["role_key"] || nil,
+          actioner_id: step_params["actioner_id"] || nil
+        }
+      end)
+
+    cleaned_params =
+      %{
+        name: workflow["name"] || "N/A",
+        description: workflow["description"] || "N/A",
+        is_active: (workflow["is_active"] || "false") == "true",
+        flow: flow_steps
+      }
+
+    case Workflows.create_registration_flow(cleaned_params) do
+      {:ok, _registration_flow} ->
+        notify_parent(:success, "Registration flow created successfully")
+        {:noreply, socket}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:error, msg} = NotifySubs.notify_subs({:error, changeset})
+        notify_parent(:error, "Failed to create flow: #{msg}")
+        {:noreply, socket}
+    end
+  end
+
+  def save_edit_workflow(workflow, socket) do
+    case Workflows.update_registration_flow(socket.assigns.registration_workflow, workflow) do
+      {:ok, _registration_workflow} ->
+        notify_parent(:success, "Registration flow updated successfully")
+        {:noreply, socket}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:error, msg} = NotifySubs.notify_subs({:error, changeset})
+        notify_parent(:error, "Failed to create flow: #{msg}")
+        {:noreply, socket}
+    end
   end
 
   defp notify_parent(key, msg), do: send(self(), {__MODULE__, {key, msg}})

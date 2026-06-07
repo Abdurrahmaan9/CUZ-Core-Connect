@@ -5,6 +5,15 @@ defmodule CuzCoreConnect.Registration do
 
   @pagination [page_size: 10]
 
+
+  def migrate_pending_registrations_workflow(old_id, new_id) do
+    Repo.update_all(
+      from(r in Registration,
+        where: r.workflow_id == ^old_id and r.registration_status == "PENDING"
+      ),
+      set: [workflow_id: new_id]
+    )
+  end
   def changeset(registration, attrs) do
     Registration.changeset(registration, attrs)
   end

@@ -2,6 +2,8 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow do
   use CuzCoreConnectWeb, :live_view
 
   alias CuzCoreConnect.Workflows
+  alias CuzCoreConnect.Registration
+  alias CuzCoreConnect.Workflows.RegistrationWorkflow
   alias CuzCoreConnectWeb.{
     Pagination,
     PaginationComponent,
@@ -15,14 +17,6 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow do
 
   @impl true
   def mount(_params, _session, socket) do
-    socket =
-      socket
-      |> assign(
-        registrations: true,
-        search_filter: ""
-      )
-      |> load_filtered_registration_flows()
-
     {:ok,
      socket
      |> assign(:page_title, "Registration Work Flows")
@@ -32,6 +26,7 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow do
      |> assign(:all_flows_tab, true)
      |> assign(:registrations_tab, false)
      |> assign(:form_mode, nil)
+     |> assign(:confirm_switch_flow, nil)
      |> Pagination.assign_filters(@filter_defaults)
     }
   end
@@ -42,6 +37,7 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow do
      socket
       |> assign(:params, params)
       |> Pagination.filter_composer(params)
+      |> load_filtered_registration_flows()
     }
   end
 
@@ -80,11 +76,11 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow do
   end
 
   @impl true
-  def handle_event("filter", %{"filters" => params}, socket) do
+  def handle_event("filter", params, socket) do
     socket =
       socket
       |> Pagination.filter_composer(params)
-      |> Pagination.push_filters(~p"/admin/student")
+      |> Pagination.push_filters(~p"/admin/workflows/registration")
 
     {:noreply, socket}
   end
@@ -94,21 +90,26 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow do
     {:noreply,
      socket
      |> assign(:show_registration_formcomponent, true)
-     |> assign(:registration_workflow, %CuzCoreConnect.Workflows.RegistrationWorkflow{})
+     |> assign(:registration_workflow, %RegistrationWorkflow{flow: []})
      |> assign(:form_mode, :new)
     }
   end
 
-  def handle_event("edit_registration_flow", params, socket) do
+  def handle_event("edit_registration_flow", %{"id" => id}, socket) do
+    registration_flow =
+      Workflows.get_registration_flows_by_id(id)
+
     {:noreply,
-     push_navigate(socket,
-       to:
-         ~p"/admin/workflows/registration/#{params["id"]}/edit?redirect=#{~p"/admin/workflows/registration"}"
-     )}
+     socket
+     |> assign(:show_registration_formcomponent, true)
+     |> assign(:registration_workflow, registration_flow)
+     |> assign(:form_mode, :edit)
+    }
   end
 
   def handle_event("duplicate_registration_flow", %{"id" => id} = _params, socket) do
-    registration_flow = Workflows.get_registration_flows_by_id(id)
+    registration_flow =
+      Workflows.get_registration_flows_by_id(id)
 
     flow_steps =
       registration_flow.flow
@@ -184,6 +185,66 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow do
   end
 
   @impl true
+  def handle_event("set_active_flow", %{"id" => id}, socket) do
+    id = String.to_integer(id)
+    current_active = Workflows.get_active_registration_flow()
+
+    pending_count =
+      if current_active && current_active.id != id do
+        Workflows.count_incomplete_registrations_by_workflow(current_active.id)
+      else
+        0
+      end
+
+    if pending_count > 0 do
+      # Show confirmation modal with info about in-progress registrations
+      {:noreply,
+      socket
+      |> assign(:confirm_switch_flow, %{
+        new_id: id,
+        old_id: current_active.id,
+        old_name: current_active.name,
+        pending_count: pending_count
+      })}
+    else
+      do_activate_flow(socket, id)
+    end
+  end
+
+  @impl true
+  def handle_event("confirm_switch_restart", _params, socket) do
+    %{new_id: new_id, old_id: old_id} = socket.assigns.confirm_switch_flow
+
+    Registration.migrate_pending_registrations_workflow(old_id, new_id)
+
+    do_activate_flow(socket |> assign(:confirm_switch_flow, nil), new_id)
+  end
+
+  @impl true
+  def handle_event("confirm_switch_keep", _params, socket) do
+    # Keep old registrations on old workflow, just activate new for future ones
+      do_activate_flow(socket |> assign(:confirm_switch_flow, nil), socket.assigns.confirm_switch_flow.new_id)
+  end
+
+  @impl true
+  def handle_event("cancel_switch_flow", _params, socket) do
+    {:noreply, assign(socket, :confirm_switch_flow, nil)}
+  end
+
+  defp do_activate_flow(socket, id) do
+    case Workflows.set_active_registration_flow(id) do
+      {:ok, _} ->
+        {:noreply,
+        socket
+        |> put_flash(:info, "Registration workflow activated.")
+        |> load_filtered_registration_flows()}
+
+      {:error, changeset} ->
+        {:noreply, put_flash(socket, :error, "Failed to activate workflow: #{inspect(changeset.errors)}")}
+    end
+  end
+
+  @impl true
   def render(assigns) do
     ~H"""
     <Layouts.admin flash={@flash} current_scope={@current_scope} page_title={@page_title} current_page={@current_page}>
@@ -194,10 +255,10 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow do
               <i class="fas fa-file-alt mr-2 text-indigo-500"></i> Registration Flows
             </h3>
 
-            <.form for={%{}} phx-change="seach_registration_flow">
+            <.form for={%{}} phx-change="filter">
               <.input
                 id="registration-flow-filter-search"
-                name="search_filter[search_term]"
+                name="search_filter"
                 value={@search_filter}
                 placeholder="Type here to search Memo flow..."
               />
@@ -237,9 +298,6 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow do
                           {if flow.is_active, do: "Active", else: "Inactive"}
                         </span>
                         <div class="flex space-x-2">
-                          <.button phx-click="edit_registration_flow" phx-value-id={flow.id}>
-                            edit
-                          </.button>
                           <.button
                             phx-click={JS.toggle(to: "#flow-details-#{flow.id}")}
                           >
@@ -280,12 +338,26 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow do
                         <% end %>
                       </div>
 
-                      <div class="flex justify-between">
-                        <div class="mt-4 text-sm text-gray-500">
-                          <p>Created: {Calendar.strftime(flow.inserted_at, "%H:%M %B %d, %Y")}</p>
-                          <p>Last updated: {Calendar.strftime(flow.updated_at, "%H:%M %B %d, %Y")}</p>
-                        </div>
-                        <div class="mt-4 text-sm text-gray-500">
+                      <div class="mt-4 text-sm text-base-content">
+                        <p>Created: {Calendar.strftime(flow.inserted_at, "%H:%M %B %d, %Y")}</p>
+                        <p>Last updated: {Calendar.strftime(flow.updated_at, "%H:%M %B %d, %Y")}</p>
+                      </div>
+
+
+                        <div class="mt-4 text-sm text-base-content flex justify-between">
+                          <.button
+                            :if={!flow.is_active}
+                            phx-click="set_active_flow"
+                            phx-value-id={flow.id}
+                          >
+                            Set Active
+                          </.button>
+                          <span :if={flow.is_active} class="flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
+                            {if flow.is_active, do: "Active", else: "Inactive"}
+                          </span>
+                          <.button phx-click="edit_registration_flow" phx-value-id={flow.id}>
+                            edit
+                          </.button>
                           <.button
                             phx-click="duplicate_registration_flow"
                             phx-value-id={flow.id}
@@ -310,12 +382,11 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow do
 
                           <.button
                             phx-click={show("confirmation-modal-delete-registration-flow")}
-                            class="mt-4 text-sm text-gray-500"
                           >
                             delete
                           </.button>
                         </div>
-                      </div>
+
                     </div>
                   </div>
                 <% end %>
@@ -347,6 +418,52 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow do
         form_mode={@form_mode}
         registration_workflow={@registration_workflow}
       />
+
+      <.modal :if={@confirm_switch_flow} id="confirm-switch-flow-modal" show on_cancel={JS.push("cancel_switch_flow")}>
+        <:title>Active Workflow Has Pending Registrations</:title>
+
+        <div class="p-4 space-y-4">
+          <p class="text-sm text-gray-700">
+            There are <strong>{@confirm_switch_flow.pending_count}</strong> registration(s)
+            still in progress using <strong>{@confirm_switch_flow.old_name}</strong>.
+          </p>
+          <p class="text-sm text-gray-700">
+            How should these be handled?
+          </p>
+
+          <div class="space-y-2">
+            <div class="p-3 border rounded-lg border-yellow-300 bg-yellow-50">
+              <p class="font-medium text-yellow-800 text-sm">Continue with old workflow</p>
+              <p class="text-xs text-yellow-700 mt-1">
+                In-progress registrations keep using <em>{@confirm_switch_flow.old_name}</em>.
+                New registrations will use the new workflow.
+              </p>
+            </div>
+            <div class="p-3 border rounded-lg border-blue-300 bg-blue-50">
+              <p class="font-medium text-blue-800 text-sm">Restart with new workflow</p>
+              <p class="text-xs text-blue-700 mt-1">
+                All pending registrations will be moved to the new workflow and restart from step 1.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <:footer>
+          <div class="flex justify-between gap-2">
+            <.button phx-click="cancel_switch_flow" class="bg-gray-100 text-gray-800">
+              Cancel
+            </.button>
+            <div class="flex gap-2">
+              <.button phx-click="confirm_switch_keep" class="bg-yellow-500 text-white">
+                Keep Old for In-Progress
+              </.button>
+              <.button phx-click="confirm_switch_restart" class="bg-blue-600 text-white">
+                Restart with New Flow
+              </.button>
+            </div>
+          </div>
+        </:footer>
+      </.modal>
     </Layouts.admin>
     """
   end

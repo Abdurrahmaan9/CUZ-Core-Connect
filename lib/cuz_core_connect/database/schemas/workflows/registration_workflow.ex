@@ -6,7 +6,7 @@ defmodule CuzCoreConnect.Workflows.RegistrationWorkflow do
   schema "tbl_registration_workflows" do
     field :name, :string
     field :description, :string
-    field :is_active, :boolean, default: true
+    field :is_active, :boolean, default: false
     field :deleted_at, :naive_datetime
 
     embeds_many :flow, FlowStep, on_replace: :delete do

@@ -5,25 +5,54 @@ defmodule CuzCoreConnect.Workflows do
   alias CuzCoreConnectWeb.Pagination
   alias CuzCoreConnect.Workflows.RegistrationWorkflow
 
-  def list_registration_flows do
-    from(mf in RegistrationWorkflow,
-      where: mf.is_deleted == false,
-      order_by: [asc: mf.name]
+  def get_active_registration_flow do
+    Repo.one(
+      from w in RegistrationWorkflow,
+        where: w.is_active == true and is_nil(w.deleted_at),
+        limit: 1
     )
-    |> Repo.all()
   end
 
-  def list_peginated_registration_flows(params \\ %{page: 1, page_size: 10}, filters \\ %{}) do
+  def set_active_registration_flow(id) do
+    Repo.transaction(fn ->
+      # Deactivate all others first
+      Repo.update_all(
+        from(w in RegistrationWorkflow, where: w.id != ^id),
+        set: [is_active: false]
+      )
+
+      workflow = Repo.get!(RegistrationWorkflow, id)
+
+      workflow
+      |> RegistrationWorkflow.changeset(%{is_active: true})
+      |> Repo.update()
+      |> case do
+        {:ok, updated} -> updated
+        {:error, changeset} -> Repo.rollback(changeset)
+      end
+    end)
+  end
+
+  # Count in-progress registrations still using a given workflow_id
+  def count_incomplete_registrations_by_workflow(workflow_id) do
+    Repo.one(
+      from r in CuzCoreConnect.Registrations.Registration,
+        where: r.workflow_id == ^workflow_id and r.registration_status == "PENDING",
+        select: count(r.id)
+    )
+  end
+
+  def list_peginated_registration_flows(filters \\ %{}) do
     page_params = %{
-      page: Pagination.param_value(params, :page, 1),
-      page_size: Pagination.param_value(params, :page_size, 10)
+      page: Pagination.param_value(filters, :page, 1),
+      page_size: Pagination.param_value(filters, :page_size, 10)
     }
 
     query =
       RegistrationWorkflow
       |> where([f], is_nil(f.deleted_at))
       |> apply_filters(filters)
-      |> order_by(desc: :updated_at)
+      |> order_by(desc: :name)
 
     case Pagination.do_paginate(query, page_params) do
       {:ok, page} ->
@@ -38,20 +67,6 @@ defmodule CuzCoreConnect.Workflows do
           total_pages: 0
         }
     end
-  end
-
-  def get_registration_flows(id) do
-    RegistrationWorkflow
-    |> where([mf], mf.id == ^id)
-    # |> preload([:stages])
-    |> Repo.one()
-  end
-
-  def list_flows do
-    from(mf in RegistrationWorkflow,
-      order_by: [asc: mf.name]
-    )
-    |> Repo.all()
   end
 
   def registration_flow_changeset(registration_flow \\ %RegistrationWorkflow{}, attrs \\ %{}) do
@@ -80,33 +95,13 @@ defmodule CuzCoreConnect.Workflows do
     RegistrationWorkflow.changeset(registration_flow, attrs)
   end
 
-  # helpers to pick sensible timestamps from lists of structs
-  def get_first_inserted_at(list) when is_list(list) and list != [] do
-    list
-    |> Enum.map(&Map.get(&1, :inserted_at))
-    |> Enum.reject(&is_nil/1)
-    |> Enum.min(fn -> nil end)
-  end
-
-  def get_first_inserted_at(_), do: nil
-
-  def get_last_updated_at(list) when is_list(list) and list != [] do
-    list
-    |> Enum.map(&Map.get(&1, :updated_at))
-    |> Enum.reject(&is_nil/1)
-    |> Enum.max(fn -> nil end)
-  end
-
-  def get_last_updated_at(_), do: nil
-
   defp apply_filters(query, filters) do
     query
-    |> maybe_search(filters[:search_filter])
-    # |> maybe_filter_by_department(filters[:department_filter])
+    |> maybe_filter_by_search(filters[:search_filter])
   end
 
-  defp maybe_search(query, term) when term in [nil, ""], do: query
-  defp maybe_search(query, search_term) do
+  defp maybe_filter_by_search(query, term) when term in [nil, ""], do: query
+  defp maybe_filter_by_search(query, search_term) do
     where(query, [f], ilike(f.name, ^"%#{search_term}%"))
   end
 end
