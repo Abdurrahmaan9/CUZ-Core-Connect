@@ -2,7 +2,7 @@ defmodule CuzCoreConnectWeb.Admin.AcademicManagement.Courses.FormComponent do
   use CuzCoreConnectWeb, :live_component
 
   alias CuzCoreConnect.Academic
-  alias CuzCoreConnect.Academics.Courses, as: Course
+  # alias CuzCoreConnect.Academics.Courses, as: Course
 
   @impl true
   def render(assigns) do

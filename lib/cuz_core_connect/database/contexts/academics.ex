@@ -5,12 +5,12 @@ defmodule CuzCoreConnect.Academic do
   import Ecto.Query, warn: false
   alias CuzCoreConnect.Repo
   alias CuzCoreConnect.Academics.Programmes, as: Programme
-  alias CuzCoreConnect.Academics.ProgramCourse
-  alias CuzCoreConnect.Academic.StudentProgram
-  alias CuzCoreConnect.Academic.LecturerCourse
+  # alias CuzCoreConnect.Academics.ProgramCourse
+  # alias CuzCoreConnect.Academic.StudentProgram
+  # alias CuzCoreConnect.Academic.LecturerCourse
   alias CuzCoreConnect.Academic.LecturerProgram
   alias CuzCoreConnect.Academics.Courses, as: Course
-  alias CuzCoreConnect.Accounts.User
+  # alias CuzCoreConnect.Accounts.User
 
   # ====================== Programme functions =================================
   def list_programs do
