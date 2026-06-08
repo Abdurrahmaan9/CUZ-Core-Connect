@@ -676,7 +676,7 @@ defmodule CuzCoreConnectWeb.CoreComponents do
 
   slot :action, doc: "the slot for showing user actions in the last table column"
 
-  def table(assigns) do
+  def old_table(assigns) do
     assigns =
       with %{rows: %Phoenix.LiveView.LiveStream{}} <- assigns do
         assign(assigns, row_id: assigns.row_id || fn {id, _item} -> id end)
@@ -719,7 +719,7 @@ defmodule CuzCoreConnectWeb.CoreComponents do
 
   ## Examples
 
-      <.modern_table id="registrations" rows={@registrations} class="shadow-sm">
+      <.table id="registrations" rows={@registrations} class="shadow-sm">
         <:col :let={registration} label="Student Details">
           <div class="text-sm font-medium text-gray-900">{registration.student_names}</div>
           <div class="text-sm text-gray-500">{registration.student_email}</div>
@@ -730,7 +730,7 @@ defmodule CuzCoreConnectWeb.CoreComponents do
             View
           </.link>
         </:action>
-      </.modern_table>
+      </.table>
   """
   attr :id, :string, required: true
   attr :rows, :list, required: true
@@ -759,7 +759,7 @@ defmodule CuzCoreConnectWeb.CoreComponents do
 
   slot :action, doc: "the slot for showing user actions in the last table column"
 
-  def modern_table(assigns) do
+  def table(assigns) do
     assigns =
       with %{rows: %Phoenix.LiveView.LiveStream{}} <- assigns do
         assign(assigns, row_id: assigns.row_id || fn {id, _item} -> id end)
@@ -772,49 +772,6 @@ defmodule CuzCoreConnectWeb.CoreComponents do
     ]}>
       <%= if @show_header do %>
         <div class="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div class="flex w-full max-w-[214px] overflow-hidden rounded-md border border-base-300 bg-base-100 shadow-sm transition duration-150 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
-            <span class="flex h-[34px] w-[30px] shrink-0 items-center justify-center bg-primary text-primary-content">
-              <.icon name="hero-magnifying-glass" class="size-4" />
-            </span>
-            <input
-              id={"#{@id}-search"}
-              type="search"
-              name="search"
-              placeholder={@search_placeholder}
-              class="h-[34px] min-w-0 flex-1 border-0 bg-base-100 px-2 text-xs text-base-content outline-none placeholder:text-base-content/50 focus:ring-0"
-            />
-          </div>
-
-          <div class="flex flex-wrap items-center gap-2 lg:justify-end">
-            <button
-              type="button"
-              id={"#{@id}-export"}
-              class="inline-flex h-[30px] items-center rounded-md bg-primary px-3 text-[11px] font-bold tracking-wide text-primary-content transition duration-150 hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20"
-            >
-              Export
-            </button>
-            <button
-              type="button"
-              id={"#{@id}-filter"}
-              class="inline-flex h-[30px] items-center gap-1.5 rounded-md bg-primary px-3 text-[11px] font-bold tracking-wide text-primary-content transition duration-150 hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20"
-            >
-              <.icon name="hero-funnel" class="size-3.5" /> Filter
-            </button>
-            <button
-              type="button"
-              id={"#{@id}-transactions-report"}
-              class="inline-flex h-[30px] items-center gap-1.5 rounded-md bg-primary px-3 text-[11px] font-bold tracking-wide text-primary-content transition duration-150 hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20"
-            >
-              <.icon name="hero-chart-bar-square" class="size-3.5" /> Transactions Report
-            </button>
-            <button
-              type="button"
-              id={"#{@id}-reload"}
-              class="inline-flex h-[30px] items-center gap-1.5 rounded-md bg-primary px-3 text-[11px] font-bold tracking-wide text-primary-content transition duration-150 hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20"
-            >
-              <.icon name="hero-arrow-path" class="size-3.5" /> Reload
-            </button>
-          </div>
         </div>
       <% end %>
 
@@ -881,16 +838,16 @@ defmodule CuzCoreConnectWeb.CoreComponents do
         </div>
 
         <div class="pt-3 text-[10px] text-base-content">
-          Showing 1 to {modern_table_row_count(@rows)} of {modern_table_row_count(@rows)} entries
+          Showing 1 to {table_row_count(@rows)} of {table_row_count(@rows)} entries
         </div>
       <% end %>
     </div>
     """
   end
 
-  defp modern_table_row_count(%Phoenix.LiveView.LiveStream{}), do: 0
-  defp modern_table_row_count(rows) when is_list(rows), do: length(rows)
-  defp modern_table_row_count(_rows), do: 0
+  defp table_row_count(%Phoenix.LiveView.LiveStream{}), do: 0
+  defp table_row_count(rows) when is_list(rows), do: length(rows)
+  defp table_row_count(_rows), do: 0
 
   @doc ~S"""
   Renders a table with generic styling and sorting functionality.

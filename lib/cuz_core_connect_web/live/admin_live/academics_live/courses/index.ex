@@ -12,7 +12,9 @@ defmodule CuzCoreConnectWeb.Admin.AcademicManagement.Courses.Index do
      |> stream(:courses, Academic.list_courses())
      |> assign(
        page_title: "Courses",
-       current_page: :courses_management
+       current_page: :courses_management,
+       id: "courses",
+       search_placeholder: "Search courses..."
      )}
   end
 

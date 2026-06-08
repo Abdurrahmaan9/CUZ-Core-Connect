@@ -1,0 +1,106 @@
+<Layouts.user flash={@flash} current_scope={@current_scope} page_title={@page_title} current_page={@current_page}>
+   <.header>
+      Programmes
+      <:subtitle>Manage academic programmes in the system</:subtitle>
+      <:actions>
+         <.link patch={~p"/admin/student/programmes/new"}>
+         <.button>New Programme</.button>
+         </.link>
+      </:actions>
+   </.header>
+
+  <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <div class="flex w-full max-w-[320px] overflow-hidden rounded-md border border-base-300 bg-base-100 shadow-sm transition duration-150 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
+      <span class="flex h-[34px] w-[30px] shrink-0 items-center justify-center bg-primary text-primary-content">
+        <.icon name="hero-magnifying-glass" class="size-4" />
+      </span>
+      <input
+        id={"#{@id}-search"}
+        type="search"
+        name="search"
+        placeholder={@search_placeholder}
+        class="h-[34px] min-w-0 flex-1 border-0 bg-base-100 px-2 text-xs text-base-content outline-none placeholder:text-base-content/50 focus:ring-0"
+      />
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2 md:justify-end">
+    <button
+      type="button"
+      id={"#{@id}-export"}
+      class="inline-flex h-[30px] items-center rounded-md bg-primary px-3 text-[11px] font-bold tracking-wide text-primary-content transition duration-150 hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20"
+    >
+      Export
+    </button>
+    <button
+      type="button"
+      id={"#{@id}-filter"}
+      class="inline-flex h-[30px] items-center gap-1.5 rounded-md bg-primary px-3 text-[11px] font-bold tracking-wide text-primary-content transition duration-150 hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20"
+    >
+      <.icon name="hero-funnel" class="size-3.5" /> Filter
+    </button>
+    <button
+      type="button"
+      id={"#{@id}-reload"}
+      class="inline-flex h-[30px] items-center gap-1.5 rounded-md bg-primary px-3 text-[11px] font-bold tracking-wide text-primary-content transition duration-150 hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20"
+    >
+      <.icon name="hero-arrow-path" class="size-3.5" /> Reload
+    </button>
+  </div>
+  </div>
+
+   <.table
+         id="programmes"
+         rows={@streams.programmes}
+         class="shadow-sm"
+         empty_state_title="No programmes found"
+         empty_state_description="No programmes have been created yet."
+         row_click={fn {_id, programme} -> JS.navigate(~p"/admin/student/programmes/#{programme}/edit") end}
+      >
+         <:col :let={{_id, programme}} label="Code"><%= programme.code %></:col>
+         <:col :let={{_id, programme}} label="Name"><%= programme.name %></:col>
+         <:col :let={{_id, programme}} label="Duration"><%= programme.duration_years %> years</:col>
+         <:col :let={{_id, programme}} label="Status">
+         <span class={[
+            "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
+            programme.is_active && "bg-green-100 text-green-800",
+            !programme.is_active && "bg-gray-100 text-gray-800"
+         ]}>
+            <%= if programme.is_active, do: "Active", else: "Inactive" %>
+         </span>
+         </:col>
+         <:action :let={{_id, programme}}>
+         <div class="sr-only">
+            <.link navigate={~p"/admin/student/programmes/#{programme}"}>Show</.link>
+         </div>
+         <.link patch={~p"/admin/student/programmes/#{programme}/edit"}>
+            <.button>Edit</.button>
+         </.link>
+         </:action>
+         <:action :let={{id, programme}}>
+         <.link
+            phx-click={JS.push("delete", value: %{id: programme.id}) |> hide("##{id}")}
+            data-confirm="Are you sure?"
+         >
+            <.button class="bg-red-600 hover:bg-red-700 text-white">Delete</.button>
+         </.link>
+         </:action>
+      </.table>
+
+      <div :if={@live_action in [:new, :edit]} class="fixed inset-0 z-50 overflow-y-auto">
+      <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" aria-hidden="true"></div>
+      <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0 relative z-10">
+        <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+          <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+            <.live_component
+              module={FormComponent}
+              id={@programme.id || :new}
+              title={@page_title}
+              action={@live_action}
+              programme={@programme}
+              patch={~p"/admin/student/programmes"}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+</Layouts.user>
