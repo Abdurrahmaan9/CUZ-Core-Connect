@@ -48,7 +48,7 @@ defmodule CuzCoreConnectWeb.AcademicsLive.Dashboard.OverviewComponent do
 
   defp stat_card(assigns) do
     ~H"""
-    <div class={"bg-base-200/40 rounded-xl p-5 border-l-4 border-#{@color}"}>
+    <div class={"bg-base-200/40 rounded-r p-5 border-l-4 border-#{@color}"}>
       <div class="flex items-center justify-between">
         <div>
           <p class="text-sm text-base-content/60">{@label}</p>
