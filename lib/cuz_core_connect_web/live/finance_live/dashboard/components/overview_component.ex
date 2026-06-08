@@ -31,7 +31,7 @@ defmodule CuzCoreConnectWeb.FinanceLive.Dashboard.OverviewComponent do
         <.stat_card label="Total Verified" value={@stats.total_verified} color="info" icon="hero-document-check" />
       </div>
 
-      <div class="bg-base-200/40 rounded-xl p-6">
+      <div class="bg-base-200/40 rounded-r p-6">
         <h3 class="font-medium mb-4 flex items-center gap-2">
           <.icon name="hero-bolt" class="h-5 w-5 text-primary" />
           Quick Actions
@@ -48,7 +48,7 @@ defmodule CuzCoreConnectWeb.FinanceLive.Dashboard.OverviewComponent do
 
   defp stat_card(assigns) do
     ~H"""
-    <div class={"bg-base-200/40 rounded-xl p-5 border-l-4 border-#{@color}"}>
+    <div class={"bg-base-200/40 rounded-r p-5 border-l-4 border-#{@color}"}>
       <div class="flex items-center justify-between">
         <div>
           <p class="text-sm text-base-content/60">{@label}</p>

@@ -26,7 +26,7 @@ defmodule CuzCoreConnectWeb.StudentLive.Dashboard.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_scope={@current_scope} page_title={@page_title}>
+    <Layouts.user flash={@flash} current_scope={@current_scope} current_page={@current_page} page_title={@page_title}>
       <div class="border-b border-base-300 mb-6">
         <nav class="flex space-x-8 px-4">
           <%= for {label, tab} <- [{"Overview", "overview"}, {"My Registrations", "my_registrations"}, {"New Registration", "new_registration"}] do %>
@@ -68,7 +68,7 @@ defmodule CuzCoreConnectWeb.StudentLive.Dashboard.Index do
             <p class="text-center py-12 text-base-content/50">Tab not found</p>
         <% end %>
       </div>
-    </Layouts.app>
+    </Layouts.user>
     """
   end
 end
