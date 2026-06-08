@@ -94,15 +94,15 @@ defmodule CuzCoreConnect.Academic do
   @doc """
   Lists all programmes for a specific lecturer.
   """
-  def list_lecturer_programs(user_id) do
-    from(up in Register.Academic.LecturerProgram,
-      where: up.user_id == ^user_id,
-      preload: [:programme],
-      order_by: [desc: :is_primary, asc: :id]
-    )
-    |> Repo.all()
-    |> Enum.map(& &1.programme)
-  end
+  # def list_lecturer_programs(user_id) do
+  #   from(up in Register.Academic.LecturerProgram,
+  #     where: up.user_id == ^user_id,
+  #     preload: [:programme],
+  #     order_by: [desc: :is_primary, asc: :id]
+  #   )
+  #   |> Repo.all()
+  #   |> Enum.map(& &1.programme)
+  # end
 
   @doc """
   Lists all courses for a specific lecturer in a specific programme.
@@ -133,18 +133,14 @@ defmodule CuzCoreConnect.Academic do
   #   |> Repo.insert()
   # end
 
-  @doc """
-  Removes a programme assignment from a lecturer.
-  """
+  # Removes a programme assignment from a lecturer.
   # def remove_lecturer_from_program(user_id, program_id) do
   #   from(lp in LecturerProgram, where: lp.user_id == ^user_id and lp.program_id == ^program_id)
   #   |> Repo.delete_all()
   #   :ok
   # end
 
-  @doc """
-  Lists all lecturers with their assigned programmes.
-  """
+  # Lists all lecturers with their assigned programmes.
   # def list_lecturers_with_programs do
   #   from(u in Register.Accounts.User,
   #     where: u.role == "lecturer",
@@ -159,33 +155,33 @@ defmodule CuzCoreConnect.Academic do
   @doc """
   Gets a lecturer with their assigned programmes.
   """
-  def get_lecturer_with_programs(user_id) do
-    from(u in Register.Accounts.User,
-      where: u.id == ^user_id and u.role == "lecturer",
-      left_join: lp in assoc(u, :lecturer_programs),
-      left_join: p in assoc(lp, :programme),
-      preload: [lecturer_programs: {lp, programme: p}]
-    )
-    |> Repo.one()
-  end
+  # def get_lecturer_with_programs(user_id) do
+  #   from(u in Register.Accounts.User,
+  #     where: u.id == ^user_id and u.role == "lecturer",
+  #     left_join: lp in assoc(u, :lecturer_programs),
+  #     left_join: p in assoc(lp, :programme),
+  #     preload: [lecturer_programs: {lp, programme: p}]
+  #   )
+  #   |> Repo.one()
+  # end
 
   @doc """
   Lists all programmes not assigned to a lecturer.
   """
-  def list_unassigned_programs(user_id) do
-    assigned_program_ids =
-      from(lp in LecturerProgram,
-        where: lp.user_id == ^user_id,
-        select: lp.program_id
-      )
-      |> Repo.all()
+  # def list_unassigned_programs(user_id) do
+  #   assigned_program_ids =
+  #     from(lp in LecturerProgram,
+  #       where: lp.user_id == ^user_id,
+  #       select: lp.program_id
+  #     )
+  #     |> Repo.all()
 
-    from(p in Programme,
-      where: p.id not in ^assigned_program_ids,
-      order_by: [asc: :name]
-    )
-    |> Repo.all()
-  end
+  #   from(p in Programme,
+  #     where: p.id not in ^assigned_program_ids,
+  #     order_by: [asc: :name]
+  #   )
+  #   |> Repo.all()
+  # end
 
   def get_courses_by_program_and_semester(program_id, year, semester) do
     from(pc in CuzCoreConnect.Academics.ProgramCourse,
@@ -509,16 +505,16 @@ defmodule CuzCoreConnect.Academic do
   @doc """
   Gets courses by programme, year, and semester.
   """
-  def get_courses_by_program_and_semester(program_id, year, semester) do
-    from(pc in CuzCoreConnect.Academics.ProgramCourse,
-      where: pc.program_id == ^program_id and pc.year == ^year and pc.semester == ^semester,
-      where: pc.is_active == true,
-      preload: [:course],
-      order_by: [asc: :is_core, asc: :id]
-    )
-    |> Repo.all()
-    |> Enum.map(fn pc -> %{pc.course | program_course_id: pc.id, is_core: pc.is_core} end)
-  end
+  # def get_courses_by_program_and_semester(program_id, year, semester) do
+  #   from(pc in CuzCoreConnect.Academics.ProgramCourse,
+  #     where: pc.program_id == ^program_id and pc.year == ^year and pc.semester == ^semester,
+  #     where: pc.is_active == true,
+  #     preload: [:course],
+  #     order_by: [asc: :is_core, asc: :id]
+  #   )
+  #   |> Repo.all()
+  #   |> Enum.map(fn pc -> %{pc.course | program_course_id: pc.id, is_core: pc.is_core} end)
+  # end
 
   @doc """
   Returns the total count of courses.

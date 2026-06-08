@@ -36,6 +36,17 @@ defmodule CuzCoreConnectWeb.AcademicsLive.Dashboard.PendingRegistrationsComponen
     end
   end
 
+  def handle_event("view_details", %{"id" => id}, socket) do
+    registration = 
+      Registrations.get_registration!(id)
+      |> CuzCoreConnect.Repo.preload(:payment_receipts)
+    {:noreply, assign(socket, :selected, registration)}
+  end
+
+  def handle_event("close_details", _, socket) do
+    {:noreply, assign(socket, :selected, nil)}
+  end
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -57,7 +68,7 @@ defmodule CuzCoreConnectWeb.AcademicsLive.Dashboard.PendingRegistrationsComponen
                 <th>Tracking #</th>
                 <th>Programme</th>
                 <th>Submitted</th>
-                <th>Payment</th>
+                <th>Academic</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -69,15 +80,24 @@ defmodule CuzCoreConnectWeb.AcademicsLive.Dashboard.PendingRegistrationsComponen
                     <div class="text-xs text-base-content/50">{reg.student_email}</div>
                   </td>
                   <td class="font-mono text-sm">{reg.tracking_number}</td>
-                  <td>{get_in(reg.student_program_details, ["name"]) || "—"}</td>
+                  <td>{get_in(reg.student_program_details, ["program_name"]) || "—"}</td>
                   <td class="text-sm">{Calendar.strftime(reg.inserted_at, "%b %d, %Y")}</td>
                   <td>
-                    <span class={"badge badge-sm #{payment_badge(reg.payment_status)}"}>
-                      {reg.payment_status}
+                    <span class={"badge badge-sm #{payment_badge(reg.accademics_status)}"}>
+                      {reg.accademics_status}
                     </span>
                   </td>
                   <td>
-                    <div class="flex gap-2">
+                    <div class="flex gap-2 flex-wrap">
+                      <.button
+                        phx-click="view_details"
+                        phx-value-id={reg.id}
+                        phx-target={@myself}
+                        class="btn-xs bg-info/20 text-info border-info/30"
+                      >
+                        <.icon name="hero-eye" class="w-4 h-4" />
+                        Details
+                      </.button>
                       <.button
                         phx-click="approve"
                         phx-value-id={reg.id}
@@ -101,6 +121,15 @@ defmodule CuzCoreConnectWeb.AcademicsLive.Dashboard.PendingRegistrationsComponen
             </tbody>
           </table>
         </div>
+      <% end %>
+
+      <%= if @selected do %>
+        <.live_component
+          module={CuzCoreConnectWeb.RegistrationDetailsComponent}
+          id="registration-details-modal"
+          registration={@selected}
+          return_to=""
+        />
       <% end %>
     </div>
     """

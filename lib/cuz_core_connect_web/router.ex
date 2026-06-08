@@ -187,5 +187,6 @@ defmodule CuzCoreConnectWeb.Router do
     end
 
     post "/users/update-password", UserSessionController, :update_password
+    get "/receipts/:id", ReceiptController, :show
   end
 end

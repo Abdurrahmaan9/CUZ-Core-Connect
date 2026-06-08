@@ -7,7 +7,7 @@ defmodule CuzCoreConnect.Registrations do
 
   def list_pending_for_academics do
     Repo.all(from r in Registration,
-      where: r.accademics_status == "PENDING" and r.payment_status == "APPROVED" and is_nil(r.deleted_at),
+      where: r.accademics_status == "PENDING" and is_nil(r.deleted_at),
       order_by: [asc: r.inserted_at])
   end
 
@@ -70,7 +70,7 @@ defmodule CuzCoreConnect.Registrations do
     today = Date.utc_today()
     Repo.aggregate(
       from(r in Registration,
-        where: fragment("DATE(?)", field(r, ^field)) == ^today
+        where: fragment("DATE(?)", r.inserted_at) == ^today
           and field(r, ^field) == "APPROVED"),
       :count
     )
@@ -185,7 +185,7 @@ defmodule CuzCoreConnect.Registrations do
       tracking_number: tracking_number,
       approval_level: "pending",
       approved_by: %{},
-      payment_status: "pending"
+      payment_status: "PENDING"
     }
 
     %Registration{}
@@ -199,6 +199,14 @@ defmodule CuzCoreConnect.Registrations do
     %PaymentReceipt{}
     |> PaymentReceipt.changeset(receipt_attrs)
     |> Repo.insert()
+  end
+
+  @doc """
+  Get a payment receipt by id.
+  Returns the `%PaymentReceipt{}` or `nil` if not found.
+  """
+  def get_payment_receipt(id) do
+    Repo.get(CuzCoreConnect.Students.PaymentReceipt, id)
   end
 
   # Private helper functions
