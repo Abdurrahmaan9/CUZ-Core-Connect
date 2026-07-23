@@ -2,7 +2,7 @@ defmodule CuzCoreConnectWeb.Admin.AcademicManagement.Courses.FormComponent do
   use CuzCoreConnectWeb, :live_component
 
   alias CuzCoreConnect.Academic
-  # alias CuzCoreConnect.Academics.Courses, as: Course
+  alias CuzCoreConnect.Academics.Courses, as: Course
 
   @impl true
   def render(assigns) do
@@ -27,6 +27,29 @@ defmodule CuzCoreConnectWeb.Admin.AcademicManagement.Courses.FormComponent do
         <.input field={@form[:credits]} type="number" label="Credits" min="1" max="10" />
         <.input field={@form[:is_active]} type="checkbox" label="Active" />
 
+        <%= if @action == :new do %>
+          <div class="border-t border-base-200 pt-4 space-y-4">
+            <p class="text-sm font-medium text-base-content/80">Programme assignment</p>
+            <.input
+              field={@form[:program_id]}
+              type="select"
+              label="Programme"
+              prompt="Select a programme"
+              options={@programme_options}
+              required
+            />
+            <.input field={@form[:year]} type="number" label="Year" min="1" max="10" required />
+            <.input
+              field={@form[:semester]}
+              type="select"
+              label="Semester"
+              options={[{"Semester 1", 1}, {"Semester 2", 2}]}
+              required
+            />
+            <.input field={@form[:is_core]} type="checkbox" label="Core course" />
+          </div>
+        <% end %>
+
         <div class="flex justify-end space-x-2">
           <.link patch={~p"/admin/courses"}>
             <.button>Cancel</.button>
@@ -41,52 +64,37 @@ defmodule CuzCoreConnectWeb.Admin.AcademicManagement.Courses.FormComponent do
 
   @impl true
   def update(%{course: course} = assigns, socket) do
-    changeset = Academic.change_course(course)
+    programme_options =
+      Academic.list_active_programs()
+      |> Enum.map(&{"#{&1.code} — #{&1.name}", &1.id})
+
+    changeset = change_course(course, %{}, assigns.action)
 
     {:ok,
      socket
      |> assign(assigns)
+     |> assign(:programme_options, programme_options)
      |> assign_form(changeset)}
   end
 
   @impl true
   def handle_event("validate", %{"courses" => course_params}, socket) do
-    # Merge current params with existing course data
-    updated_course =
-      socket.assigns.course
-      |> Map.merge(course_params, fn _k, v1, v2 ->
-        if v2 == "" or v2 == nil, do: v1, else: v2
-      end)
-
     changeset =
-      updated_course
-      |> Academic.change_course(course_params)
+      socket.assigns.course
+      |> change_course(course_params, socket.assigns.action)
       |> Map.put(:action, :validate)
 
-    {:noreply,
-     socket
-     |> assign(:course, updated_course)
-     |> assign_form(changeset)}
+    {:noreply, assign_form(socket, changeset)}
   end
 
   @impl true
   def handle_event("validate", params, socket) do
-    # Fallback for direct params (no nesting)
-    updated_course =
-      socket.assigns.course
-      |> Map.merge(params, fn _k, v1, v2 ->
-        if v2 == "" or v2 == nil, do: v1, else: v2
-      end)
-
     changeset =
-      updated_course
-      |> Academic.change_course(params)
+      socket.assigns.course
+      |> change_course(params, socket.assigns.action)
       |> Map.put(:action, :validate)
 
-    {:noreply,
-     socket
-     |> assign(:course, updated_course)
-     |> assign_form(changeset)}
+    {:noreply, assign_form(socket, changeset)}
   end
 
   @impl true
@@ -115,18 +123,46 @@ defmodule CuzCoreConnectWeb.Admin.AcademicManagement.Courses.FormComponent do
   end
 
   defp save_course(socket, :new, params) do
-    case Academic.create_course(params) do
-      {:ok, course} ->
-        notify_parent({:saved, course})
+    changeset =
+      socket.assigns.course
+      |> change_course(params, :new)
+      |> Map.put(:action, :insert)
 
-        {:noreply,
-         socket
-         |> put_flash(:info, "Course created successfully")
-         |> push_patch(to: socket.assigns.patch)}
+    if changeset.valid? do
+      {course_params, program_course_params} = split_course_params(params)
 
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply, assign_form(socket, changeset)}
+      case Academic.create_course_with_program(course_params, program_course_params) do
+        {:ok, course} ->
+          notify_parent({:saved, course})
+
+          {:noreply,
+           socket
+           |> put_flash(:info, "Course created successfully")
+           |> push_patch(to: socket.assigns.patch)}
+
+        {:error, %Ecto.Changeset{} = error_changeset} ->
+          {:noreply, assign_form(socket, error_changeset)}
+      end
+    else
+      {:noreply, assign_form(socket, changeset)}
     end
+  end
+
+  defp change_course(course, params, :new) do
+    Course.create_with_program_changeset(course, params)
+  end
+
+  defp change_course(course, params, _action) do
+    Academic.change_course(course, params)
+  end
+
+  defp split_course_params(params) do
+    course_params = Map.take(params, ["title", "description", "code", "credits", "is_active"])
+
+    program_course_params =
+      Map.take(params, ["program_id", "year", "semester", "is_core"])
+
+    {course_params, program_course_params}
   end
 
   defp assign_form(socket, %Ecto.Changeset{} = changeset) do

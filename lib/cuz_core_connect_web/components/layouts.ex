@@ -85,12 +85,6 @@ defmodule CuzCoreConnectWeb.Layouts do
           </div>
         </div>
       </main>
-      <%= if @current_scope && @current_scope.user do %>
-        <.live_component
-          module={CuzCoreConnectWeb.Components.SessionTimerComponent}
-          id="session-timer-admin"
-        />
-      <% end %>
     </div>
 
     <!-- Overlay for mobile sidebar -->

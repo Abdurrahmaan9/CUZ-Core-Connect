@@ -231,12 +231,12 @@ defmodule CuzCoreConnectWeb.Admin.Messages do
                   {format_datetime(item.inserted_at)}
                 </td>
                 <td>
-                  <div title="view" class="inline-flex">
+                  <div title="View" class="inline-flex">
                     <button
                       type="button"
                       phx-click="select"
                       phx-value-id={item.id}
-                      class="btn btn-ghost btn-sm btn-square text-info"
+                      class="btn btn-ghost btn-sm btn-square text-info hover:bg-info/10"
                       aria-label="View"
                     >
                       <.icon name="hero-eye" class="size-5" />

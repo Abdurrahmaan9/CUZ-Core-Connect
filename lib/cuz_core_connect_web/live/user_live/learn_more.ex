@@ -310,10 +310,10 @@ defmodule CuzCoreConnectWeb.UserLive.LearnMore do
             <.icon name="hero-envelope" class="mb-3 size-6 text-primary" />
             <h3 class="font-semibold mb-1">Email</h3>
             <a
-              href="mailto:support@cuz.coreconnect.edu"
+              href="mailto:support@coreconnect.lobnode.com"
               class="text-sm text-primary hover:underline"
             >
-              support@cuz.coreconnect.edu
+              support@coreconnect.lobnode.com
             </a>
           </div>
           <div class="flex flex-col items-center p-4">

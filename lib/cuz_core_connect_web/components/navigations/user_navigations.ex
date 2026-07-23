@@ -163,12 +163,35 @@ defmodule CuzCoreConnectWeb.Navigations.User do
               class="flex items-center gap-3 px-4 py-2 rounded-lg bg-base-300/10 hover:bg-base-300/30 transition-all duration-200 border border-primary/20"
             >
               <div class="relative">
-                <img
-                  class="h-9 w-9 rounded-full object-cover ring-2 ring-orange-200"
-                  src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
-                  alt={@current_scope.user.email}
-                />
+                <% # Generate a deterministic but pseudo-random color based on the user's email or name
+                user = @current_scope.user
+                identifier = user.username || user.email
+
+                hash =
+                  :crypto.hash(:md5, identifier)
+                  |> Base.encode16(case: :lower)
+
+                color = "##{String.slice(hash, 0, 6)}"
+
+                initials =
+                  if user.username do
+                    user.username
+                    |> String.split()
+                    |> Enum.map(&String.first/1)
+                    |> Enum.join()
+                  else
+                    user.email
+                    |> String.first()
+                  end %>
+                <div
+                  class="flex items-center justify-center h-9 w-9 rounded-full ring-2"
+                  style={"background-color: #{color}; color: white; ring-color: #{color};"}
+                  title={user.email}
+                >
+                  {String.upcase(initials)}
+                </div>
               </div>
+
               <div class="hidden md:block text-left">
                 <p class="font-semibold text-base">
                   {@current_scope.user.username ||
@@ -204,7 +227,7 @@ defmodule CuzCoreConnectWeb.Navigations.User do
                     |> String.capitalize()}
                 </p>
                 <p class="text-xs mt-0.5 text-base-content/50">{@current_scope.user.email}</p>
-                <span class="badge badge-xs badge-outline mt-1">
+                <span class="badge badge-xs border border-base-300 mt-1">
                   {role_label(@current_scope.user.user_role)}
                 </span>
               </div>
@@ -226,7 +249,7 @@ defmodule CuzCoreConnectWeb.Navigations.User do
               <.link
                 href={~p"/users/log-out"}
                 method="DELETE"
-                class="border-t border-base-300 mt-1 flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                class="border-t border-base-300 mt-1 flex items-center px-4 py-2 text-sm text-red-600 hover:text-red-900 transition-colors"
               >
                 <.icon name="hero-arrow-right-start-on-rectangle" class="w-5 h-5 mr-3" /> Logout
               </.link>

@@ -80,7 +80,8 @@ defmodule CuzCoreConnectWeb.Router do
     live_session :require_admin_user,
       on_mount: [
         {CuzCoreConnectWeb.Plugs.UserAuth, :require_authenticated},
-        {CuzCoreConnectWeb.Plugs.UserAuth, :ensure_admin_role}
+        {CuzCoreConnectWeb.Plugs.UserAuth, :ensure_admin_role},
+        {CuzCoreConnectWeb.Hooks.Notifications, :default}
       ] do
       scope "/admin" do
         live "/dashboard", AdminLiveIndex, :index
@@ -94,6 +95,7 @@ defmodule CuzCoreConnectWeb.Router do
         scope "/programmes" do
           live "/", Admin.AcademicManagement.Programmes.Index, :index
           live "/new", Admin.AcademicManagement.Programmes.Index, :new
+          live "/:id", Admin.AcademicManagement.Programmes.Index, :show
           live "/:id/edit", Admin.AcademicManagement.Programmes.Index, :edit
         end
 
@@ -142,7 +144,8 @@ defmodule CuzCoreConnectWeb.Router do
     live_session :require_academics_user,
       on_mount: [
         {CuzCoreConnectWeb.Plugs.UserAuth, :require_authenticated},
-        {CuzCoreConnectWeb.Plugs.UserAuth, :ensure_academics_role}
+        {CuzCoreConnectWeb.Plugs.UserAuth, :ensure_academics_role},
+        {CuzCoreConnectWeb.Hooks.Notifications, :default}
       ] do
       scope "/academics" do
         live "/dashboard", AcademicsLive.Dashboard.Index, :index
@@ -152,7 +155,8 @@ defmodule CuzCoreConnectWeb.Router do
     live_session :require_finance_user,
       on_mount: [
         {CuzCoreConnectWeb.Plugs.UserAuth, :require_authenticated},
-        {CuzCoreConnectWeb.Plugs.UserAuth, :ensure_finance_role}
+        {CuzCoreConnectWeb.Plugs.UserAuth, :ensure_finance_role},
+        {CuzCoreConnectWeb.Hooks.Notifications, :default}
       ] do
       scope "/finance" do
         live "/dashboard", FinanceLive.Dashboard.Index, :index
@@ -162,7 +166,8 @@ defmodule CuzCoreConnectWeb.Router do
     live_session :require_hod_user,
       on_mount: [
         {CuzCoreConnectWeb.Plugs.UserAuth, :require_authenticated},
-        {CuzCoreConnectWeb.Plugs.UserAuth, :ensure_hod_role}
+        {CuzCoreConnectWeb.Plugs.UserAuth, :ensure_hod_role},
+        {CuzCoreConnectWeb.Hooks.Notifications, :default}
       ] do
       scope "/hod" do
         live "/dashboard", HODLive.Dashboard.Index, :index
@@ -172,7 +177,8 @@ defmodule CuzCoreConnectWeb.Router do
     live_session :require_retention_user,
       on_mount: [
         {CuzCoreConnectWeb.Plugs.UserAuth, :require_authenticated},
-        {CuzCoreConnectWeb.Plugs.UserAuth, :ensure_retention_role}
+        {CuzCoreConnectWeb.Plugs.UserAuth, :ensure_retention_role},
+        {CuzCoreConnectWeb.Hooks.Notifications, :default}
       ] do
       scope "/retention" do
         live "/dashboard", RetentionLive.Dashboard.Index, :index
@@ -182,7 +188,8 @@ defmodule CuzCoreConnectWeb.Router do
     live_session :require_student_user,
       on_mount: [
         {CuzCoreConnectWeb.Plugs.UserAuth, :require_authenticated},
-        {CuzCoreConnectWeb.Plugs.UserAuth, :ensure_student_role}
+        {CuzCoreConnectWeb.Plugs.UserAuth, :ensure_student_role},
+        {CuzCoreConnectWeb.Hooks.Notifications, :default}
       ] do
       scope "/student" do
         live "/dashboard", StudentLive.Dashboard.Index, :index
@@ -193,9 +200,13 @@ defmodule CuzCoreConnectWeb.Router do
     end
 
     live_session :require_authenticated_user,
-      on_mount: [{CuzCoreConnectWeb.Plugs.UserAuth, :require_authenticated}] do
+      on_mount: [
+        {CuzCoreConnectWeb.Plugs.UserAuth, :require_authenticated},
+        {CuzCoreConnectWeb.Hooks.Notifications, :default}
+      ] do
       live "/users/settings", UserLive.Settings, :edit
       live "/users/settings/confirm-email/:token", UserLive.Settings, :confirm_email
+      live "/users/notifications", UserLive.Notifications, :index
     end
 
     scope "/" do

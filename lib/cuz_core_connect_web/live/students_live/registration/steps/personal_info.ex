@@ -6,6 +6,7 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.PersonalInfo do
     {:ok,
      socket
      |> assign(assigns)
+     |> assign_new(:authenticated?, fn -> false end)
      |> assign_new(:student_id, fn -> assigns.registration.student_id || "" end)
      |> assign_new(:student_names, fn -> assigns.registration.student_names || "" end)
      |> assign_new(:student_email, fn -> assigns.registration.student_email || "" end)
@@ -120,13 +121,17 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.PersonalInfo do
         </div>
       <% end %>
 
-      <div class="mt-8 flex justify-end">
+      <div class="mt-8 flex flex-wrap justify-end gap-3">
         <button
+          :if={@authenticated?}
           type="button"
-          phx-click="next"
+          phx-click="save"
           phx-target={@myself}
-          class="btn btn-primary px-8"
+          class="btn btn-outline"
         >
+          Save
+        </button>
+        <button type="button" phx-click="next" phx-target={@myself} class="btn btn-primary px-8">
           Next <span aria-hidden="true">→</span>
         </button>
       </div>
@@ -151,25 +156,35 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.PersonalInfo do
     {:noreply, assign(socket, student_contact: String.trim(student_contact))}
   end
 
-  def handle_event("next", _params, socket) do
+  def handle_event("save", _params, socket) do
     errors = validate(socket.assigns)
 
     if map_size(errors) == 0 do
-      send(
-        self(),
-        {:next_step,
-         %{
-           student_id: socket.assigns.student_id,
-           student_names: socket.assigns.student_names,
-           student_email: socket.assigns.student_email,
-           student_contact: socket.assigns.student_contact
-         }}
-      )
-
+      send(self(), {:save_step, step_payload(socket.assigns)})
       {:noreply, socket}
     else
       {:noreply, assign(socket, errors: errors)}
     end
+  end
+
+  def handle_event("next", _params, socket) do
+    errors = validate(socket.assigns)
+
+    if map_size(errors) == 0 do
+      send(self(), {:next_step, step_payload(socket.assigns)})
+      {:noreply, socket}
+    else
+      {:noreply, assign(socket, errors: errors)}
+    end
+  end
+
+  defp step_payload(assigns) do
+    %{
+      student_id: assigns.student_id,
+      student_names: assigns.student_names,
+      student_email: assigns.student_email,
+      student_contact: assigns.student_contact
+    }
   end
 
   # ── Private ──────────────────────────────────────────────────────────────────

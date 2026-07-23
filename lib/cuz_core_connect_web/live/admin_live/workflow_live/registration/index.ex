@@ -433,29 +433,41 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow do
                           Active — new registrations
                         </span>
 
-                        <div class="flex flex-wrap gap-2">
-                          <.button
-                            phx-click="edit_registration_flow"
-                            phx-value-id={flow.id}
-                            class="btn btn-ghost btn-sm"
-                          >
-                            Edit
-                          </.button>
-                          <.button
-                            phx-click="duplicate_registration_flow"
-                            phx-value-id={flow.id}
-                            class="btn btn-ghost btn-sm"
-                          >
-                            Duplicate
-                          </.button>
-                          <.button
-                            phx-click="delete_registration_flow"
-                            phx-value-id={flow.id}
-                            data-confirm={"Delete workflow \"#{flow.name}\"? This cannot be undone."}
-                            class="btn btn-ghost btn-sm text-error"
-                          >
-                            Delete
-                          </.button>
+                        <div class="flex flex-wrap gap-1">
+                          <div title="Edit" class="inline-flex">
+                            <button
+                              type="button"
+                              phx-click="edit_registration_flow"
+                              phx-value-id={flow.id}
+                              class="btn btn-ghost btn-sm btn-square text-warning hover:bg-warning/10"
+                              aria-label="Edit"
+                            >
+                              <.icon name="hero-pencil-square" class="size-5" />
+                            </button>
+                          </div>
+                          <div title="Duplicate" class="inline-flex">
+                            <button
+                              type="button"
+                              phx-click="duplicate_registration_flow"
+                              phx-value-id={flow.id}
+                              class="btn btn-ghost btn-sm btn-square text-info hover:bg-info/10"
+                              aria-label="Duplicate"
+                            >
+                              <.icon name="hero-document-duplicate" class="size-5" />
+                            </button>
+                          </div>
+                          <div title="Delete" class="inline-flex">
+                            <button
+                              type="button"
+                              phx-click="delete_registration_flow"
+                              phx-value-id={flow.id}
+                              data-confirm={"Delete workflow \"#{flow.name}\"? This cannot be undone."}
+                              class="btn btn-ghost btn-sm btn-square text-error hover:bg-error/10"
+                              aria-label="Delete"
+                            >
+                              <.icon name="hero-trash" class="size-5" />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>

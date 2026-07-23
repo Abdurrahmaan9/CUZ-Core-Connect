@@ -5,7 +5,7 @@ defmodule CuzCoreConnect.Academic do
   import Ecto.Query, warn: false
   alias CuzCoreConnect.Repo
   alias CuzCoreConnect.Academics.Programmes, as: Programme
-  # alias CuzCoreConnect.Academics.ProgramCourse
+  alias CuzCoreConnect.Academics.ProgramCourse
   # alias CuzCoreConnect.Academic.StudentProgram
   # alias CuzCoreConnect.Academic.LecturerCourse
   # alias CuzCoreConnect.Academic.LecturerProgram
@@ -23,6 +23,23 @@ defmodule CuzCoreConnect.Academic do
   end
 
   def get_program!(id), do: Repo.get!(Programme, id)
+
+  @doc """
+  Gets a programme with its linked courses preloaded.
+  """
+  def get_program_with_courses!(id) do
+    from(p in Programme,
+      where: p.id == ^id,
+      preload: [
+        program_courses:
+          ^from(pc in ProgramCourse,
+            order_by: [asc: pc.year, asc: pc.semester, asc: pc.id],
+            preload: [:course]
+          )
+      ]
+    )
+    |> Repo.one!()
+  end
 
   def create_program(attrs \\ %{}) do
     %Programme{}
@@ -46,7 +63,7 @@ defmodule CuzCoreConnect.Academic do
 
   # Programme Course functions
   def list_program_courses(program_id) do
-    from(pc in CuzCoreConnect.Academics.ProgramCourse,
+    from(pc in ProgramCourse,
       where: pc.program_id == ^program_id,
       preload: [:course],
       order_by: [asc: :year, asc: :semester, asc: :id]
@@ -55,61 +72,48 @@ defmodule CuzCoreConnect.Academic do
   end
 
   @doc """
-  Courses available for student registration for a programme + semester.
-  Returns maps shaped for the registration wizard (`id`, `code`, `name`,
-  `credits`, `is_core`).
+  Active courses linked to a programme, for the student registration wizard.
   """
-  def list_courses_for_registration(program_id, semester)
-      when is_integer(program_id) and is_integer(semester) do
-    from(pc in CuzCoreConnect.Academics.ProgramCourse,
+  def list_courses_for_registration(program_id) when is_integer(program_id) do
+    from(pc in ProgramCourse,
       join: c in assoc(pc, :course),
-      # pc.program_id == ^program_id and pc.semester == ^semester and
-      # pc.is_active == true and
-      where: c.is_active == true,
+      where: pc.program_id == ^program_id and pc.is_active == true and c.is_active == true,
       order_by: [asc: c.code],
-      select: %{
-        id: c.id,
-        code: c.code,
-        name: c.title,
-        credit_hours: c.credits,
-        is_core: pc.is_core
-      }
+      distinct: c.id,
+      select: c
     )
     |> Repo.all()
   end
 
-  def list_courses_for_registration(_program_id, _semester), do: []
+  def list_courses_for_registration(_program_id), do: []
 
-  def get_program_course!(id), do: Repo.get!(CuzCoreConnect.Academics.ProgramCourse, id)
+  def get_program_course!(id), do: Repo.get!(ProgramCourse, id)
 
   def create_program_course(attrs \\ %{}) do
-    %CuzCoreConnect.Academics.ProgramCourse{}
-    |> CuzCoreConnect.Academics.ProgramCourse.changeset(attrs)
+    %ProgramCourse{}
+    |> ProgramCourse.changeset(attrs)
     |> Repo.insert()
   end
 
-  def update_program_course(%CuzCoreConnect.Academics.ProgramCourse{} = program_course, attrs) do
+  def update_program_course(%ProgramCourse{} = program_course, attrs) do
     program_course
-    |> CuzCoreConnect.Academics.ProgramCourse.changeset(attrs)
+    |> ProgramCourse.changeset(attrs)
     |> Repo.update()
   end
 
-  def delete_program_course(%CuzCoreConnect.Academics.ProgramCourse{} = program_course) do
+  def delete_program_course(%ProgramCourse{} = program_course) do
     Repo.delete(program_course)
   end
 
-  def change_program_course(
-        %CuzCoreConnect.Academics.ProgramCourse{} = program_course,
-        attrs \\ %{}
-      ) do
-    CuzCoreConnect.Academics.ProgramCourse.changeset(program_course, attrs)
+  def change_program_course(%ProgramCourse{} = program_course, attrs \\ %{}) do
+    ProgramCourse.changeset(program_course, attrs)
   end
 
   # Helper functions
   def list_courses_not_in_program(program_id) do
     # First, get all course IDs that are already in the programme
     assigned_course_ids =
-      from(pc in CuzCoreConnect.Academics.ProgramCourse,
+      from(pc in ProgramCourse,
         where: pc.program_id == ^program_id,
         select: pc.course_id
       )
@@ -138,7 +142,7 @@ defmodule CuzCoreConnect.Academic do
   def list_lecturer_courses(_user_id, program_id) do
     # First, get all programme courses for the given programme
     program_courses =
-      from(pc in CuzCoreConnect.Academics.ProgramCourse,
+      from(pc in ProgramCourse,
         where: pc.program_id == ^program_id,
         preload: [:course],
         order_by: [asc: :year, asc: :semester, asc: :id]
@@ -203,7 +207,7 @@ defmodule CuzCoreConnect.Academic do
   # end
 
   def get_courses_by_program_and_semester(program_id, year, semester) do
-    from(pc in CuzCoreConnect.Academics.ProgramCourse,
+    from(pc in ProgramCourse,
       where: pc.program_id == ^program_id and pc.year == ^year and pc.semester == ^semester,
       preload: [:course],
       order_by: [asc: :is_core, asc: :id]
@@ -432,6 +436,7 @@ defmodule CuzCoreConnect.Academic do
   def get_course!(id) do
     Course
     |> Repo.get!(id)
+    |> Repo.preload(program_courses: :programme)
   end
 
   @doc """
@@ -450,6 +455,33 @@ defmodule CuzCoreConnect.Academic do
     %Course{}
     |> Course.changeset(attrs)
     |> Repo.insert()
+  end
+
+  @doc """
+  Creates a course and links it to a programme in a single transaction.
+  """
+  def create_course_with_program(course_attrs, program_course_attrs) do
+    Ecto.Multi.new()
+    |> Ecto.Multi.insert(:course, Course.changeset(%Course{}, course_attrs))
+    |> Ecto.Multi.insert(:program_course, fn %{course: course} ->
+      attrs =
+        program_course_attrs
+        |> Map.new(fn {k, v} -> {to_string(k), v} end)
+        |> Map.put("course_id", course.id)
+
+      ProgramCourse.changeset(%ProgramCourse{}, attrs)
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{course: course}} ->
+        {:ok, Repo.preload(course, program_courses: :programme)}
+
+      {:error, :course, changeset, _} ->
+        {:error, changeset}
+
+      {:error, :program_course, changeset, _} ->
+        {:error, changeset}
+    end
   end
 
   @doc """
@@ -504,7 +536,7 @@ defmodule CuzCoreConnect.Academic do
   """
   def list_available_courses(program_id) do
     assigned_course_ids =
-      from(pc in CuzCoreConnect.Academics.ProgramCourse,
+      from(pc in ProgramCourse,
         where: pc.program_id == ^program_id,
         select: pc.course_id
       )

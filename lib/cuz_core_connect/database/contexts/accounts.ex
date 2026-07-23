@@ -93,6 +93,11 @@ defmodule CuzCoreConnect.Accounts do
     |> Repo.all()
   end
 
+  def count_users do
+    from(u in User, where: is_nil(u.deleted_at), select: count(u.id))
+    |> Repo.one()
+  end
+
   @doc """
   Gets internal users ordered by creation date.
 
@@ -126,6 +131,19 @@ defmodule CuzCoreConnect.Accounts do
     |> order_by(desc: :inserted_at)
     |> Repo.all()
   end
+
+  @doc """
+  Active users whose role is in the given list.
+  """
+  def list_active_users_by_roles(roles) when is_list(roles) do
+    from(u in User,
+      where: is_nil(u.deleted_at) and u.is_active == true and u.user_role in ^roles,
+      order_by: [asc: u.email]
+    )
+    |> Repo.all()
+  end
+
+  def list_active_users_by_roles(role) when is_binary(role), do: list_active_users_by_roles([role])
 
   @doc """
   Gets a single user.

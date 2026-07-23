@@ -72,9 +72,33 @@ defmodule CuzCoreConnectWeb.AdminLiveOverviewComponent do
             <%= for user <- @recent_users do %>
               <div class="flex items-center justify-between">
                 <div class="flex items-center">
-                  <div class="avatar placeholder">
-                    <div class="bg-neutral text-neutral-content rounded-full w-10 h-10 flex"></div>
+                  <% user = user
+                  identifier = user.username || user.email
+
+                  hash =
+                    :crypto.hash(:md5, identifier)
+                    |> Base.encode16(case: :lower)
+
+                  color = "##{String.slice(hash, 0, 6)}"
+
+                  initials =
+                    if user.username do
+                      user.username
+                      |> String.split()
+                      |> Enum.map(&String.first/1)
+                      |> Enum.join()
+                    else
+                      user.email
+                      |> String.first()
+                    end %>
+                  <div
+                    class="flex items-center justify-center h-9 w-9 rounded-full ring-2"
+                    style={"background-color: #{color}; color: white; ring-color: #{color};"}
+                    title={user.email}
+                  >
+                    {String.upcase(initials)}
                   </div>
+
                   <div class="ml-4">
                     <p class="text-sm font-medium text-base-content">{user.email}</p>
                     <p class="text-xs text-base-content/50">Role: {user.user_role}</p>
@@ -89,19 +113,38 @@ defmodule CuzCoreConnectWeb.AdminLiveOverviewComponent do
         </div>
 
         <div class="bg-base-100 p-6 rounded-box shadow-lg">
-          <h3 class="text-lg font-semibold text-base-content mb-4">Workflow Status</h3>
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-base-content">Workflow Status</h3>
+            <.link
+              navigate={~p"/admin/workflows/registration"}
+              class="text-xs font-medium text-primary hover:underline"
+            >
+              Manage
+            </.link>
+          </div>
           <div class="space-y-3">
-            <%= for workflow <- @workflows do %>
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-sm font-medium text-base-content">{workflow.name}</p>
-                  <p class="text-xs text-base-content/50">{workflow.description}</p>
+            <%= if @workflows == [] do %>
+              <p class="text-sm text-base-content/50 py-4 text-center">
+                No registration workflows configured yet.
+              </p>
+            <% else %>
+              <%= for workflow <- @workflows do %>
+                <div class="flex items-center justify-between gap-3">
+                  <div class="min-w-0">
+                    <p class="text-sm font-medium text-base-content truncate">{workflow.name}</p>
+                    <p class="text-xs text-base-content/50 truncate">
+                      {workflow.description || "Registration approval workflow"}
+                    </p>
+                  </div>
+                  <span class={[
+                    "badge badge-sm shrink-0",
+                    workflow.is_active && "badge-success",
+                    !workflow.is_active && "badge-neutral"
+                  ]}>
+                    {if workflow.is_active, do: "Active", else: "Inactive"}
+                  </span>
                 </div>
-                <div class={"badge badge-sm " <>
-                  if(workflow.status == "active", do: "badge-success", else: "badge-neutral")}>
-                  {workflow.status}
-                </div>
-              </div>
+              <% end %>
             <% end %>
           </div>
         </div>

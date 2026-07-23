@@ -2,35 +2,27 @@ defmodule CuzCoreConnectWeb.AdminLiveIndex do
   use CuzCoreConnectWeb, :live_view
 
   alias CuzCoreConnect.Accounts
+  alias CuzCoreConnect.Registrations
+  alias CuzCoreConnect.Workflows
 
   @impl true
   def mount(_params, _session, socket) do
+    workflows = Workflows.list_registration_workflows()
+
     {:ok,
      socket
      |> assign(:page_title, "Admin Dashboard")
      |> assign(:current_page, :admin_dashboard)
      |> assign(:active_tab, "overview")
-     |> assign(:stats, get_admin_stats())
-     |> assign(:recent_users, get_recent_users())
-     |> assign(:workflows, get_workflows())}
+     |> assign(:stats, get_admin_stats(workflows))
+     |> assign(:recent_users, Accounts.list_recent_users(5))
+     |> assign(:workflows, workflows)}
   end
 
   @impl true
   def handle_params(%{"tab" => tab}, _url, socket)
       when tab in ["overview", "users", "workflows", "settings"] do
-    # current_page =
-    #   cond do
-    #     tab == "overview" -> :admin_dashboard
-    #     tab == "users" -> :academics_pending_review
-    #     tab == "workflows" -> :academics_approved
-    #     tab == "settings" -> :academics_approved
-    #   end
-
-    {
-      :noreply,
-      assign(socket, :active_tab, tab)
-      #  |> assign(:current_page, current_page)
-    }
+    {:noreply, assign(socket, :active_tab, tab)}
   end
 
   def handle_params(_params, _url, socket) do
@@ -42,26 +34,15 @@ defmodule CuzCoreConnectWeb.AdminLiveIndex do
     {:noreply, push_patch(socket, to: ~p"/admin/dashboard?tab=#{tab}")}
   end
 
-  # Helper functions
-  defp get_admin_stats do
+  defp get_admin_stats(workflows) do
+    active_count = Enum.count(workflows, & &1.is_active)
+
     %{
-      total_users: 156,
-      active_workflows: 8,
-      pending_requests: 23,
+      total_users: Accounts.count_users(),
+      active_workflows: active_count,
+      pending_requests: Registrations.count_pending_registrations(),
       system_health: "Good"
     }
-  end
-
-  defp get_recent_users do
-    Accounts.list_recent_users(5)
-  end
-
-  defp get_workflows do
-    [
-      %{name: "Student Registration", description: "New student onboarding", status: "active"},
-      %{name: "Course Enrollment", description: "Course selection workflow", status: "active"},
-      %{name: "Faculty Approval", description: "Department approvals", status: "paused"}
-    ]
   end
 
   @impl true
@@ -73,7 +54,7 @@ defmodule CuzCoreConnectWeb.AdminLiveIndex do
       page_title={@page_title}
       current_page={@current_page}
     >
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div class="mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <%= case @active_tab do %>
           <% "overview" -> %>
             <.live_component
@@ -92,6 +73,7 @@ defmodule CuzCoreConnectWeb.AdminLiveIndex do
             <.live_component
               module={CuzCoreConnectWeb.AdminLiveWorkflowsComponent}
               id="workflows"
+              workflows={@workflows}
             />
           <% "settings" -> %>
             <.live_component

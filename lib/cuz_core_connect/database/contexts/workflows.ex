@@ -15,6 +15,26 @@ defmodule CuzCoreConnect.Workflows do
   end
 
   @doc """
+  Lists non-deleted registration workflows for dashboard status display.
+  Active workflows are listed first.
+  """
+  def list_registration_workflows do
+    from(w in RegistrationWorkflow,
+      where: is_nil(w.deleted_at),
+      order_by: [desc: w.is_active, asc: w.name]
+    )
+    |> Repo.all()
+  end
+
+  def count_active_registration_workflows do
+    from(w in RegistrationWorkflow,
+      where: w.is_active == true and is_nil(w.deleted_at),
+      select: count(w.id)
+    )
+    |> Repo.one()
+  end
+
+  @doc """
   Activates the given workflow and deactivates every other non-deleted workflow.
   Only one registration workflow can be active at a time. New registrations
   pick up the active workflow via `Registration.put_active_workflow/1`.

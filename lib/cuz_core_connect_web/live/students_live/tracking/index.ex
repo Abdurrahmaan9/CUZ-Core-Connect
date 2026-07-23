@@ -5,12 +5,24 @@ defmodule CuzCoreConnectWeb.Student.Tracking.Index do
 
   @impl true
   def mount(_params, _session, socket) do
+    authenticated? = match?(%{user: %{id: _}}, socket.assigns[:current_scope])
+
+    registrations =
+      if authenticated? do
+        Registrations.list_submitted_for_student(socket.assigns.current_scope.user)
+      else
+        []
+      end
+
     {:ok,
      socket
      |> assign(:page_title, "Track Registration")
      |> assign(:current_page, :student_registration_tracking)
      |> assign(:tracking_number, "")
+     |> assign(:status_filter, "all")
      |> assign(:registration, nil)
+     |> assign(:registrations, registrations)
+     |> assign(:filtered_registrations, registrations)
      |> assign(:searched, false)
      |> assign(:show_mobile_menu, false)
      |> assign(:loading, false)}
@@ -33,14 +45,49 @@ defmodule CuzCoreConnectWeb.Student.Tracking.Index do
   def handle_event("search_tracking", %{"tracking_number" => tracking_number}, socket) do
     tracking_number = String.trim(tracking_number)
 
-    socket =
-      socket
-      |> assign(:tracking_number, tracking_number)
-      |> assign(:loading, true)
-      |> assign(:searched, false)
-      |> assign(:registration, nil)
+    if logged_in?(socket.assigns) do
+      {:noreply,
+       socket
+       |> assign(:tracking_number, tracking_number)
+       |> apply_registration_filters()}
+    else
+      socket =
+        socket
+        |> assign(:tracking_number, tracking_number)
+        |> assign(:loading, true)
+        |> assign(:searched, false)
+        |> assign(:registration, nil)
 
-    search_registration(socket, tracking_number)
+      search_registration(socket, tracking_number)
+    end
+  end
+
+  def handle_event("filter_status", %{"status" => status}, socket) do
+    {:noreply,
+     socket
+     |> assign(:status_filter, status)
+     |> apply_registration_filters()}
+  end
+
+  def handle_event("select_registration", %{"id" => id}, socket) do
+    registration = Registrations.get_registration!(id)
+
+    if Registrations.owns_registration?(socket.assigns.current_scope.user, registration) do
+      {:noreply,
+       socket
+       |> assign(:registration, registration)
+       |> assign(:searched, true)
+       |> assign(:tracking_number, registration.tracking_number || "")
+       |> then(fn s ->
+         if registration.tracking_number do
+           push_patch(s, to: ~p"/registration/tracking/#{registration.tracking_number}")
+         else
+           s
+         end
+       end)}
+    else
+      {:noreply, put_flash(socket, :error, "Registration not found.")}
+    end
   end
 
   def handle_event("toggle_mobile_menu", _params, socket) do
@@ -48,13 +95,47 @@ defmodule CuzCoreConnectWeb.Student.Tracking.Index do
   end
 
   def handle_event("clear_search", _params, socket) do
-    {:noreply,
-     socket
-     |> assign(:tracking_number, "")
-     |> assign(:registration, nil)
-     |> assign(:searched, false)
-     |> assign(:loading, false)
-     |> push_patch(to: ~p"/registration/tracking")}
+    socket =
+      socket
+      |> assign(:tracking_number, "")
+      |> assign(:status_filter, "all")
+      |> assign(:registration, nil)
+      |> assign(:searched, false)
+      |> assign(:loading, false)
+
+    socket =
+      if logged_in?(socket.assigns) do
+        apply_registration_filters(socket)
+      else
+        socket
+      end
+
+    {:noreply, push_patch(socket, to: ~p"/registration/tracking")}
+  end
+
+  defp apply_registration_filters(socket) do
+    query = String.downcase(String.trim(socket.assigns.tracking_number || ""))
+    status = socket.assigns.status_filter
+
+    filtered =
+      socket.assigns.registrations
+      |> Enum.reject(&CuzCoreConnect.Registrations.Registration.draft?/1)
+      |> Enum.filter(fn reg ->
+        status_ok =
+          case status do
+            "all" -> true
+            s -> overall_status(reg) == String.upcase(s)
+          end
+
+        query_ok =
+          query == "" or
+            String.contains?(String.downcase(reg.tracking_number || ""), query) or
+            String.contains?(String.downcase(reg.student_names || ""), query)
+
+        status_ok and query_ok
+      end)
+
+    assign(socket, :filtered_registrations, filtered)
   end
 
   defp search_registration(socket, tracking_number) do
@@ -124,18 +205,6 @@ defmodule CuzCoreConnectWeb.Student.Tracking.Index do
   defp stage_tone("REJECTED"), do: "border-error/40 bg-error/10 text-error"
   defp stage_tone(_), do: "border-warning/40 bg-warning/10 text-warning"
 
-  defp stage_connector("APPROVED"), do: "bg-success"
-  defp stage_connector("REJECTED"), do: "bg-error"
-  defp stage_connector(_), do: "bg-base-300"
-
-  defp payment_label("APPROVED"), do: "Verified"
-  defp payment_label("REJECTED"), do: "Rejected"
-  defp payment_label(_), do: "Pending"
-
-  defp format_datetime(%DateTime{} = dt), do: Calendar.strftime(dt, "%d %b %Y · %H:%M")
-  defp format_datetime(%NaiveDateTime{} = dt), do: Calendar.strftime(dt, "%d %b %Y · %H:%M")
-  defp format_datetime(_), do: "—"
-
   defp approval_stages(registration) do
     [
       %{
@@ -168,16 +237,6 @@ defmodule CuzCoreConnectWeb.Student.Tracking.Index do
   defp program_detail(registration, key) do
     details = registration.student_program_details || %{}
     Map.get(details, key) || Map.get(details, to_string(key))
-  end
-
-  defp selected_courses(registration) do
-    courses = registration.student_courses || %{}
-    Map.get(courses, "selected_courses") || Map.get(courses, :selected_courses) || []
-  end
-
-  defp total_credits(registration) do
-    courses = registration.student_courses || %{}
-    Map.get(courses, "total_credit_hours") || Map.get(courses, :total_credit_hours) || 0
   end
 
   @impl true
@@ -217,30 +276,153 @@ defmodule CuzCoreConnectWeb.Student.Tracking.Index do
 
   defp tracking_body(assigns) do
     ~H"""
-    <div class={[
-      "mx-auto px-4 sm:px-6",
-      @logged_in? && "max-w-5xl py-2",
-      !@logged_in? && "max-w-5xl py-8 sm:py-12"
-    ]}>
-      <div class="relative overflow-hidden rounded-3xl border border-base-300/70 bg-gradient-to-br from-base-100 via-base-100 to-primary/5 shadow-sm">
-        <div class="pointer-events-none absolute -right-16 -top-16 size-56 rounded-full bg-primary/10 blur-3xl">
-        </div>
-        <div class="pointer-events-none absolute -bottom-20 -left-10 size-48 rounded-full bg-secondary/10 blur-3xl">
+    <%= if @logged_in? do %>
+      <.auth_tracking {assigns} />
+    <% else %>
+      <.public_tracking {assigns} />
+    <% end %>
+    """
+  end
+
+  defp auth_tracking(assigns) do
+    ~H"""
+    <div class="mx-auto px-4 sm:px-6 py-2 space-y-6">
+      <div>
+        <h1 class="text-2xl font-bold text-base-content">Track Registrations</h1>
+        <p class="text-sm text-base-content/60 mt-1">
+          Filter and open your submitted registrations to view approval progress.
+        </p>
+      </div>
+
+      <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div class="flex flex-wrap gap-2">
+          <%= for {label, status} <- [
+                {"All", "all"},
+                {"Pending", "pending"},
+                {"Approved", "approved"},
+                {"Rejected", "rejected"}
+              ] do %>
+            <button
+              type="button"
+              phx-click="filter_status"
+              phx-value-status={status}
+              class={[
+                "btn btn-sm",
+                @status_filter == status && "btn-primary",
+                @status_filter != status && "btn-ghost"
+              ]}
+            >
+              {label}
+            </button>
+          <% end %>
         </div>
 
+        <form
+          id="tracking-filter-form"
+          phx-change="search_tracking"
+          phx-submit="search_tracking"
+          class="flex gap-2"
+        >
+          <label class="input input-bordered input-sm flex items-center gap-2 w-full sm:w-72">
+            <.icon name="hero-magnifying-glass" class="size-4 opacity-50" />
+            <input
+              type="text"
+              name="tracking_number"
+              id="tracking_number"
+              value={@tracking_number}
+              placeholder="Filter by tracking # or name"
+              autocomplete="off"
+              class="grow"
+            />
+          </label>
+          <button
+            :if={@tracking_number != "" or @status_filter != "all" or @registration}
+            type="button"
+            phx-click="clear_search"
+            class="btn btn-ghost btn-sm"
+          >
+            Clear
+          </button>
+        </form>
+      </div>
+
+      <div class="overflow-x-auto rounded-box border border-base-300 bg-base-100 shadow-sm">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Tracking #</th>
+              <th>Programme</th>
+              <th>Submitted</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              :for={reg <- @filtered_registrations}
+              id={"tracking-row-#{reg.id}"}
+              class={[
+                "hover",
+                @registration && @registration.id == reg.id && "bg-primary/5"
+              ]}
+            >
+              <td class="font-mono text-sm">{reg.tracking_number || "—"}</td>
+              <td class="text-sm">
+                {program_detail(reg, "program_name") || "—"}
+              </td>
+              <td class="text-sm text-base-content/70">
+                {Calendar.strftime(reg.registration_date || reg.inserted_at, "%b %d, %Y")}
+              </td>
+              <td>
+                <span class={[
+                  "badge badge-sm border",
+                  overall_badge_class(overall_status(reg))
+                ]}>
+                  {overall_label(overall_status(reg))}
+                </span>
+              </td>
+              <td class="text-right">
+                <button
+                  type="button"
+                  phx-click="select_registration"
+                  phx-value-id={reg.id}
+                  class="btn btn-ghost btn-sm"
+                >
+                  View
+                </button>
+              </td>
+            </tr>
+            <tr :if={@filtered_registrations == []}>
+              <td colspan="5" class="py-10 text-center text-base-content/50">
+                No registrations match this filter.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div :if={@registration} id="tracking-detail" class="space-y-6">
+        <.registration_detail {assigns} />
+      </div>
+    </div>
+    """
+  end
+
+  defp public_tracking(assigns) do
+    ~H"""
+    <div class={[
+      "mx-auto px-4 sm:px-6",
+      "max-w-5xl py-8 sm:py-12"
+    ]}>
+      <div class="relative overflow-hidden rounded-3xl border border-base-300/70 bg-gradient-to-br from-base-100 via-base-100 to-primary/5 shadow-sm">
         <div class="relative p-5 sm:p-8 lg:p-10 space-y-8">
-          <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div class="space-y-2">
-              <div class="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-                <.icon name="hero-bolt" class="size-3.5" /> Live status check
-              </div>
-              <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-base-content">
-                Track Your Registration
-              </h1>
-              <p class="max-w-xl text-sm sm:text-base text-base-content/65">
-                Enter your tracking number to see approval progress across payment, academics, HOD, and retention.
-              </p>
-            </div>
+          <div class="space-y-2">
+            <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-base-content">
+              Track Your Registration
+            </h1>
+            <p class="max-w-xl text-sm sm:text-base text-base-content/65">
+              Enter your tracking number to see approval progress across payment, academics, HOD, and retention.
+            </p>
           </div>
 
           <form
@@ -268,17 +450,17 @@ defmodule CuzCoreConnectWeb.Student.Tracking.Index do
             <button
               type="submit"
               phx-disable-with="Searching..."
-              class="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-3.5 text-sm font-semibold text-primary-content shadow-sm transition hover:bg-primary/90 active:scale-[0.98]"
+              class="btn btn-primary"
             >
-              <.icon name="hero-magnifying-glass" class="size-5" /> Track
+              Track
             </button>
             <button
               :if={@searched}
               type="button"
               phx-click="clear_search"
-              class="inline-flex items-center justify-center gap-2 rounded-2xl border border-base-300 bg-base-100 px-5 py-3.5 text-sm font-medium text-base-content/70 transition hover:bg-base-200"
+              class="btn btn-ghost"
             >
-              <.icon name="hero-arrow-path" class="size-4" /> Clear
+              Clear
             </button>
           </form>
 
@@ -289,231 +471,133 @@ defmodule CuzCoreConnectWeb.Student.Tracking.Index do
 
           <div :if={@searched && !@loading} class="space-y-6">
             <%= if @registration do %>
-              <div class={[
-                "flex flex-col gap-4 rounded-2xl border p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5",
-                overall_badge_class(@overall)
-              ]}>
-                <div class="flex items-start gap-3">
-                  <div class="rounded-xl bg-base-100/70 p-2.5 shadow-sm">
-                    <.icon name={overall_icon(@overall)} class="size-6" />
-                  </div>
-                  <div>
-                    <p class="text-xs font-medium uppercase tracking-wide opacity-70">
-                      Approval Status
-                    </p>
-                    <p class="text-xl font-bold">{overall_label(@overall)}</p>
-                    <p class="mt-1 font-mono text-xs sm:text-sm opacity-80">
-                      {@registration.tracking_number}
-                    </p>
-                  </div>
-                </div>
-                <div class="flex flex-wrap gap-2 text-xs sm:justify-end">
-                  <span class="inline-flex items-center gap-1.5 rounded-full border border-current/20 bg-base-100/50 px-3 py-1.5">
-                    <.icon name="hero-calendar-days" class="size-3.5" />
-                    Submitted {format_datetime(
-                      @registration.registration_date || @registration.inserted_at
-                    )}
-                  </span>
-                  <span class="inline-flex items-center gap-1.5 rounded-full border border-current/20 bg-base-100/50 px-3 py-1.5">
-                    <.icon name="hero-banknotes" class="size-3.5" />
-                    Payment {payment_label(@registration.payment_status)}
-                  </span>
-                </div>
-              </div>
-
-              <div class="rounded-2xl border border-base-300 bg-base-100/80 p-4 sm:p-6">
-                <div class="mb-5 flex items-center gap-2">
-                  <.icon name="hero-arrows-right-left" class="size-5 text-primary" />
-                  <h2 class="text-base font-semibold sm:text-lg">Approval Pipeline</h2>
-                </div>
-
-                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  <div
-                    :for={{stage, idx} <- Enum.with_index(@stages)}
-                    id={"stage-#{stage.key}"}
-                    class={[
-                      "relative rounded-2xl border p-4 transition duration-200 hover:-translate-y-0.5 hover:shadow-md",
-                      stage_tone(stage.status)
-                    ]}
-                  >
-                    <div
-                      :if={idx < length(@stages) - 1}
-                      class={[
-                        "absolute right-[-0.4rem] top-1/2 hidden h-0.5 w-3 -translate-y-1/2 lg:block",
-                        stage_connector(stage.status)
-                      ]}
-                    >
-                    </div>
-                    <div class="mb-3 flex items-center justify-between">
-                      <div class="rounded-xl bg-base-100/70 p-2">
-                        <.icon name={stage.icon} class="size-5" />
-                      </div>
-                      <.icon name={stage_status_icon(stage.status)} class="size-5" />
-                    </div>
-                    <p class="text-sm font-semibold">{stage.label}</p>
-                    <p class="mt-1 text-xs font-medium uppercase tracking-wide opacity-80">
-                      {String.capitalize(String.downcase(stage.status || "pending"))}
-                    </p>
-                  </div>
-                </div>
-
-                <div
-                  :if={@overall == "REJECTED"}
-                  class="mt-5 rounded-xl border border-error/30 bg-error/10 p-4 text-sm text-error"
-                >
-                  <div class="flex items-start gap-2">
-                    <.icon name="hero-exclamation-triangle" class="mt-0.5 size-5 shrink-0" />
-                    <div>
-                      <p class="font-semibold">
-                        Rejected at {String.capitalize(@registration.rejected_stage || "a stage")}
-                      </p>
-                      <p class="mt-1 opacity-90">
-                        {@registration.rejection_reason || "No reason was provided."}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div
-                  :if={@overall == "APPROVED"}
-                  class="mt-5 flex flex-col gap-3 rounded-xl border border-success/30 bg-success/10 p-4 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div class="flex items-start gap-2 text-success">
-                    <.icon name="hero-check-badge" class="mt-0.5 size-5 shrink-0" />
-                    <div>
-                      <p class="text-sm font-medium">
-                        Registration fully approved
-                      </p>
-                      <p class="mt-0.5 text-xs opacity-80">
-                        View or print your official Proof of Registration.
-                      </p>
-                    </div>
-                  </div>
-                  <div class="flex flex-wrap gap-2 sm:justify-end">
-                    <.link
-                      href={~p"/registration/tracking/#{@registration.tracking_number}/proof"}
-                      target="_blank"
-                      class="inline-flex items-center justify-center gap-2 rounded-xl border border-success/40 bg-base-100 px-4 py-2 text-sm font-semibold text-success transition hover:bg-success/10"
-                    >
-                      <.icon name="hero-eye" class="size-4" /> View Proof
-                    </.link>
-                    <.link
-                      href={~p"/registration/tracking/#{@registration.tracking_number}/proof"}
-                      target="_blank"
-                      class="inline-flex items-center justify-center gap-2 rounded-xl bg-success px-4 py-2 text-sm font-semibold text-success-content transition hover:bg-success/90"
-                    >
-                      <.icon name="hero-arrow-down-tray" class="size-4" /> Download / Print
-                    </.link>
-                  </div>
-                </div>
-              </div>
-
-              <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                <div class="rounded-2xl border border-base-300 bg-base-100/80 p-4 sm:p-6">
-                  <div class="mb-4 flex items-center gap-2">
-                    <.icon name="hero-user-circle" class="size-5 text-primary" />
-                    <h2 class="text-base font-semibold">Student</h2>
-                  </div>
-                  <dl class="space-y-3 text-sm">
-                    <div class="flex items-start justify-between gap-4 border-b border-base-200 pb-3">
-                      <dt class="text-base-content/55">Student number</dt>
-                      <dd class="font-mono font-semibold text-right">{@registration.student_id}</dd>
-                    </div>
-                    <div class="flex items-start justify-between gap-4 border-b border-base-200 pb-3">
-                      <dt class="text-base-content/55">Name</dt>
-                      <dd class="font-medium text-right">{@registration.student_names}</dd>
-                    </div>
-                    <div class="flex items-start justify-between gap-4">
-                      <dt class="text-base-content/55">Email</dt>
-                      <dd class="text-right break-all">{@registration.student_email}</dd>
-                    </div>
-                  </dl>
-                </div>
-
-                <div class="rounded-2xl border border-base-300 bg-base-100/80 p-4 sm:p-6">
-                  <div class="mb-4 flex items-center gap-2">
-                    <.icon name="hero-building-library" class="size-5 text-primary" />
-                    <h2 class="text-base font-semibold">Programme</h2>
-                  </div>
-                  <dl class="space-y-3 text-sm">
-                    <div class="flex items-start justify-between gap-4 border-b border-base-200 pb-3">
-                      <dt class="text-base-content/55">Programme</dt>
-                      <dd class="font-medium text-right">
-                        {program_detail(@registration, "program_name") || "—"}
-                      </dd>
-                    </div>
-                    <div class="flex items-start justify-between gap-4 border-b border-base-200 pb-3">
-                      <dt class="text-base-content/55">Academic year</dt>
-                      <dd class="text-right">
-                        {program_detail(@registration, "academic_year") || "—"}
-                      </dd>
-                    </div>
-                    <div class="flex items-start justify-between gap-4">
-                      <dt class="text-base-content/55">Semester</dt>
-                      <dd class="text-right">{program_detail(@registration, "semester") || "—"}</dd>
-                    </div>
-                  </dl>
-                </div>
-              </div>
-
-              <div
-                :if={selected_courses(@registration) != []}
-                class="rounded-2xl border border-base-300 bg-base-100/80 p-4 sm:p-6"
-              >
-                <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
-                  <div class="flex items-center gap-2">
-                    <.icon name="hero-book-open" class="size-5 text-primary" />
-                    <h2 class="text-base font-semibold">Registered Courses</h2>
-                  </div>
-                  <span class="inline-flex items-center gap-1.5 rounded-full bg-secondary/10 px-3 py-1 text-xs font-semibold text-secondary">
-                    <.icon name="hero-academic-cap" class="size-3.5" />
-                    {total_credits(@registration)} credit hours
-                  </span>
-                </div>
-
-                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  <div
-                    :for={course <- selected_courses(@registration)}
-                    class="rounded-xl border border-base-200 bg-base-200/30 p-3.5 transition hover:border-primary/30 hover:bg-primary/5"
-                  >
-                    <div class="mb-1.5 flex items-start justify-between gap-2">
-                      <span class="font-mono text-xs font-semibold text-primary">
-                        {course["code"] || course[:code]}
-                      </span>
-                      <span class="text-xs text-base-content/50">
-                        {course["credits"] || course[:credits]} cr
-                      </span>
-                    </div>
-                    <p class="text-sm font-medium leading-snug">
-                      {course["name"] || course[:name]}
-                    </p>
-                  </div>
-                </div>
-              </div>
+              <.registration_detail {assigns} />
             <% else %>
               <div class="rounded-2xl border border-error/20 bg-error/5 px-6 py-12 text-center">
                 <.icon name="hero-exclamation-triangle" class="mx-auto mb-4 size-12 text-error" />
-                <h3 class="text-lg font-semibold text-base-content">Registration not found</h3>
+                <h3 class="text-lg font-semibold">Registration not found</h3>
                 <p class="mx-auto mt-2 max-w-md text-sm text-base-content/65">
-                  We couldn’t find a registration with that tracking number. Double-check the code and try again.
+                  We couldn’t find a registration with that tracking number.
                 </p>
-                <ul class="mx-auto mt-6 max-w-sm space-y-2 text-left text-xs text-base-content/60">
-                  <li class="flex items-start gap-2">
-                    <.icon name="hero-check-circle" class="mt-0.5 size-4 shrink-0 text-primary" />
-                    Use the full tracking number from your submission confirmation
-                  </li>
-                  <li class="flex items-start gap-2">
-                    <.icon name="hero-check-circle" class="mt-0.5 size-4 shrink-0 text-primary" />
-                    Format looks like <span class="font-mono">REG-1234567890-abc123</span>
-                  </li>
-                  <li class="flex items-start gap-2">
-                    <.icon name="hero-check-circle" class="mt-0.5 size-4 shrink-0 text-primary" />
-                    Avoid extra spaces before or after the code
-                  </li>
-                </ul>
               </div>
             <% end %>
           </div>
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  defp registration_detail(assigns) do
+    ~H"""
+    <div class="space-y-6">
+      <div class={[
+        "flex flex-col gap-4 rounded-2xl border p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5",
+        overall_badge_class(@overall)
+      ]}>
+        <div class="flex items-start gap-3">
+          <div class="rounded-xl bg-base-100/70 p-2.5 shadow-sm">
+            <.icon name={overall_icon(@overall)} class="size-6" />
+          </div>
+          <div>
+            <p class="text-xs font-medium uppercase tracking-wide opacity-70">Approval Status</p>
+            <p class="text-xl font-bold">{overall_label(@overall)}</p>
+            <p class="mt-1 font-mono text-xs sm:text-sm opacity-80">
+              {@registration.tracking_number}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="rounded-2xl border border-base-300 bg-base-100/80 p-4 sm:p-6">
+        <div class="mb-5 flex items-center gap-2">
+          <.icon name="hero-arrows-right-left" class="size-5 text-primary" />
+          <h2 class="text-base font-semibold sm:text-lg">Approval Pipeline</h2>
+        </div>
+
+        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div
+            :for={stage <- @stages}
+            id={"stage-#{stage.key}"}
+            class={[
+              "relative rounded-2xl border p-4",
+              stage_tone(stage.status)
+            ]}
+          >
+            <div class="mb-3 flex items-center justify-between">
+              <div class="rounded-xl bg-base-100/70 p-2">
+                <.icon name={stage.icon} class="size-5" />
+              </div>
+              <.icon name={stage_status_icon(stage.status)} class="size-5" />
+            </div>
+            <p class="text-sm font-semibold">{stage.label}</p>
+            <p class="mt-1 text-xs font-medium uppercase tracking-wide opacity-80">
+              {String.capitalize(String.downcase(stage.status || "pending"))}
+            </p>
+          </div>
+        </div>
+
+        <div
+          :if={@overall == "REJECTED"}
+          class="mt-5 rounded-xl border border-error/30 bg-error/10 p-4 text-sm text-error"
+        >
+          <p class="font-semibold">
+            Rejected at {String.capitalize(@registration.rejected_stage || "a stage")}
+          </p>
+          <p class="mt-1 opacity-90">
+            {@registration.rejection_reason || "No reason was provided."}
+          </p>
+        </div>
+
+        <div
+          :if={@overall == "APPROVED"}
+          class="mt-5 flex flex-wrap gap-2"
+        >
+          <.link
+            href={~p"/registration/tracking/#{@registration.tracking_number}/proof"}
+            target="_blank"
+            class="btn btn-success btn-sm"
+          >
+            View Proof
+          </.link>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <div class="rounded-2xl border border-base-300 bg-base-100/80 p-4 sm:p-6">
+          <h2 class="text-base font-semibold mb-4">Student</h2>
+          <dl class="space-y-3 text-sm">
+            <div class="flex justify-between gap-4 border-b border-base-200 pb-3">
+              <dt class="text-base-content/55">Student number</dt>
+              <dd class="font-mono font-semibold">{@registration.student_id}</dd>
+            </div>
+            <div class="flex justify-between gap-4 border-b border-base-200 pb-3">
+              <dt class="text-base-content/55">Name</dt>
+              <dd class="font-medium">{@registration.student_names}</dd>
+            </div>
+            <div class="flex justify-between gap-4">
+              <dt class="text-base-content/55">Email</dt>
+              <dd class="break-all">{@registration.student_email}</dd>
+            </div>
+          </dl>
+        </div>
+
+        <div class="rounded-2xl border border-base-300 bg-base-100/80 p-4 sm:p-6">
+          <h2 class="text-base font-semibold mb-4">Programme</h2>
+          <dl class="space-y-3 text-sm">
+            <div class="flex justify-between gap-4 border-b border-base-200 pb-3">
+              <dt class="text-base-content/55">Programme</dt>
+              <dd class="font-medium">{program_detail(@registration, "program_name") || "—"}</dd>
+            </div>
+            <div class="flex justify-between gap-4 border-b border-base-200 pb-3">
+              <dt class="text-base-content/55">Academic year</dt>
+              <dd>{program_detail(@registration, "academic_year") || "—"}</dd>
+            </div>
+            <div class="flex justify-between gap-4">
+              <dt class="text-base-content/55">Semester</dt>
+              <dd>{program_detail(@registration, "semester") || "—"}</dd>
+            </div>
+          </dl>
         </div>
       </div>
     </div>

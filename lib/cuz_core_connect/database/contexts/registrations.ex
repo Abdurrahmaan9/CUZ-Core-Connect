@@ -10,15 +10,29 @@ defmodule CuzCoreConnect.Registrations do
   def list_pending_for_academics do
     Repo.all(
       from r in Registration,
-        where: r.accademics_status == "PENDING" and is_nil(r.deleted_at),
+        where:
+          r.accademics_status == "PENDING" and
+            r.registration_status == "PENDING" and
+            is_nil(r.deleted_at),
         order_by: [asc: r.inserted_at]
     )
+  end
+
+  def count_pending_registrations do
+    from(r in Registration,
+      where: r.registration_status == "PENDING" and is_nil(r.deleted_at),
+      select: count(r.id)
+    )
+    |> Repo.one()
   end
 
   def list_pending_for_finance do
     Repo.all(
       from r in Registration,
-        where: r.payment_status == "PENDING" and is_nil(r.deleted_at),
+        where:
+          r.payment_status == "PENDING" and
+            r.registration_status == "PENDING" and
+            is_nil(r.deleted_at),
         order_by: [asc: r.inserted_at]
     )
   end
@@ -28,6 +42,7 @@ defmodule CuzCoreConnect.Registrations do
       from r in Registration,
         where:
           r.hod_status == "PENDING" and
+            r.registration_status == "PENDING" and
             r.accademics_status == "APPROVED" and
             r.payment_status == "APPROVED" and
             is_nil(r.deleted_at),
@@ -40,6 +55,7 @@ defmodule CuzCoreConnect.Registrations do
       from r in Registration,
         where:
           r.retention_status == "PENDING" and
+            r.registration_status == "PENDING" and
             r.hod_status == "APPROVED" and
             r.accademics_status == "APPROVED" and
             r.payment_status == "APPROVED" and
@@ -130,6 +146,176 @@ defmodule CuzCoreConnect.Registrations do
   end
 
   def owns_registration?(_, _), do: false
+
+  @doc """
+  Incomplete wizard entries for a student (not yet in the approval workflow).
+  """
+  def list_drafts_for_student(%CuzCoreConnect.Accounts.User{} = user) do
+    user
+    |> list_registrations_by_student()
+    |> Enum.filter(&Registration.draft?/1)
+  end
+
+  def list_submitted_for_student(%CuzCoreConnect.Accounts.User{} = user) do
+    user
+    |> list_registrations_by_student()
+    |> Enum.reject(&Registration.draft?/1)
+  end
+
+  @doc """
+  Saves wizard progress as a DRAFT. Creates or updates. Does not enter workflow.
+  """
+  def save_draft(registration_data, existing \\ nil, opts \\ []) do
+    wizard_step = Keyword.get(opts, :wizard_step)
+    attrs = build_draft_attrs(registration_data, wizard_step)
+
+    case existing do
+      %Registration{registration_status: "DRAFT"} = draft ->
+        draft
+        |> Registration.draft_changeset(attrs)
+        |> Repo.update()
+
+      nil ->
+        %Registration{}
+        |> Registration.draft_changeset(attrs)
+        |> Repo.insert()
+
+      %Registration{} ->
+        {:error, :not_a_draft}
+    end
+  end
+
+  def delete_draft(%Registration{registration_status: "DRAFT"} = draft) do
+    Repo.delete(draft)
+  end
+
+  def delete_draft(_), do: {:error, :not_a_draft}
+
+  @doc """
+  Converts a persisted registration into the LiveView wizard map.
+  """
+  def to_wizard_map(%Registration{} = registration) do
+    details = stringify_keys(registration.student_program_details || %{})
+    courses_map = registration.student_courses || %{}
+
+    courses =
+      case courses_map do
+        %{"selected_courses" => items} when is_list(items) -> Enum.map(items, &course_from_map/1)
+        %{selected_courses: items} when is_list(items) -> Enum.map(items, &course_from_map/1)
+        %{"items" => items} when is_list(items) -> Enum.map(items, &course_from_map/1)
+        list when is_list(list) -> Enum.map(list, &course_from_map/1)
+        _ -> []
+      end
+
+    %{
+      student_id: registration.student_id,
+      student_names: registration.student_names,
+      student_email: registration.student_email,
+      student_contact: contact_to_string(registration.student_contact),
+      program_id: parse_int(details["program_id"]),
+      program_name: details["program_name"],
+      academic_year: details["academic_year"],
+      semester: details["semester"],
+      intake: details["intake"],
+      courses: courses,
+      uploaded_receipts: [],
+      g_number: nil
+    }
+  end
+
+  defp course_from_map(course) when is_map(course) do
+    course = stringify_keys(course)
+
+    %{
+      id: parse_int(course["id"]),
+      code: course["code"],
+      title: course["title"] || course["name"],
+      name: course["name"] || course["title"],
+      credits: parse_int(course["credits"]) || 0
+    }
+  end
+
+  defp course_from_map(_), do: %{id: nil, code: "", title: "", name: "", credits: 0}
+
+  defp stringify_keys(map) when is_map(map) do
+    Map.new(map, fn
+      {k, v} when is_atom(k) -> {Atom.to_string(k), v}
+      {k, v} -> {to_string(k), v}
+    end)
+  end
+
+  defp stringify_keys(_), do: %{}
+
+  defp parse_int(nil), do: nil
+  defp parse_int(value) when is_integer(value), do: value
+
+  defp parse_int(value) when is_binary(value) do
+    case Integer.parse(value) do
+      {int, _} -> int
+      :error -> nil
+    end
+  end
+
+  defp parse_int(_), do: nil
+
+  defp contact_to_string(nil), do: ""
+  defp contact_to_string(contact) when is_integer(contact), do: Integer.to_string(contact)
+  defp contact_to_string(contact), do: to_string(contact)
+
+  defp build_draft_attrs(registration_data, wizard_step) do
+    data = normalize_wizard_data(registration_data)
+
+    %{
+      student_id: data.student_id,
+      student_names: data.student_names,
+      student_email: data.student_email,
+      student_contact: data.student_contact,
+      student_program_details: %{
+        "program_id" => data.program_id,
+        "program_name" => data.program_name,
+        "academic_year" => data.academic_year,
+        "semester" => data.semester,
+        "intake" => data.intake
+      },
+      student_courses: format_courses(data.courses),
+      registration_date: DateTime.utc_now() |> DateTime.truncate(:second),
+      wizard_step: wizard_step && to_string(wizard_step)
+    }
+  end
+
+  defp normalize_wizard_data(data) when is_map(data) do
+    get = fn key -> Map.get(data, key) || Map.get(data, to_string(key)) end
+
+    contact =
+      case get.(:student_contact) do
+        contact when is_binary(contact) ->
+          contact
+          |> String.replace(~r/[^\d]/, "")
+          |> case do
+            "" -> nil
+            digits -> String.to_integer(digits)
+          end
+
+        contact when is_integer(contact) ->
+          contact
+
+        _ ->
+          nil
+      end
+
+    %{
+      student_id: get.(:student_id),
+      student_names: get.(:student_names),
+      student_email: get.(:student_email),
+      student_contact: contact,
+      program_id: get.(:program_id),
+      program_name: get.(:program_name),
+      academic_year: get.(:academic_year),
+      semester: get.(:semester),
+      intake: get.(:intake),
+      courses: get.(:courses) || []
+    }
+  end
 
   def list_by_academics_status(status) do
     Repo.all(from r in Registration, where: r.accademics_status == ^status)
@@ -480,6 +666,7 @@ defmodule CuzCoreConnect.Registrations do
       {:ok, updated} ->
         broadcast(updated)
         maybe_notify_approval(updated, action_type, status)
+        maybe_notify_in_app(updated, action_type, status, actor, comment)
         {:ok, updated}
 
       {:error, reason} ->
@@ -508,6 +695,25 @@ defmodule CuzCoreConnect.Registrations do
   end
 
   defp maybe_notify_approval(_registration, _action_type, _status), do: :ok
+
+  defp maybe_notify_in_app(registration, action_type, status, actor, reason)
+       when status in ["approved", "rejected"] do
+    case Map.fetch(@stage_by_action, action_type) do
+      {:ok, stage} ->
+        CuzCoreConnect.Notifications.notify_registration_stage(
+          registration,
+          stage,
+          status,
+          actor,
+          reason
+        )
+
+      :error ->
+        :ok
+    end
+  end
+
+  defp maybe_notify_in_app(_registration, _action_type, _status, _actor, _reason), do: :ok
 
   def change_registration(%Registration{} = registration, attrs \\ %{}) do
     Registration.changeset(registration, attrs)
@@ -549,44 +755,64 @@ defmodule CuzCoreConnect.Registrations do
     |> Repo.update()
   end
 
-  def create_registration(user, registration_data) do
-    # Generate tracking number
+  def create_registration(user, registration_data, opts \\ []) do
+    draft = Keyword.get(opts, :draft)
     tracking_number = generate_tracking_number()
+    data = normalize_wizard_data(registration_data)
 
-    # Use personal info from wizard data (handle anonymous registration)
     student_id =
-      registration_data.student_id || registration_data.student_number ||
-        (user && extract_student_id(user))
+      data.student_id ||
+        (user && extract_student_id(user && (Map.get(user, :user) || user)))
 
-    student_names = registration_data.student_names || (user && extract_student_name(user))
-    student_email = registration_data.student_email || (user && extract_student_email(user))
-    student_contact = registration_data.student_contact || (user && extract_student_contact(user))
+    student_names =
+      data.student_names || (user && extract_student_name(user && (Map.get(user, :user) || user)))
 
-    # Prepare registration attributes
+    student_email =
+      data.student_email ||
+        (user && extract_student_email(user && (Map.get(user, :user) || user)))
+
+    student_contact =
+      data.student_contact ||
+        (user && extract_student_contact(user && (Map.get(user, :user) || user)))
+
     attrs = %{
       student_id: student_id,
       student_names: student_names,
       student_email: student_email,
       student_contact: student_contact,
       student_program_details: %{
-        program_id: registration_data.program_id,
-        program_name: registration_data.program_name,
-        academic_year: registration_data.academic_year,
-        semester: registration_data.semester,
-        intake: registration_data.intake
+        "program_id" => data.program_id,
+        "program_name" => data.program_name,
+        "academic_year" => data.academic_year,
+        "semester" => data.semester,
+        "intake" => data.intake
       },
-      student_courses: format_courses(registration_data.courses),
-      registration_date: DateTime.utc_now(),
+      student_courses: format_courses(data.courses),
+      registration_date: DateTime.utc_now() |> DateTime.truncate(:second),
       tracking_number: tracking_number,
       approval_level: "pending",
       approved_by: %{},
-      payment_status: "PENDING"
+      payment_status: "PENDING",
+      retention_status: "PENDING",
+      accademics_status: "PENDING",
+      hod_status: "PENDING",
+      financial_status: "PENDING",
+      registration_status: "PENDING",
+      wizard_step: nil
     }
 
     result =
-      %Registration{}
-      |> Registration.changeset(attrs)
-      |> Repo.insert()
+      case draft do
+        %Registration{registration_status: "DRAFT"} = existing ->
+          existing
+          |> Registration.submit_changeset(attrs)
+          |> Repo.update()
+
+        _ ->
+          %Registration{}
+          |> Registration.submit_changeset(attrs)
+          |> Repo.insert()
+      end
 
     case result do
       {:ok, registration} ->
@@ -595,6 +821,7 @@ defmodule CuzCoreConnect.Registrations do
         broadcast(registration)
         CuzCoreConnect.Registrations.RegistrationNotifier.deliver_submission_email(registration)
         _ = CuzCoreConnect.Communications.create_registration_message(registration)
+        _ = CuzCoreConnect.Notifications.notify_registration_submitted(registration, actor)
         {:ok, registration}
 
       error ->
@@ -801,18 +1028,22 @@ defmodule CuzCoreConnect.Registrations do
   end
 
   defp format_courses(courses) when is_list(courses) do
+    selected =
+      Enum.map(courses, fn course ->
+        %{
+          id: Map.get(course, :id) || Map.get(course, "id"),
+          code: Map.get(course, :code) || Map.get(course, "code"),
+          name:
+            Map.get(course, :title) || Map.get(course, :name) || Map.get(course, "title") ||
+              Map.get(course, "name"),
+          credits: Map.get(course, :credits) || Map.get(course, "credits") || 0
+        }
+      end)
+
     %{
-      selected_courses:
-        Enum.map(courses, fn course ->
-          %{
-            id: course.id,
-            code: course.code,
-            name: course.title,
-            credits: course.credits
-          }
-        end),
-      total_credit_hours: Enum.sum(Enum.map(courses, & &1.credits)),
-      course_count: length(courses)
+      selected_courses: selected,
+      total_credit_hours: Enum.sum(Enum.map(selected, & &1.credits)),
+      course_count: length(selected)
     }
   end
 

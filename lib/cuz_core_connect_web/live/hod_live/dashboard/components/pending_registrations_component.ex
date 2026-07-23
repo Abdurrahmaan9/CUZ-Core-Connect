@@ -93,21 +93,29 @@ defmodule CuzCoreConnectWeb.HODLive.Dashboard.PendingRegistrationsComponent do
                     </span>
                   </td>
                   <td>
-                    <div class="flex gap-2">
-                      <.button
-                        phx-click="approve"
-                        phx-value-id={reg.id}
-                        phx-target={@myself}
-                        class="btn-xs bg-success/20 text-success"
-                      >
-                        Approve
-                      </.button>
-                      <.button
-                        phx-click={JS.toggle(to: "#reject-hod-form-#{reg.id}")}
-                        class="btn-xs bg-error/20 text-error"
-                      >
-                        Reject
-                      </.button>
+                    <div class="flex gap-1 justify-end">
+                      <div title="Approve" class="inline-flex">
+                        <button
+                          type="button"
+                          phx-click="approve"
+                          phx-value-id={reg.id}
+                          phx-target={@myself}
+                          class="btn btn-ghost btn-sm btn-square text-success hover:bg-success/10"
+                          aria-label="Approve"
+                        >
+                          <.icon name="hero-check" class="size-5" />
+                        </button>
+                      </div>
+                      <div title="Reject" class="inline-flex">
+                        <button
+                          type="button"
+                          phx-click={JS.toggle(to: "#reject-hod-form-#{reg.id}")}
+                          class="btn btn-ghost btn-sm btn-square text-error hover:bg-error/10"
+                          aria-label="Reject"
+                        >
+                          <.icon name="hero-x-mark" class="size-5" />
+                        </button>
+                      </div>
                     </div>
                   </td>
                 </tr>

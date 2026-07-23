@@ -165,4 +165,79 @@ defmodule CuzCoreConnect.RegistrationsTest do
                registration.id
     end
   end
+
+  describe "drafts" do
+    test "save_draft creates a DRAFT without tracking number or workflow" do
+      assert {:ok, draft} =
+               Registrations.save_draft(
+                 %{
+                   student_id: "202699001",
+                   student_names: "Draft Student",
+                   student_email: "draft@students.cavendish.co.zm",
+                   student_contact: "0977123456",
+                   program_id: nil,
+                   program_name: nil,
+                   academic_year: nil,
+                   semester: nil,
+                   intake: nil,
+                   courses: []
+                 },
+                 nil,
+                 wizard_step: :programme
+               )
+
+      assert draft.registration_status == "DRAFT"
+      assert is_nil(draft.tracking_number)
+      assert is_nil(draft.workflow_id)
+      assert draft.wizard_step == "programme"
+      assert draft.payment_status == "DRAFT"
+    end
+
+    test "create_registration promotes a draft into the approval workflow" do
+      active_workflow_fixture()
+
+      {:ok, draft} =
+        Registrations.save_draft(
+          %{
+            student_id: "202699002",
+            student_names: "Draft Student",
+            student_email: "draft2@students.cavendish.co.zm",
+            student_contact: "0977123457",
+            program_id: 1,
+            program_name: "BSc CS",
+            academic_year: 1,
+            semester: 1,
+            intake: "Jan",
+            courses: []
+          },
+          nil,
+          wizard_step: :review
+        )
+
+      assert {:ok, submitted} =
+               Registrations.create_registration(
+                 nil,
+                 %{
+                   student_id: "202699002",
+                   student_names: "Draft Student",
+                   student_email: "draft2@students.cavendish.co.zm",
+                   student_contact: "0977123457",
+                   program_id: 1,
+                   program_name: "BSc CS",
+                   academic_year: 1,
+                   semester: 1,
+                   intake: "Jan",
+                   courses: []
+                 },
+                 draft: draft
+               )
+
+      assert submitted.id == draft.id
+      assert submitted.registration_status == "PENDING"
+      assert submitted.payment_status == "PENDING"
+      assert String.starts_with?(submitted.tracking_number, "REG-")
+      assert is_nil(submitted.wizard_step)
+      assert submitted.workflow_id
+    end
+  end
 end

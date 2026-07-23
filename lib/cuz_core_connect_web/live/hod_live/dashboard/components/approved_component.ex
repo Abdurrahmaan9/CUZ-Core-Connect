@@ -67,7 +67,7 @@ defmodule CuzCoreConnectWeb.HODLive.Dashboard.ApprovedComponent do
                     </span>
                   </td>
                   <td class="text-right">
-                    <div title="view" class="inline-flex">
+                    <div title="View" class="inline-flex">
                       <button
                         type="button"
                         phx-click="view_details"

@@ -167,15 +167,17 @@ defmodule CuzCoreConnectWeb.Admin.EmailLogs do
                   {format_datetime(item.inserted_at)}
                 </td>
                 <td>
-                  <button
-                    type="button"
-                    phx-click="select"
-                    phx-value-id={item.id}
-                    class="btn btn-ghost btn-sm btn-square text-info"
-                    aria-label="View"
-                  >
-                    <.icon name="hero-eye" class="size-5" />
-                  </button>
+                  <div title="View" class="inline-flex">
+                    <button
+                      type="button"
+                      phx-click="select"
+                      phx-value-id={item.id}
+                      class="btn btn-ghost btn-sm btn-square text-info hover:bg-info/10"
+                      aria-label="View"
+                    >
+                      <.icon name="hero-eye" class="size-5" />
+                    </button>
+                  </div>
                 </td>
               </tr>
               <tr :if={@logs == []}>

@@ -301,32 +301,38 @@ defmodule CuzCoreConnectWeb.Admin.UserAccounts.External do
                   </td>
                   <td>
                     <div class="flex justify-end gap-1">
-                      <.link
-                        patch={~p"/admin/user-accounts/external/#{user.id}/edit"}
-                        class="btn btn-ghost btn-xs"
-                        title="Edit"
-                      >
-                        <.icon name="hero-pencil-square" class="size-4" />
-                      </.link>
-                      <button
-                        type="button"
-                        phx-click="edit_user_page_access"
-                        phx-value-id={user.id}
-                        class="btn btn-ghost btn-xs"
-                        title="Privileges"
-                      >
-                        <.icon name="hero-key" class="size-4" />
-                      </button>
-                      <button
-                        type="button"
-                        phx-click="delete_user"
-                        phx-value-id={user.id}
-                        data-confirm="Deactivate this user?"
-                        class="btn btn-ghost btn-xs text-error"
-                        title="Deactivate"
-                      >
-                        <.icon name="hero-trash" class="size-4" />
-                      </button>
+                      <div title="Edit" class="inline-flex">
+                        <.link
+                          patch={~p"/admin/user-accounts/external/#{user.id}/edit"}
+                          class="btn btn-ghost btn-sm btn-square text-warning hover:bg-warning/10"
+                          aria-label="Edit"
+                        >
+                          <.icon name="hero-pencil-square" class="size-5" />
+                        </.link>
+                      </div>
+                      <div title="Privileges" class="inline-flex">
+                        <button
+                          type="button"
+                          phx-click="edit_user_page_access"
+                          phx-value-id={user.id}
+                          class="btn btn-ghost btn-sm btn-square text-primary hover:bg-primary/10"
+                          aria-label="Privileges"
+                        >
+                          <.icon name="hero-key" class="size-5" />
+                        </button>
+                      </div>
+                      <div title="Deactivate" class="inline-flex">
+                        <button
+                          type="button"
+                          phx-click="delete_user"
+                          phx-value-id={user.id}
+                          data-confirm="Deactivate this user?"
+                          class="btn btn-ghost btn-sm btn-square text-error hover:bg-error/10"
+                          aria-label="Deactivate"
+                        >
+                          <.icon name="hero-trash" class="size-5" />
+                        </button>
+                      </div>
                     </div>
                   </td>
                 </tr>

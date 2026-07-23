@@ -18,6 +18,7 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Semesters do
     {:ok,
      socket
      |> assign(assigns)
+     |> assign_new(:authenticated?, fn -> false end)
      |> assign_new(:academic_year, fn -> assigns.registration.academic_year || "" end)
      |> assign_new(:semester, fn -> assigns.registration.semester end)
      |> assign_new(:intake, fn -> assigns.registration.intake end)
@@ -115,23 +116,24 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Semesters do
         </div>
       </div>
 
-      <div class="mt-8 flex justify-between">
-        <button
-          type="button"
-          phx-click="back"
-          phx-target={@myself}
-          class="btn btn-ghost"
-        >
+      <div class="mt-8 flex justify-between gap-3">
+        <button type="button" phx-click="back" phx-target={@myself} class="btn btn-ghost">
           ← Back
         </button>
-        <button
-          type="button"
-          phx-click="next"
-          phx-target={@myself}
-          class="btn btn-primary px-8"
-        >
-          Next →
-        </button>
+        <div class="flex gap-3">
+          <button
+            :if={@authenticated?}
+            type="button"
+            phx-click="save"
+            phx-target={@myself}
+            class="btn btn-outline"
+          >
+            Save
+          </button>
+          <button type="button" phx-click="next" phx-target={@myself} class="btn btn-primary px-8">
+            Next →
+          </button>
+        </div>
       </div>
     </div>
     """
@@ -154,30 +156,39 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Semesters do
   end
 
   @impl true
-  def handle_event("next", _params, socket) do
+  def handle_event("save", _params, socket) do
     errors = validate(socket.assigns)
 
     if map_size(errors) == 0 do
-      send(
-        self(),
-        {:next_step,
-         %{
-           academic_year: socket.assigns.academic_year,
-           semester: socket.assigns.semester,
-           intake: socket.assigns.intake
-         }}
-      )
-
+      send(self(), {:save_step, semester_payload(socket.assigns)})
       {:noreply, socket}
     else
       {:noreply, assign(socket, errors: errors)}
     end
   end
 
-  @impl true
+  def handle_event("next", _params, socket) do
+    errors = validate(socket.assigns)
+
+    if map_size(errors) == 0 do
+      send(self(), {:next_step, semester_payload(socket.assigns)})
+      {:noreply, socket}
+    else
+      {:noreply, assign(socket, errors: errors)}
+    end
+  end
+
   def handle_event("back", _params, socket) do
     send(self(), :prev_step)
     {:noreply, socket}
+  end
+
+  defp semester_payload(assigns) do
+    %{
+      academic_year: assigns.academic_year,
+      semester: assigns.semester,
+      intake: assigns.intake
+    }
   end
 
   # ── Private ──────────────────────────────────────────────────────────────────

@@ -83,7 +83,7 @@ defmodule CuzCoreConnectWeb.RetentionLive.Dashboard.ApprovedComponent do
                   </td>
                   <td class="text-right">
                     <div class="flex items-center justify-end gap-1">
-                      <div title="view" class="inline-flex">
+                      <div title="View" class="inline-flex">
                         <button
                           type="button"
                           phx-click="view_details"
@@ -95,14 +95,16 @@ defmodule CuzCoreConnectWeb.RetentionLive.Dashboard.ApprovedComponent do
                           <.icon name="hero-eye" class="size-5" />
                         </button>
                       </div>
-                      <.link
-                        href={~p"/registrations/#{reg.id}/certificate"}
-                        target="_blank"
-                        class="btn btn-ghost btn-xs gap-1"
-                        title="Proof of Registration"
-                      >
-                        <.icon name="hero-document-check" class="size-3.5" /> Proof
-                      </.link>
+                      <div title="Proof of Registration" class="inline-flex">
+                        <.link
+                          href={~p"/registrations/#{reg.id}/certificate"}
+                          target="_blank"
+                          class="btn btn-ghost btn-sm btn-square text-primary hover:bg-primary/10"
+                          aria-label="Proof of Registration"
+                        >
+                          <.icon name="hero-document-check" class="size-5" />
+                        </.link>
+                      </div>
                     </div>
                   </td>
                 </tr>

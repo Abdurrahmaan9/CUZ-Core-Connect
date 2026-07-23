@@ -37,7 +37,7 @@ defmodule CuzCoreConnect.MailerTest do
       email =
         Swoosh.Email.new()
         |> Swoosh.Email.to("student@example.com")
-        |> Swoosh.Email.from({"CUZ - Core Connect", "contact@cuz.coreconnect.edu"})
+        |> Swoosh.Email.from({"CUZ - Core Connect", "contact@coreconnect.lobnode.com"})
         |> Swoosh.Email.subject("Test log email")
         |> Swoosh.Email.text_body("Hello from the mailer log test.")
         |> Swoosh.Email.put_private(:notif_type, "test")

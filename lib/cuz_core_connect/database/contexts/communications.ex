@@ -41,12 +41,26 @@ defmodule CuzCoreConnect.Communications do
     %Announcement{}
     |> Announcement.changeset(attrs)
     |> Repo.insert()
+    |> maybe_notify_announcement()
   end
 
   def update_announcement(%Announcement{} = announcement, attrs) do
+    was_published? = announcement.status == "published"
+
     announcement
     |> Announcement.changeset(attrs)
     |> Repo.update()
+    |> case do
+      {:ok, updated} = result ->
+        if updated.status == "published" and not was_published? do
+          _ = CuzCoreConnect.Notifications.notify_announcement_published(updated)
+        end
+
+        result
+
+      error ->
+        error
+    end
   end
 
   def delete_announcement(%Announcement{} = announcement) do
@@ -104,6 +118,7 @@ defmodule CuzCoreConnect.Communications do
     %SiteMessage{}
     |> SiteMessage.contact_changeset(attrs)
     |> Repo.insert()
+    |> maybe_notify_admins_of_message()
   end
 
   def change_contact_message(attrs \\ %{}) do
@@ -204,4 +219,21 @@ defmodule CuzCoreConnect.Communications do
       failed: Map.get(rows, "failed", 0)
     }
   end
+
+  defp maybe_notify_announcement({:ok, announcement} = result) do
+    if announcement.status == "published" do
+      _ = CuzCoreConnect.Notifications.notify_announcement_published(announcement)
+    end
+
+    result
+  end
+
+  defp maybe_notify_announcement(error), do: error
+
+  defp maybe_notify_admins_of_message({:ok, message} = result) do
+    _ = CuzCoreConnect.Notifications.notify_admins_of_message(message)
+    result
+  end
+
+  defp maybe_notify_admins_of_message(error), do: error
 end

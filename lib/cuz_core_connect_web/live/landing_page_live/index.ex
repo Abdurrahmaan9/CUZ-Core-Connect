@@ -297,7 +297,7 @@ defmodule CuzCoreConnectWeb.LandingPageLive do
               <div class="flex flex-col items-center text-center p-2 md:p-4">
                 <.icon name="hero-envelope" class="mb-3 size-6 text-primary" />
                 <h3 class="font-semibold text-sm md:text-base mb-1">Email Us</h3>
-                <p class="text-xs md:text-sm text-base-content/60">support@cuz.coreconnect.edu</p>
+                <p class="text-xs md:text-sm text-base-content/60">support@coreconnect.lobnode.com</p>
               </div>
               <div class="flex flex-col items-center text-center p-2 md:p-4">
                 <.icon name="hero-phone" class="mb-3 size-6 text-primary" />

@@ -138,18 +138,19 @@ defmodule CuzCoreConnectWeb.CoreComponents do
       id={@id}
       type="button"
       phx-hook="CopyToClipboard"
+      phx-update="ignore"
       data-value={@value}
-      title={if @label, do: "Copy #{@label}", else: "Copy"}
+      title={if @label, do: "Copy #{@label |> String.replace("-", " ")}", else: "Copy"}
       class={[
-        "px-2 py-2 text-gray-500 hover:text-gray-700 transition",
+        "group inline-flex items-center gap-1 px-2 py-2 text-gray-500 hover:text-gray-700 transition",
         @class
       ]}
     >
-      <span class="icon-copy">
+      <span class="icon-copy inline-flex group-data-[copied]:hidden">
         <.icon name="hero-document-duplicate" class="w-5 h-5" />
       </span>
 
-      <span class="icon-check text-green-600">
+      <span class="icon-check hidden text-green-600 group-data-[copied]:inline-flex">
         <.icon name="hero-check" class="w-5 h-5" />
       </span>
 
@@ -615,9 +616,15 @@ defmodule CuzCoreConnectWeb.CoreComponents do
         </:col>
         <:col :let={registration} label="Programme">{registration.programme}</:col>
         <:action :let={registration}>
-          <.link navigate={~p"/registrations/\#{registration.id}"} class="text-indigo-600 hover:text-indigo-900">
-            View
-          </.link>
+          <div title="View" class="inline-flex">
+            <.link
+              navigate={~p"/registrations/\#{registration.id}"}
+              class="btn btn-ghost btn-sm btn-square text-info hover:bg-info/10"
+              aria-label="View"
+            >
+              <.icon name="hero-eye" class="size-5" />
+            </.link>
+          </div>
         </:action>
       </.table>
   """

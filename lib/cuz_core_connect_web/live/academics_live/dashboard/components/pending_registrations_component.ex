@@ -168,29 +168,41 @@ defmodule CuzCoreConnectWeb.AcademicsLive.Dashboard.PendingRegistrationsComponen
                     </span>
                   </td>
                   <td>
-                    <div class="flex gap-2 flex-wrap">
-                      <.button
-                        phx-click="view_details"
-                        phx-value-id={reg.id}
-                        phx-target={@myself}
-                        class="btn-xs bg-info/20 text-info border-info/30"
-                      >
-                        <.icon name="hero-eye" class="w-4 h-4" /> Details
-                      </.button>
-                      <.button
-                        phx-click="approve"
-                        phx-value-id={reg.id}
-                        phx-target={@myself}
-                        class="btn-xs bg-success/20 text-success border-success/30"
-                      >
-                        Approve
-                      </.button>
-                      <.button
-                        phx-click={JS.toggle(to: "#reject-academics-form-#{reg.id}")}
-                        class="btn-xs bg-error/20 text-error border-error/30"
-                      >
-                        Reject
-                      </.button>
+                    <div class="flex gap-1 flex-wrap justify-end">
+                      <div title="View details" class="inline-flex">
+                        <button
+                          type="button"
+                          phx-click="view_details"
+                          phx-value-id={reg.id}
+                          phx-target={@myself}
+                          class="btn btn-ghost btn-sm btn-square text-info hover:bg-info/10"
+                          aria-label="View details"
+                        >
+                          <.icon name="hero-eye" class="size-5" />
+                        </button>
+                      </div>
+                      <div title="Approve" class="inline-flex">
+                        <button
+                          type="button"
+                          phx-click="approve"
+                          phx-value-id={reg.id}
+                          phx-target={@myself}
+                          class="btn btn-ghost btn-sm btn-square text-success hover:bg-success/10"
+                          aria-label="Approve"
+                        >
+                          <.icon name="hero-check" class="size-5" />
+                        </button>
+                      </div>
+                      <div title="Reject" class="inline-flex">
+                        <button
+                          type="button"
+                          phx-click={JS.toggle(to: "#reject-academics-form-#{reg.id}")}
+                          class="btn btn-ghost btn-sm btn-square text-error hover:bg-error/10"
+                          aria-label="Reject"
+                        >
+                          <.icon name="hero-x-mark" class="size-5" />
+                        </button>
+                      </div>
                     </div>
                   </td>
                 </tr>

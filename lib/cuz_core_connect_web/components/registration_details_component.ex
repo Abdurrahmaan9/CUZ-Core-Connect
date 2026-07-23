@@ -28,7 +28,6 @@ defmodule CuzCoreConnectWeb.RegistrationDetailsComponent do
     ~H"""
     <div
       id={"registration-details-overlay-#{@id}"}
-      phx-hook="ModalPortal"
       class="fixed inset-0 z-[100] grid place-items-center bg-black/50 p-4 sm:p-6"
       phx-click="close"
       phx-target={@myself}
@@ -166,7 +165,7 @@ defmodule CuzCoreConnectWeb.RegistrationDetailsComponent do
                           {receipt.content_type} · {format_file_size(receipt.file_size || 0)}
                         </p>
                       </div>
-                      <div title="view" class="inline-flex">
+                      <div title="View" class="inline-flex">
                         <a
                           href={~p"/receipts/#{receipt.id}"}
                           target="_blank"

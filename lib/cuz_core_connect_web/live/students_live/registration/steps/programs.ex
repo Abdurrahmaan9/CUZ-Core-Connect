@@ -10,6 +10,7 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Programmes do
     {:ok,
      socket
      |> assign(assigns)
+     |> assign_new(:authenticated?, fn -> false end)
      |> assign_new(:selected_id, fn -> assigns.registration.program_id end)
      |> assign_new(:selected_name, fn -> assigns.registration.program_name end)
      |> assign(programmes: programmes, error: nil)}
@@ -59,7 +60,16 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Programmes do
         </p>
       <% end %>
 
-      <div class="mt-8 flex justify-end">
+      <div class="mt-8 flex flex-wrap justify-end gap-3">
+        <button
+          :if={@authenticated?}
+          type="button"
+          phx-click="save"
+          phx-target={@myself}
+          class="btn btn-outline"
+        >
+          Save
+        </button>
         <button type="button" phx-click="next" phx-target={@myself} class="btn btn-primary px-8">
           Next <span aria-hidden="true">→</span>
         </button>
@@ -74,20 +84,28 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Programmes do
      assign(socket, selected_id: String.to_integer(id), selected_name: name, error: nil)}
   end
 
+  def handle_event("save", _params, socket) do
+    if is_nil(socket.assigns.selected_id) do
+      {:noreply, assign(socket, error: "Please select a programme to save.")}
+    else
+      send(self(), {:save_step, programme_payload(socket.assigns)})
+      {:noreply, socket}
+    end
+  end
+
   def handle_event("next", _params, socket) do
     if is_nil(socket.assigns.selected_id) do
       {:noreply, assign(socket, error: "Please select a programme to continue.")}
     else
-      send(
-        self(),
-        {:next_step,
-         %{
-           program_id: socket.assigns.selected_id,
-           program_name: socket.assigns.selected_name
-         }}
-      )
-
+      send(self(), {:next_step, programme_payload(socket.assigns)})
       {:noreply, socket}
     end
+  end
+
+  defp programme_payload(assigns) do
+    %{
+      program_id: assigns.selected_id,
+      program_name: assigns.selected_name
+    }
   end
 end

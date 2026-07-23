@@ -14,7 +14,8 @@ defmodule CuzCoreConnectWeb.Admin.AcademicManagement.Programmes.Index do
        page_title: "Programmes",
        current_page: :programmes_management,
        id: "Programmes",
-       search_placeholder: "Search Programmes..."
+       search_placeholder: "Search Programmes...",
+       programme: nil
      )}
   end
 
@@ -27,6 +28,12 @@ defmodule CuzCoreConnectWeb.Admin.AcademicManagement.Programmes.Index do
     socket
     |> assign(:page_title, "Edit Programme")
     |> assign(:programme, Academic.get_program!(id))
+  end
+
+  defp apply_action(socket, :show, %{"id" => id}) do
+    socket
+    |> assign(:page_title, "Programme Details")
+    |> assign(:programme, Academic.get_program_with_courses!(id))
   end
 
   defp apply_action(socket, :new, _params) do

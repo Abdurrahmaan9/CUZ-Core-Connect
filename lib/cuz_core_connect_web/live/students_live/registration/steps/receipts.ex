@@ -7,6 +7,7 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Receipts do
      socket
      |> assign(:id, assigns.id)
      |> assign(:upload_config, assigns.upload_config)
+     |> assign_new(:authenticated?, fn -> Map.get(assigns, :authenticated?, false) end)
      |> assign(:form, to_form(%{}, as: :receipt_upload))}
   end
 
@@ -103,18 +104,29 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Receipts do
         <% end %>
       </div>
 
-      <div class="mt-8 flex justify-between">
+      <div class="mt-8 flex justify-between gap-3">
         <button type="button" phx-click="back" phx-target={@myself} class="btn btn-ghost">
           ← Back
         </button>
-        <button
-          type="button"
-          phx-click="next_receipt_step"
-          phx-target={@myself}
-          class="btn btn-primary px-8"
-        >
-          Review →
-        </button>
+        <div class="flex gap-3">
+          <button
+            :if={@authenticated?}
+            type="button"
+            phx-click="save"
+            phx-target={@myself}
+            class="btn btn-outline"
+          >
+            Save
+          </button>
+          <button
+            type="button"
+            phx-click="next_receipt_step"
+            phx-target={@myself}
+            class="btn btn-primary px-8"
+          >
+            Review →
+          </button>
+        </div>
       </div>
     </div>
     """
@@ -126,7 +138,11 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Receipts do
     {:noreply, socket}
   end
 
-  @impl true
+  def handle_event("save", _params, socket) do
+    send(self(), {:save_step, %{}})
+    {:noreply, socket}
+  end
+
   def handle_event("next_receipt_step", _params, socket) do
     send(self(), {:next_step, %{}})
     {:noreply, socket}

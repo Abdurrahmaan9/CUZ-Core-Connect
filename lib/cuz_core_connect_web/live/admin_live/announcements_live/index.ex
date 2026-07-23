@@ -243,43 +243,51 @@ defmodule CuzCoreConnectWeb.Admin.Announcements do
                 <td class="text-sm text-base-content/70">{format_datetime(item.published_at)}</td>
                 <td>
                   <div class="flex justify-end gap-1">
-                    <div title="view" class="inline-flex">
+                    <div title="View" class="inline-flex">
                       <button
                         type="button"
                         phx-click="select"
                         phx-value-id={item.id}
-                        class="btn btn-ghost btn-sm btn-square text-info"
+                        class="btn btn-ghost btn-sm btn-square text-info hover:bg-info/10"
                         aria-label="View"
                       >
                         <.icon name="hero-eye" class="size-5" />
                       </button>
                     </div>
-                    <button
-                      type="button"
-                      phx-click="edit"
-                      phx-value-id={item.id}
-                      class="btn btn-ghost btn-xs"
-                    >
-                      Edit
-                    </button>
-                    <button
-                      :if={item.status != "published"}
-                      type="button"
-                      phx-click="publish"
-                      phx-value-id={item.id}
-                      class="btn btn-ghost btn-xs text-success"
-                    >
-                      Publish
-                    </button>
-                    <button
-                      type="button"
-                      phx-click="delete"
-                      phx-value-id={item.id}
-                      data-confirm="Delete this announcement?"
-                      class="btn btn-ghost btn-xs text-error"
-                    >
-                      Delete
-                    </button>
+                    <div title="Edit" class="inline-flex">
+                      <button
+                        type="button"
+                        phx-click="edit"
+                        phx-value-id={item.id}
+                        class="btn btn-ghost btn-sm btn-square text-warning hover:bg-warning/10"
+                        aria-label="Edit"
+                      >
+                        <.icon name="hero-pencil-square" class="size-5" />
+                      </button>
+                    </div>
+                    <div :if={item.status != "published"} title="Publish" class="inline-flex">
+                      <button
+                        type="button"
+                        phx-click="publish"
+                        phx-value-id={item.id}
+                        class="btn btn-ghost btn-sm btn-square text-success hover:bg-success/10"
+                        aria-label="Publish"
+                      >
+                        <.icon name="hero-paper-airplane" class="size-5" />
+                      </button>
+                    </div>
+                    <div title="Delete" class="inline-flex">
+                      <button
+                        type="button"
+                        phx-click="delete"
+                        phx-value-id={item.id}
+                        data-confirm="Delete this announcement?"
+                        class="btn btn-ghost btn-sm btn-square text-error hover:bg-error/10"
+                        aria-label="Delete"
+                      >
+                        <.icon name="hero-trash" class="size-5" />
+                      </button>
+                    </div>
                   </div>
                 </td>
               </tr>
@@ -343,7 +351,21 @@ defmodule CuzCoreConnectWeb.Admin.Announcements do
           >
             <.input field={@form[:title]} type="text" label="Title" required />
             <.input field={@form[:body]} type="textarea" label="Body" required />
-            <.input field={@form[:audience]} type="text" label="Audience" />
+            <.input
+              field={@form[:audience]}
+              type="select"
+              label="Audience"
+              options={[
+                {"All Users", "All Users"},
+                {"Students", "Students"},
+                {"Internal Users", "Internal"},
+                {"Admin", "Admin"},
+                {"Academics", "Academics"},
+                {"Finance", "Finance"},
+                {"HOD", "HOD"},
+                {"Retention", "Retention"}
+              ]}
+            />
             <.input field={@form[:author]} type="text" label="Author" />
             <.input
               field={@form[:status]}

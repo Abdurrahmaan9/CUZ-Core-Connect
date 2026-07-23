@@ -59,7 +59,7 @@
     class="shadow-sm"
     empty_state_title="No programmes found"
     empty_state_description="No programmes have been created yet."
-    row_click={fn {_id, programme} -> JS.navigate(~p"/admin/programmes/#{programme}/edit") end}
+    row_click={fn {_id, programme} -> JS.navigate(~p"/admin/programmes/#{programme}") end}
   >
     <:col :let={{_id, programme}} label="Code">{programme.code}</:col>
     <:col :let={{_id, programme}} label="Name">{programme.name}</:col>
@@ -74,17 +74,38 @@
       </span>
     </:col>
     <:action :let={{_id, programme}}>
-      <.link patch={~p"/admin/programmes/#{programme}/edit"}>
-        <.button>Edit</.button>
-      </.link>
+      <div title="View" class="inline-flex">
+        <.link
+          patch={~p"/admin/programmes/#{programme}"}
+          class="btn btn-ghost btn-sm btn-square text-info hover:bg-info/10"
+          aria-label="View"
+        >
+          <.icon name="hero-eye" class="size-5" />
+        </.link>
+      </div>
+    </:action>
+    <:action :let={{_id, programme}}>
+      <div title="Edit" class="inline-flex">
+        <.link
+          patch={~p"/admin/programmes/#{programme}/edit"}
+          class="btn btn-ghost btn-sm btn-square text-warning hover:bg-warning/10"
+          aria-label="Edit"
+        >
+          <.icon name="hero-pencil-square" class="size-5" />
+        </.link>
+      </div>
     </:action>
     <:action :let={{id, programme}}>
-      <.link
-        phx-click={JS.push("delete", value: %{id: programme.id}) |> hide("##{id}")}
-        data-confirm="Are you sure?"
-      >
-        <.button class="bg-red-600 hover:bg-red-700 text-white">Delete</.button>
-      </.link>
+      <div title="Delete" class="inline-flex">
+        <.link
+          phx-click={JS.push("delete", value: %{id: programme.id}) |> hide("##{id}")}
+          data-confirm="Are you sure?"
+          class="btn btn-ghost btn-sm btn-square text-error hover:bg-error/10"
+          aria-label="Delete"
+        >
+          <.icon name="hero-trash" class="size-5" />
+        </.link>
+      </div>
     </:action>
   </.table>
 
@@ -101,6 +122,111 @@
             programme={@programme}
             patch={~p"/admin/programmes"}
           />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div
+    :if={@live_action == :show && @programme}
+    id="programme-details-modal"
+    class="fixed inset-0 z-50 overflow-y-auto"
+  >
+    <.link
+      patch={~p"/admin/programmes"}
+      class="fixed inset-0 bg-black/50 backdrop-blur-sm"
+      aria-label="Close"
+    >
+    </.link>
+    <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0 relative z-10">
+      <div class="relative transform overflow-hidden rounded-2xl bg-base-100 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-2xl">
+        <div class="px-6 pt-6 pb-4">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <p class="text-xs font-bold tracking-wide text-base-content/40 uppercase">
+                {@programme.code}
+              </p>
+              <h3 class="mt-1 text-xl font-bold text-base-content">{@programme.name}</h3>
+              <p :if={@programme.description} class="mt-2 text-sm text-base-content/70">
+                {@programme.description}
+              </p>
+              <div class="mt-3 flex flex-wrap gap-2">
+                <span class="inline-flex items-center rounded-full bg-base-200 px-2.5 py-0.5 text-xs font-medium text-base-content/80">
+                  {@programme.duration_years} years
+                </span>
+                <span class={[
+                  "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+                  @programme.is_active && "bg-green-100 text-green-800",
+                  !@programme.is_active && "bg-gray-100 text-gray-800"
+                ]}>
+                  {if @programme.is_active, do: "Active", else: "Inactive"}
+                </span>
+              </div>
+            </div>
+            <.link
+              patch={~p"/admin/programmes"}
+              class="btn btn-ghost btn-sm btn-square"
+              aria-label="Close"
+            >
+              <.icon name="hero-x-mark" class="size-5" />
+            </.link>
+          </div>
+
+          <div class="mt-6">
+            <div class="flex items-center justify-between border-b border-base-200 pb-2">
+              <h4 class="text-sm font-semibold text-base-content">Courses</h4>
+              <span class="text-xs text-base-content/50">
+                {length(@programme.program_courses)} linked
+              </span>
+            </div>
+
+            <div class="mt-3 max-h-80 overflow-y-auto space-y-2">
+              <div
+                :if={@programme.program_courses == []}
+                class="rounded-xl border border-dashed border-base-300 px-4 py-8 text-center text-sm text-base-content/50"
+              >
+                No courses linked to this programme yet.
+              </div>
+
+              <div
+                :for={pc <- @programme.program_courses}
+                id={"programme-course-#{pc.id}"}
+                class="flex items-start justify-between gap-3 rounded-xl border border-base-200 px-4 py-3"
+              >
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-base-content/40">{pc.course.code}</span>
+                    <span
+                      :if={pc.is_core}
+                      class="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary"
+                    >
+                      Core
+                    </span>
+                  </div>
+                  <p class="text-sm font-medium text-base-content">{pc.course.title}</p>
+                  <p class="mt-0.5 text-xs text-base-content/50">
+                    Year {pc.year} · Semester {pc.semester} · {pc.course.credits} credits
+                  </p>
+                </div>
+                <span class={[
+                  "inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium",
+                  pc.is_active && "bg-green-100 text-green-800",
+                  !pc.is_active && "bg-gray-100 text-gray-800"
+                ]}>
+                  {if pc.is_active, do: "Active", else: "Inactive"}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 border-t border-base-200 bg-base-200/40 px-6 py-4">
+          <.link patch={~p"/admin/programmes/#{@programme}/edit"}>
+            <.button>Edit Programme</.button>
+          </.link>
+          <.link patch={~p"/admin/programmes"}>
+            <.button class="btn-ghost">Close</.button>
+          </.link>
         </div>
       </div>
     </div>

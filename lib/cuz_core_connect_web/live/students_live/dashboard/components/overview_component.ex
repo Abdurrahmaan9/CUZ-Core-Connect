@@ -5,7 +5,10 @@ defmodule CuzCoreConnectWeb.StudentLive.Dashboard.OverviewComponent do
 
   @impl true
   def update(%{current_scope: current_scope} = assigns, socket) do
-    registrations = Registrations.list_registrations_by_student(current_scope.user)
+    registrations =
+      current_scope.user
+      |> Registrations.list_registrations_by_student()
+      |> Enum.reject(&CuzCoreConnect.Registrations.Registration.draft?/1)
 
     stats = %{
       total: length(registrations),

@@ -35,13 +35,13 @@ import { ModalPortal } from "./hooks/modal_portal";
 
 // Define Hooks HERE!
 const Hooks = {
-  AutoFade,
-  CopyToClipboard,
-  PasswordToggle,
-  TutorialSpotlight,
-  SearchableSelect,
-  MultiSelect,
-  ModalPortal,
+  AutoFade: AutoFade,
+  CopyToClipboard: CopyToClipboard,
+  PasswordToggle: PasswordToggle,
+  TutorialSpotlight: TutorialSpotlight,
+  SearchableSelect: SearchableSelect,
+  MultiSelect: MultiSelect,
+  ModalPortal: ModalPortal,
 };
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {

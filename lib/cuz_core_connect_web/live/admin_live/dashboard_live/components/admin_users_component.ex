@@ -68,11 +68,25 @@ defmodule CuzCoreConnectWeb.AdminLiveAdminUsersComponent do
                   {format_date(user.inserted_at)}
                 </td>
                 <td>
-                  <div class="flex space-x-2">
-                    <.link href={"/admin/users/#{user.id}/edit"} class="btn btn-xs btn-primary">
-                      Edit
-                    </.link>
-                    <.link href="/admin/users" class="btn btn-xs btn-secondary">View All</.link>
+                  <div class="flex space-x-1 justify-end">
+                    <div title="Edit" class="inline-flex">
+                      <.link
+                        href={"/admin/users/#{user.id}/edit"}
+                        class="btn btn-ghost btn-sm btn-square text-warning hover:bg-warning/10"
+                        aria-label="Edit"
+                      >
+                        <.icon name="hero-pencil-square" class="size-5" />
+                      </.link>
+                    </div>
+                    <div title="View all users" class="inline-flex">
+                      <.link
+                        href="/admin/users"
+                        class="btn btn-ghost btn-sm btn-square text-info hover:bg-info/10"
+                        aria-label="View all users"
+                      >
+                        <.icon name="hero-users" class="size-5" />
+                      </.link>
+                    </div>
                   </div>
                 </td>
               </tr>

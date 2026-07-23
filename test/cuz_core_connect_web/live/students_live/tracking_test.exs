@@ -37,7 +37,6 @@ defmodule CuzCoreConnectWeb.Student.TrackingTest do
     assert has_element?(view, "#stage-retention")
     assert render(view) =~ "Approved"
     assert render(view) =~ "View Proof"
-    assert render(view) =~ "Download / Print"
 
     assert has_element?(
              view,

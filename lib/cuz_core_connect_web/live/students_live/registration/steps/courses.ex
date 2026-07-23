@@ -6,30 +6,23 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Courses do
   @impl true
   def update(assigns, socket) do
     program_id = assigns.registration.program_id
-    semester = parse_semester(assigns.registration.semester)
 
     available_courses =
-      case {program_id, semester} do
-        {pid, sem} when is_integer(pid) and is_integer(sem) ->
-          Academic.list_all_courses()
-
-        _ ->
-          []
+      case program_id do
+        pid when is_integer(pid) -> Academic.list_courses_for_registration(pid)
+        _ -> []
       end
 
-    # Pre-select required (core) courses on first visit when nothing chosen yet.
     selected =
       case assigns.registration.courses do
-        courses when is_list(courses) and courses != [] ->
-          courses
-
-        _ ->
-          Enum.filter(available_courses, & &1.is_active)
+        courses when is_list(courses) and courses != [] -> courses
+        _ -> []
       end
 
     {:ok,
      socket
      |> assign(assigns)
+     |> assign_new(:authenticated?, fn -> false end)
      |> assign_new(:selected_courses, fn -> selected end)
      |> assign(available_courses: available_courses, search: "", error: nil)}
   end
@@ -118,13 +111,24 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Courses do
         </p>
       <% end %>
 
-      <div class="mt-6 flex justify-between">
+      <div class="mt-6 flex justify-between gap-3">
         <button type="button" phx-click="back" phx-target={@myself} class="btn btn-ghost">
           ← Back
         </button>
-        <button type="button" phx-click="next" phx-target={@myself} class="btn btn-primary px-8">
-          Review →
-        </button>
+        <div class="flex gap-3">
+          <button
+            :if={@authenticated?}
+            type="button"
+            phx-click="save"
+            phx-target={@myself}
+            class="btn btn-outline"
+          >
+            Save
+          </button>
+          <button type="button" phx-click="next" phx-target={@myself} class="btn btn-primary px-8">
+            Next →
+          </button>
+        </div>
       </div>
     </div>
     """
@@ -146,6 +150,15 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Courses do
     updated = Enum.reject(socket.assigns.selected_courses, &(&1.id == String.to_integer(id)))
 
     {:noreply, assign(socket, selected_courses: updated)}
+  end
+
+  def handle_event("save", _params, socket) do
+    if socket.assigns.selected_courses == [] do
+      {:noreply, assign(socket, error: "Please add at least one course to save.")}
+    else
+      send(self(), {:save_step, %{courses: socket.assigns.selected_courses}})
+      {:noreply, socket}
+    end
   end
 
   def handle_event("next", _params, socket) do
@@ -170,21 +183,12 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Courses do
     q = String.downcase(query)
 
     Enum.filter(courses, fn c ->
-      String.contains?(String.downcase(c.name), q) or
+      title = Map.get(c, :title) || Map.get(c, :name) || ""
+
+      String.contains?(String.downcase(title), q) or
         String.contains?(String.downcase(c.code), q)
     end)
   end
 
   defp total_credits(courses), do: Enum.sum(Enum.map(courses, & &1.credits))
-
-  defp parse_semester(sem) when is_integer(sem), do: sem
-
-  defp parse_semester(sem) when is_binary(sem) do
-    case Integer.parse(sem) do
-      {n, _} -> n
-      :error -> nil
-    end
-  end
-
-  defp parse_semester(_), do: nil
 end

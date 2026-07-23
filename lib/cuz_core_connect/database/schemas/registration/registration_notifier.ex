@@ -25,7 +25,7 @@ defmodule CuzCoreConnect.Registrations.RegistrationNotifier do
     email =
       new()
       |> to(recipient)
-      |> from({"CUZ - Core Connect", "contact@cuz.coreconnect.edu"})
+      |> from({"CUZ - Core Connect", "cuzcoreconnect@lobnode.com"})
       |> subject(subject)
       |> text_body(body)
       |> put_private(:notif_type, notif_type)

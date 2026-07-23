@@ -59,7 +59,6 @@
     class="shadow-sm"
     empty_state_title="No courses found"
     empty_state_description="No courses have been created yet."
-    row_click={fn {_id, course} -> JS.navigate(~p"/admin/courses/#{course}/edit") end}
   >
     <:col :let={{_id, course}} label="Code">{course.code}</:col>
     <:col :let={{_id, course}} label="Title">{course.title}</:col>
@@ -74,17 +73,27 @@
       </span>
     </:col>
     <:action :let={{_id, course}}>
-      <.link patch={~p"/admin/courses/#{course}/edit"}>
-        <.button>Edit</.button>
-      </.link>
+      <div title="Edit" class="inline-flex">
+        <.link
+          patch={~p"/admin/courses/#{course}/edit"}
+          class="btn btn-ghost btn-sm btn-square text-warning hover:bg-warning/10"
+          aria-label="Edit"
+        >
+          <.icon name="hero-pencil-square" class="size-5" />
+        </.link>
+      </div>
     </:action>
     <:action :let={{id, course}}>
-      <.link
-        phx-click={JS.push("delete", value: %{id: course.id}) |> hide("##{id}")}
-        data-confirm="Are you sure?"
-      >
-        <.button class="bg-red-600 hover:bg-red-700 text-white">Delete</.button>
-      </.link>
+      <div title="Delete" class="inline-flex">
+        <.link
+          phx-click={JS.push("delete", value: %{id: course.id}) |> hide("##{id}")}
+          data-confirm="Are you sure?"
+          class="btn btn-ghost btn-sm btn-square text-error hover:bg-error/10"
+          aria-label="Delete"
+        >
+          <.icon name="hero-trash" class="size-5" />
+        </.link>
+      </div>
     </:action>
   </.table>
 
