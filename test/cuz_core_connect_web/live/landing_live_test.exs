@@ -3,10 +3,10 @@ defmodule CuzCoreConnectWeb.LandingLiveTest do
 
   import Phoenix.LiveViewTest
 
-  test "GET /student/registration renders the LiveView and responds to events", %{conn: conn} do
-    {:ok, view, html} = live(conn, ~p"/student/registration")
+  test "GET /student/registration renders the registration wizard LiveView", %{conn: conn} do
+    {:ok, _view, html} = live(conn, ~p"/student/registration")
 
-    assert html =~ "Live View Demo"
-    assert render_click(view, :increment) =~ "1"
+    assert html =~ "Course Registration"
+    assert html =~ "Personal Info"
   end
 end

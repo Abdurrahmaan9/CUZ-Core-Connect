@@ -42,7 +42,14 @@ defmodule CuzCoreConnect.Workflows.RegistrationWorkflow do
 
   defp flow_step_changeset(flow_step, attrs) do
     flow_step
-    |> cast(attrs, [:step_no, :description, :actionar_type, :role_key, :actioner_id, :required_titles])
+    |> cast(attrs, [
+      :step_no,
+      :description,
+      :actionar_type,
+      :role_key,
+      :actioner_id,
+      :required_titles
+    ])
     |> validate_required([:description, :actionar_type])
   end
 end

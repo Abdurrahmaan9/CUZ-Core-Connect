@@ -31,10 +31,7 @@ defmodule CuzCoreConnectWeb.CoreComponents do
 
   alias Phoenix.LiveView.JS
 
-  alias CuzCoreConnectWeb.Utilities.Pagination
-  alias CuzCoreConnectWeb.Utilities.Sorting
-
-    @doc """
+  @doc """
   Renders a modal.
 
   ## Examples
@@ -108,7 +105,11 @@ defmodule CuzCoreConnectWeb.CoreComponents do
               <div id={"#{@id}-content"}>
                 {render_slot(@inner_block)}
               </div>
-              <div :if={@footer != []} id={"#{@id}-footer"} class="bg-base-300 px-6 py-4 border-t border-gray-200/20 flex items-center justify-between">
+              <div
+                :if={@footer != []}
+                id={"#{@id}-footer"}
+                class="bg-base-300 px-6 py-4 border-t border-gray-200/20 flex items-center justify-between"
+              >
                 {render_slot(@footer)}
               </div>
             </.focus_wrap>
@@ -118,7 +119,6 @@ defmodule CuzCoreConnectWeb.CoreComponents do
     </div>
     """
   end
-
 
   @doc """
   Display a coppy button, to capture text to system clipboard.
@@ -308,7 +308,11 @@ defmodule CuzCoreConnectWeb.CoreComponents do
   attr :multiple, :boolean, default: false, doc: "the multiple flag for select inputs"
   attr :class, :any, default: nil, doc: "the input class to use over defaults"
   attr :error_class, :any, default: nil, doc: "the input error class to use over defaults"
-  attr :select_search, :boolean, default: false, doc: "adds a search bar to search through the options list"
+
+  attr :select_search, :boolean,
+    default: false,
+    doc: "adds a search bar to search through the options list"
+
   # attr :markdown, :boolean, default: false, doc: "the markdown flag determins whether to add the text formartting tools on the textarea input type"
   attr :rest, :global,
     include: ~w(accept autocomplete capture cols disabled form list max maxlength min minlength
@@ -364,7 +368,7 @@ defmodule CuzCoreConnectWeb.CoreComponents do
     """
   end
 
-    def input(%{type: "select"} = assigns) do
+  def input(%{type: "select"} = assigns) do
     ~H"""
     <div class="fieldset mb-2">
       <label>
@@ -386,8 +390,6 @@ defmodule CuzCoreConnectWeb.CoreComponents do
     </div>
     """
   end
-
-
 
   def input(%{type: "textarea"} = assigns) do
     ~H"""
@@ -503,24 +505,6 @@ defmodule CuzCoreConnectWeb.CoreComponents do
       <.error :for={msg <- @errors}>{msg}</.error>
     </div>
     """
-  end
-
-  defp get_display_value(_options, value) when is_nil(value) or value == "", do: ""
-
-  defp get_display_value(options, value) do
-    options
-    |> normalize_options()
-    |> Enum.find_value("", fn {label, opt_value} ->
-      if to_string(opt_value) == to_string(value), do: label
-    end)
-  end
-
-  defp normalize_options(options) when is_list(options) do
-    Enum.map(options, fn
-      {label, key} -> {label, key}
-      value when is_binary(value) or is_atom(value) -> {value, value}
-      value -> {to_string(value), value}
-    end)
   end
 
   # Helper used by inputs to generate form errors
@@ -676,8 +660,7 @@ defmodule CuzCoreConnectWeb.CoreComponents do
       @class
     ]}>
       <%= if @show_header do %>
-        <div class="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        </div>
+        <div class="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"></div>
       <% end %>
 
       <%= if @rows == [] do %>
@@ -754,119 +737,6 @@ defmodule CuzCoreConnectWeb.CoreComponents do
   defp table_row_count(rows) when is_list(rows), do: length(rows)
   defp table_row_count(_rows), do: 0
 
-  @doc ~S"""
-  Renders a table with generic styling and sorting functionality.
-
-  ## Examples
-
-      <.table id="users" rows={@users} filter_params={@filter_params}>
-        <:col :let={user} label="id" filter_item="id">{user.id}</:col>
-        <:col :let={user} label="username" filter_item="username">{user.username}</:col>
-      </.table>
-  """
-  attr :id, :string, required: true
-  attr :filter_params, :map, default: %{}
-  attr :pagination, :map
-  attr :selected_column, :string, default: "inserted_at"
-  attr :list_of_operators, :list, default: []
-  attr :operator, :string, default: ""
-  attr :query_fields_list, :list, default: []
-  attr :rows, :list, required: true
-  attr :row_id, :any, default: nil, doc: "the function for generating the row id"
-  attr :row_click, :any, default: nil, doc: "the function for handling phx-click on each row"
-  attr :filter_url, :string, default: "#"
-  attr :export_url, :string, default: "#"
-  attr :show_filter, :boolean, default: false
-  attr :show_export, :boolean, default: false
-
-  attr :row_item, :any,
-    default: &Function.identity/1,
-    doc: "the function for mapping each row before calling the :col and :action slots"
-
-  slot :col, required: true do
-    attr :label, :string
-    attr :filter_item, :string
-  end
-
-  slot :action, doc: "the slot for showing user actions in the last table column"
-
-  def table_with_sorting(assigns) do
-    assigns =
-      with %{rows: %Phoenix.LiveView.LiveStream{}} <- assigns do
-        assign(assigns, row_id: assigns.row_id || fn {id, _item} -> id end)
-      end
-
-    ~H"""
-    <div class="px-2 sm:px-0">
-      <div class="p-2">
-        <div class="overflow-x-auto overflow-y-hidden sm:rounded-lg">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="text-[12px] text-left leading-4 text-white">
-              <tr class="bg-[#0c2f9d] text-left font-medium text-white uppercase tracking-wider sticky top-0">
-                <th :for={col <- @col} class="p-2 pb-2 pr-3 font-normal whitespace-nowrap">
-                  <div class="flex items-center gap-2">
-                    <span class="sm:mr-auto xl:flex text-[11px]">{col[:label]}</span>
-                    <a
-                      :if={col[:filter_item]}
-                      href={Sorting.table_link_encode_url(@filter_params, col[:filter_item])}
-                      data-phx-link="redirect"
-                      data-phx-link-state="push"
-                      class="inline-flex items-center hover:text-gray-700 transition-colors duration-200"
-                    >
-                      {Phoenix.HTML.raw(icon_def(@filter_params, col[:filter_item], @selected_column))}
-                    </a>
-                  </div>
-                </th>
-                <th :if={@action != []} class="relative p-0 pb-2">
-                  <span class="sr-only">{gettext("Actions")}</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody
-              id={@id}
-              phx-update={is_struct(@rows, Phoenix.LiveView.LiveStream) && "stream"}
-              class="relative divide-y divide-zinc-100 border-t border-zinc-200 text-[12px] leading-4 text-zinc-700 bg-white"
-            >
-              <tr
-                :for={row <- @rows}
-                id={@row_id && @row_id.(row)}
-                class="group hover:bg-gray-50 transition duration-150"
-              >
-                <td
-                  :for={{col, i} <- Enum.with_index(@col)}
-                  phx-click={@row_click && @row_click.(row)}
-                  class={[
-                    "relative px-1 py-1 text-[12px] text-gray-900 whitespace-nowrap",
-                    @row_click && "hover:cursor-pointer"
-                  ]}
-                >
-                  <div class="block py-1 pr-2">
-                    <span class="absolute -inset-y-px right-0 -left-4 group-hover:bg-gray-50 sm:rounded-l-xl" />
-                    <span class={["relative", i == 0 && "font-semibold text-zinc-900"]}>
-                      {render_slot(col, @row_item.(row))}
-                    </span>
-                  </div>
-                </td>
-                <td :if={@action != []} class="relative w-12 p-0">
-                  <div class="relative whitespace-nowrap text-left text-[12px] font-medium">
-                    <span class="absolute -inset-y-px -right-4 left-0 group-hover:bg-gray-50 sm:rounded-r-xl" />
-                    <span
-                      :for={action <- @action}
-                      class="relative ml-3 font-semibold leading-4 text-zinc-900 hover:text-zinc-700"
-                    >
-                      {render_slot(action, @row_item.(row))}
-                    </span>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-    """
-  end
-
   @doc """
   Renders a data list.
 
@@ -908,8 +778,7 @@ defmodule CuzCoreConnectWeb.CoreComponents do
         "flex items-center px-1 py-3 text-sm font-medium transition-all duration-200 group cursor-pointer",
         if(@active,
           do: "bg-primary/20 border-l-2 border-orange-500",
-          else:
-            "hover:bg-secondary/50 hover:border-l-2 hover:border-orange-500/50"
+          else: "hover:bg-secondary/50 hover:border-l-2 hover:border-orange-500/50"
         )
       ]}
     >
@@ -935,8 +804,7 @@ defmodule CuzCoreConnectWeb.CoreComponents do
           "w-full flex items-center justify-between px-2 py-3 text-sm font-medium transition-all duration-200 group cursor-pointer ",
           if(@active,
             do: "bg-primary/20 border-l-2 border-orange-500",
-            else:
-              "hover:bg-secondary/50 hover:border-l-2 hover:border-orange-500/50"
+            else: "hover:bg-secondary/50 hover:border-l-2 hover:border-orange-500/50"
           )
         ]}
       >
@@ -1007,7 +875,6 @@ defmodule CuzCoreConnectWeb.CoreComponents do
     |> JS.toggle_class("rotate-90", to: "#{menu_id}-chevron")
   end
 
-
   @doc """
   Renders a [Heroicon](https://heroicons.com).
 
@@ -1042,8 +909,6 @@ defmodule CuzCoreConnectWeb.CoreComponents do
   attr :class, :any, default: "size-4"
 
   def icon(%{name: "hero-" <> _} = assigns) do
-    if is_nil(Map.get(@icons, assigns.name)), do: IO.inspect(assigns.name)
-
     assigns =
       assign(assigns, :svg, Map.get(@icons, assigns.name))
 
@@ -1233,33 +1098,6 @@ defmodule CuzCoreConnectWeb.CoreComponents do
     """
   end
 
-  # Renders sort direction icons for table headers.
-  defp icon_def(filter_params, filter_item, selected_column) do
-    if filter_item == selected_column do
-      if filter_params["sort_order"] == "asc" do
-        ~s"""
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-4 p-1 text-black">
-            <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 15.75 7.5-7.5 7.5 7.5" />
-          </svg>
-        """
-      else
-        ~s"""
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-4 p-1 text-black">
-            <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" />
-          </svg>
-        """
-      end
-    else
-      ~s"""
-        <div class="text-zinc-200">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-4">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 15 12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9" />
-          </svg>
-        </div>
-      """
-    end
-  end
-
   @doc """
   Renders a search field with options dropdown for filter/export.
   """
@@ -1390,189 +1228,6 @@ defmodule CuzCoreConnectWeb.CoreComponents do
   end
 
   @doc """
-  Renders pagination controls.
-  """
-  attr :pagination, :map, required: true
-  attr :filter_params, :map, default: %{}
-
-  def render_pagination(assigns) do
-    ~H"""
-    <!-- BEGIN: Pagination -->
-    <div class="intro-y mb-12 mt-5 flex flex-wrap items-center sm:flex-row sm:flex-nowrap">
-      <nav class="w-full ml-2 sm:mr-auto sm:w-auto">
-        <ul class="flex w-full mr-0 sm:mr-auto sm:w-auto">
-          <%= if @pagination[:page_number] > 1 do %>
-            <li class="flex-1 sm:flex-initial">
-              <a
-                href={Pagination.get_priv_pagination_link(@pagination, @filter_params)}
-                data-phx-link="redirect"
-                data-phx-link-state="push"
-                data-tw-merge=""
-                class="transition duration-200 border items-center justify-center pt-4 py-3 rounded-md cursor-pointer
-                 focus:ring-4 focus:ring-primary focus:ring-opacity-20 focus-visible:outline-none dark:focus:ring-slate-700
-                  dark:focus:ring-opacity-50 [&:hover:not(:disabled)]:bg-opacity-90 [&:hover:not(:disabled)]:border-opacity-90
-                   [&:not(button)]:text-center disabled:opacity-70 disabled:cursor-not-allowed min-w-0 sm:min-w-[40px] shadow-none
-                    font-normal flex border-transparent text-slate-800 sm:mr-2 px-1 sm:px-3"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke-width="1.5"
-                  stroke="currentColor"
-                  class="size-3"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="m18.75 4.5-7.5 7.5 7.5 7.5m-6-15L5.25 12l7.5 7.5"
-                  />
-                </svg>
-              </a>
-            </li>
-          <% else %>
-            <li class="flex-1 sm:flex-initial">
-              <a
-                href="#"
-                data-tw-merge=""
-                class="transition duration-200 border items-center justify-center pt-4 py-3 rounded-md cursor-pointer
-                focus:ring-4 focus:ring-primary focus:ring-opacity-20 focus-visible:outline-none dark:focus:ring-slate-700
-                  dark:focus:ring-opacity-50 [&:hover:not(:disabled)]:bg-opacity-90 [&:hover:not(:disabled)]:border-opacity-90
-                  [&:not(button)]:text-center disabled:opacity-70 disabled:cursor-not-allowed min-w-0 sm:min-w-[40px] shadow-none
-                    font-normal flex border-transparent text-slate-400 sm:mr-2 px-1 sm:px-3"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke-width="1.5"
-                  stroke="currentColor"
-                  class="size-3"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="m18.75 4.5-7.5 7.5 7.5 7.5m-6-15L5.25 12l7.5 7.5"
-                  />
-                </svg>
-              </a>
-            </li>
-          <% end %>
-
-          <%= for number <- gen_page_numbers(@pagination.total_pages, @pagination.page_number) do %>
-            <%= if @pagination[:page_number] == number do %>
-              <li class="flex-1 sm:flex-initial">
-                <a
-                  data-tw-merge=""
-                  class="transition duration-200 border shadow-lg items-center justify-center py-2
-                                             rounded-md cursor-pointer focus:ring-4 focus:ring-primary focus:ring-opacity-20 focus-visible:outline-none
-                                              dark:focus:ring-slate-700 dark:focus:ring-opacity-50 [&:hover:not(:disabled)]:bg-opacity-90
-                                               [&:hover:not(:disabled)]:border-opacity-90 [&:not(button)]:text-center
-                                               disabled:opacity-70 disabled:cursor-not-allowed min-w-0 sm:min-w-[40px] shadow-none font-normal flex
-                                               border-transparent text-fdhBlue sm:mr-2 px-1 sm:px-3 !box dark:bg-darkmode-400"
-                >
-                  {number}
-                </a>
-              </li>
-            <% else %>
-              <li class="flex-1 sm:flex-initial">
-                <a
-                  href={Pagination.get_number_pagination_link(number, @filter_params)}
-                  data-phx-link="redirect"
-                  data-phx-link-state="push"
-                  data-tw-merge=""
-                  class="transition duration-200 border items-center justify-center py-2 rounded-md cursor-pointer focus:ring-4 focus:ring-primary
-                   focus:ring-opacity-20 focus-visible:outline-none dark:focus:ring-slate-700 dark:focus:ring-opacity-50
-                    [&:hover:not(:disabled)]:bg-opacity-90 [&:hover:not(:disabled)]:border-opacity-90 [&:not(button)]:text-center
-                    disabled:opacity-70 disabled:cursor-not-allowed min-w-0 sm:min-w-[40px] shadow-none font-normal flex border-transparent
-                    text-slate-800 sm:mr-2 px-1 sm:px-3"
-                >
-                  {number}
-                </a>
-              </li>
-            <% end %>
-          <% end %>
-
-          <%= if @pagination[:page_number] < @pagination.total_pages do %>
-            <li class="flex-1 sm:flex-initial">
-              <a
-                href={Pagination.get_next_pagination_link(@pagination, @filter_params)}
-                data-phx-link="redirect"
-                data-phx-link-state="push"
-                data-tw-merge=""
-                class="transition duration-200 border items-center justify-center pt-4 py-3 rounded-md cursor-pointer focus:ring-4 focus:ring-primary
-                focus:ring-opacity-20 focus-visible:outline-none dark:focus:ring-slate-700 dark:focus:ring-opacity-50 [&:hover:not(:disabled)]:bg-opacity-90
-                [&:hover:not(:disabled)]:border-opacity-90 [&:not(button)]:text-center disabled:opacity-70 disabled:cursor-not-allowed min-w-0 sm:min-w-[40px]
-                 shadow-none font-normal flex border-transparent text-slate-800 sm:mr-2 px-1 sm:px-3"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke-width="1.5"
-                  stroke="currentColor"
-                  class="size-3"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="m5.25 4.5 7.5 7.5-7.5 7.5m6-15 7.5 7.5-7.5 7.5"
-                  />
-                </svg>
-              </a>
-            </li>
-          <% else %>
-            <li class="flex-1 sm:flex-initial">
-              <a
-                href="#"
-                data-tw-merge=""
-                class="transition duration-200 border items-center justify-center pt-4 py-3 rounded-md cursor-pointer focus:ring-4 focus:ring-primary
-                focus:ring-opacity-20 focus-visible:outline-none dark:focus:ring-slate-700 dark:focus:ring-opacity-50 [&:hover:not(:disabled)]:bg-opacity-90
-                [&:hover:not(:disabled)]:border-opacity-90 [&:not(button)]:text-center disabled:opacity-70 disabled:cursor-not-allowed min-w-0 sm:min-w-[40px]
-                 shadow-none font-normal flex border-transparent text-slate-400 sm:mr-2 px-1 sm:px-3"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke-width="1.5"
-                  stroke="currentColor"
-                  class="size-3"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    d="m5.25 4.5 7.5 7.5-7.5 7.5m6-15 7.5 7.5-7.5 7.5"
-                  />
-                </svg>
-              </a>
-            </li>
-          <% end %>
-        </ul>
-      </nav>
-
-      <form>
-        <select
-          name="page_size"
-          phx-change="page_size"
-          data-tw-merge=""
-          class="disabled:bg-slate-100 disabled:cursor-not-allowed disabled:dark:bg-darkmode-800/50 [&[readonly]]:bg-slate-100 [&[readonly]]:cursor-not-allowed [&[readonly]]:dark:bg-darkmode-800/50 transition duration-200 ease-in-out text-sm border-slate-200 shadow-sm rounded-md py-2 px-3 pr-8 focus:ring-4 focus:ring-primary focus:ring-opacity-20 focus:border-primary focus:border-opacity-40 dark:bg-darkmode-800 dark:border-transparent dark:focus:ring-slate-700 dark:focus:ring-opacity-50 group-[.form-inline]:flex-1 !box mt-3 w-20 sm:mt-0"
-        >
-          <%= for size <- show_options() do %>
-            <%= if size == @filter_params["page_size"] do %>
-              <option selected>{size}</option>
-            <% else %>
-              <option>{size}</option>
-            <% end %>
-          <% end %>
-        </select>
-      </form>
-    </div>
-    <!-- END: Pagination -->
-    """
-  end
-
-  @doc """
   Format the System Date to a human readable form.
   """
   def format_display_datetime(d, _show_seconds? \\ false)
@@ -1603,6 +1258,7 @@ defmodule CuzCoreConnectWeb.CoreComponents do
   end
 
   def format_display_datetime(_, _), do: "—"
+
   defp format_dt(dt, show_seconds?) do
     Calendar.strftime(dt, if(show_seconds?, do: "%Y %b %d - %H:%M:%S", else: "%Y %b %d - %H:%M"))
   end

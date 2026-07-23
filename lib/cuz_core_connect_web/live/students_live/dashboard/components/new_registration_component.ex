@@ -17,8 +17,7 @@ defmodule CuzCoreConnectWeb.StudentLive.Dashboard.NewRegistrationComponent do
         </p>
         <%!-- Link to your actual registration form LiveView --%>
         <.link navigate={~p"/student/registrations/new"} class="btn btn-primary">
-          <.icon name="hero-plus" class="h-4 w-4 mr-1" />
-          Start Registration
+          <.icon name="hero-plus" class="h-4 w-4 mr-1" /> Start Registration
         </.link>
       </div>
     </div>

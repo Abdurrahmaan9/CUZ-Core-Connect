@@ -42,7 +42,11 @@ defmodule CuzCoreConnectWeb.Admin.AcademicManagement.Programmes.Index do
   end
 
   @impl true
-  def handle_info({CuzCoreConnectWeb.Admin.AcademicManagement.Programmes.FormComponent, {:saved, programme}}, socket) do
+  def handle_info(
+        {CuzCoreConnectWeb.Admin.AcademicManagement.Programmes.FormComponent,
+         {:saved, programme}},
+        socket
+      ) do
     {:noreply, stream_insert(socket, :programmes, programme)}
   end
 

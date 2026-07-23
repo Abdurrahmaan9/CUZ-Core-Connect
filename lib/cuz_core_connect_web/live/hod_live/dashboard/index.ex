@@ -3,11 +3,21 @@ defmodule CuzCoreConnectWeb.HODLive.Dashboard.Index do
 
   @impl true
   def mount(_params, _session, socket) do
+    if connected?(socket), do: CuzCoreConnect.Registrations.subscribe()
+
     {:ok,
      socket
      |> assign(:page_title, "HOD Dashboard")
      |> assign(:current_page, :hod_dashboard)
-     |> assign(:active_tab, "overview")}
+     |> assign(:active_tab, "overview")
+     |> assign(:live_tick, 0)}
+  end
+
+  @impl true
+  def handle_info({:registration_updated, _registration}, socket) do
+    # Bump a counter so child live_components receive updated assigns and
+    # re-run their update/2 (re-fetching pending lists) without a full reload.
+    {:noreply, assign(socket, :live_tick, System.unique_integer())}
   end
 
   @impl true
@@ -16,7 +26,8 @@ defmodule CuzCoreConnectWeb.HODLive.Dashboard.Index do
     {:noreply, assign(socket, :active_tab, tab)}
   end
 
-  def handle_params(_params, _url, socket), do: {:noreply, assign(socket, :active_tab, "overview")}
+  def handle_params(_params, _url, socket),
+    do: {:noreply, assign(socket, :active_tab, "overview")}
 
   @impl true
   def handle_event("switch_tab", %{"tab" => tab}, socket) do
@@ -26,7 +37,12 @@ defmodule CuzCoreConnectWeb.HODLive.Dashboard.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.user flash={@flash} current_scope={@current_scope} page_title={@page_title} current_page={@current_page}>
+    <Layouts.user
+      flash={@flash}
+      current_scope={@current_scope}
+      page_title={@page_title}
+      current_page={@current_page}
+    >
       <div class="border-b border-base-300 mb-6">
         <nav class="flex space-x-8 px-4">
           <%= for {label, tab} <- [{"Overview", "overview"}, {"Pending Review", "pending"}, {"Approved", "approved"}] do %>
@@ -51,16 +67,22 @@ defmodule CuzCoreConnectWeb.HODLive.Dashboard.Index do
               module={CuzCoreConnectWeb.HODLive.Dashboard.OverviewComponent}
               id="hod-overview"
               current_scope={@current_scope}
+              live_tick={@live_tick}
             />
           <% "pending" -> %>
             <.live_component
               module={CuzCoreConnectWeb.HODLive.Dashboard.PendingRegistrationsComponent}
               id="hod-pending"
               current_scope={@current_scope}
+              live_tick={@live_tick}
             />
           <% "approved" -> %>
-            <%!-- reuse same pattern --%>
-            <p class="text-base-content/50 py-12 text-center">Approved registrations list here</p>
+            <.live_component
+              module={CuzCoreConnectWeb.HODLive.Dashboard.ApprovedComponent}
+              id="hod-approved"
+              current_scope={@current_scope}
+              live_tick={@live_tick}
+            />
           <% _ -> %>
             <p class="text-center py-12 text-base-content/50">Tab not found</p>
         <% end %>

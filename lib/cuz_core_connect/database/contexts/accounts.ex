@@ -41,7 +41,13 @@ defmodule CuzCoreConnect.Accounts do
   def get_user_by_email_and_password(email, password)
       when is_binary(email) and is_binary(password) do
     user = Repo.get_by(User, email: email)
-    if User.valid_password?(user, password), do: user
+
+    # Deactivated users keep their historical data but must not be able to
+    # authenticate. Check is_active here so every password-login path is
+    # covered without relying on the UI alone.
+    if user && user.is_active && User.valid_password?(user, password) do
+      user
+    end
   end
 
   @doc """
@@ -122,10 +128,47 @@ defmodule CuzCoreConnect.Accounts do
   """
   def get_user!(id), do: Repo.get!(User, id)
 
+  @doc """
+  Updates an existing user from the admin panel (role, active flag, profile fields).
+  Deactivating (`is_active: false`) preserves the row and historical data but
+  blocks further logins via `get_user_by_email_and_password/2`.
+  """
+  def update_user(%User{} = user, attrs) do
+    attrs =
+      attrs
+      |> Map.new(fn {k, v} -> {to_string(k), v} end)
+      |> then(fn params ->
+        # Unchecked HTML checkboxes omit the field entirely.
+        Map.put_new(params, "is_active", false)
+      end)
+      |> then(fn params ->
+        case params["is_active"] do
+          v when v in [true, "true", "on", "1"] -> Map.put(params, "is_active", true)
+          _ -> Map.put(params, "is_active", false)
+        end
+      end)
+
+    user
+    |> User.admin_changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Soft-deactivates a user without deleting historical registrations/approvals.
+  """
+  def deactivate_user(%User{} = user) do
+    update_user(user, %{"is_active" => false, "status" => "INACTIVE"})
+  end
+
   ## User registration
 
   @doc """
   Registers a user.
+
+  Options:
+
+    * `:notify` - when `true`, emails the generated (or provided) password to
+      the user via Swoosh. In development that appears at `/dev/mailbox`.
 
   ## Examples
 
@@ -136,9 +179,12 @@ defmodule CuzCoreConnect.Accounts do
       {:error, %Ecto.Changeset{}}
 
   """
-  def register_user(attrs) do
-    password =
-      Map.get(attrs, "password") || Map.get(attrs, :password) || User.generate_random_password()
+  def register_user(attrs, opts \\ []) do
+    # Normalize keys to strings first so we never end up casting a changeset
+    # with a map that mixes atom and string keys (Ecto.Changeset.cast/3 raises
+    # an Ecto.CastError in that case).
+    attrs = for {key, val} <- attrs, into: %{}, do: {to_string(key), val}
+    password = Map.get(attrs, "password") || User.generate_random_password()
 
     %User{}
     |> User.registration_changeset(Map.put(attrs, "password", password))
@@ -147,11 +193,24 @@ defmodule CuzCoreConnect.Accounts do
       {:ok, user} ->
         # Inherit all pages for their role
         CuzCoreConnect.Pages.assign_default_pages_for_user(user)
+
+        if Keyword.get(opts, :notify, false) do
+          _ = deliver_account_credentials(user, password)
+        end
+
         {:ok, user}
-        # ... rest of your success handling
-        {:error, r} -> {:error, r}
+
+      {:error, r} ->
+        {:error, r}
     end
-    # |> IO.inspect()
+  end
+
+  @doc """
+  Emails temporary account credentials to a newly created user.
+  """
+  def deliver_account_credentials(%User{} = user, password) when is_binary(password) do
+    login_url = CuzCoreConnectWeb.Endpoint.url() <> "/users/log-in"
+    UserNotifier.deliver_account_credentials(user, password, login_url)
   end
 
   ## Settings
@@ -259,7 +318,17 @@ defmodule CuzCoreConnect.Accounts do
   """
   def get_user_by_session_token(token) do
     {:ok, query} = UserToken.verify_session_token_query(token)
-    Repo.one(query)
+
+    case Repo.one(query) do
+      {%User{is_active: false}, _token_inserted_at} ->
+        nil
+
+      {%User{} = user, token_inserted_at} ->
+        {user, token_inserted_at}
+
+      other ->
+        other
+    end
   end
 
   @doc """
@@ -296,15 +365,12 @@ defmodule CuzCoreConnect.Accounts do
     {:ok, query} = UserToken.verify_magic_link_token_query(token)
 
     case Repo.one(query) do
-      # # Prevent session fixation attacks by disallowing magic links for unconfirmed users with password
-      # {%User{confirmed_at: nil, hashed_password: hash}, _token} when not is_nil(hash) ->
-      #   raise """
-      #   magic link log in is not allowed for unconfirmed users with a password set!
-
-      #   This cannot happen with the default implementation, which indicates that you
-      #   might have adapted the code to a different use case. Please make sure to read the
-      #   "Mixing magic link and password registration" section of `mix help phx.gen.auth`.
-      #   """
+      # NOTE: Unlike the default `phx.gen.auth` implementation, every account in this
+      # app is created with a password (auto-generated when one isn't supplied, see
+      # `register_user/1`), so we intentionally do NOT raise when an unconfirmed user
+      # has a password set - that is the normal case here, not a sign of misuse.
+      {%User{is_active: false}, _token} ->
+        {:error, :inactive}
 
       {%User{confirmed_at: nil} = user, _token} ->
         user

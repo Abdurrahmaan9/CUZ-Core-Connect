@@ -259,6 +259,9 @@ defmodule CuzCoreConnectWeb.Plugs.UserAuth do
       %{user: %{user_role: "hod"}} ->
         {:noreply, Phoenix.LiveView.redirect(socket, to: "/hod/dashboard")}
 
+      %{user: %{user_role: "retention"}} ->
+        {:noreply, Phoenix.LiveView.redirect(socket, to: "/retention/dashboard")}
+
       %{user: %{user_role: "student"}} ->
         {:noreply, Phoenix.LiveView.redirect(socket, to: "/student/dashboard")}
 

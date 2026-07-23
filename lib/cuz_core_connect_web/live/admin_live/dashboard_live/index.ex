@@ -18,7 +18,18 @@ defmodule CuzCoreConnectWeb.AdminLiveIndex do
   @impl true
   def handle_params(%{"tab" => tab}, _url, socket)
       when tab in ["overview", "users", "workflows", "settings"] do
-    {:noreply, assign(socket, :active_tab, tab)}
+
+    # current_page =
+    #   cond do
+    #     tab == "overview" -> :admin_dashboard
+    #     tab == "users" -> :academics_pending_review
+    #     tab == "workflows" -> :academics_approved
+    #     tab == "settings" -> :academics_approved
+    #   end
+
+    {:noreply, assign(socket, :active_tab, tab)
+    #  |> assign(:current_page, current_page)
+    }
   end
 
   def handle_params(_params, _url, socket) do
@@ -61,45 +72,6 @@ defmodule CuzCoreConnectWeb.AdminLiveIndex do
       page_title={@page_title}
       current_page={@current_page}
     >
-
-      <div class="border-b border-base-300">
-        <div class="max-w-10xl mx-auto px-4 sm:px-6 lg:px-8">
-          <nav class="flex space-x-8">
-            <button
-              phx-click="switch_tab"
-              phx-value-tab="overview"
-              class={"py-4 px-1 border-b-2 font-medium text-sm transition-colors " <>
-                if(@active_tab == "overview", do: "border-primary text-primary", else: "border-transparent text-base-content/50 hover:text-base-content hover:border-base-300")}
-            >
-              Overview
-            </button>
-            <button
-              phx-click="switch_tab"
-              phx-value-tab="users"
-              class={"py-4 px-1 border-b-2 font-medium text-sm transition-colors " <>
-                if(@active_tab == "users", do: "border-primary text-primary", else: "border-transparent text-base-content/50 hover:text-base-content hover:border-base-300")}
-            >
-              User Management
-            </button>
-            <button
-              phx-click="switch_tab"
-              phx-value-tab="workflows"
-              class={"py-4 px-1 border-b-2 font-medium text-sm transition-colors " <>
-                if(@active_tab == "workflows", do: "border-primary text-primary", else: "border-transparent text-base-content/50 hover:text-base-content hover:border-base-300")}
-            >
-              Workflow Management
-            </button>
-            <button
-              phx-click="switch_tab"
-              phx-value-tab="settings"
-              class={"py-4 px-1 border-b-2 font-medium text-sm transition-colors " <>
-                if(@active_tab == "settings", do: "border-primary text-primary", else: "border-transparent text-base-content/50 hover:text-base-content hover:border-base-300")}
-            >
-              System Settings
-            </button>
-          </nav>
-        </div>
-      </div>
 
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <%= case @active_tab do %>

@@ -2,7 +2,6 @@ defmodule CuzCoreConnectWeb.Academics.Students.PendingRegistration do
   use CuzCoreConnectWeb, :live_view
 
   alias CuzCoreConnect.Registrations
-  alias CuzCoreConnect.Repo
   alias CuzCoreConnectWeb.Datatable.Pagination
 
   @filter_defaults %{
@@ -35,6 +34,7 @@ defmodule CuzCoreConnectWeb.Academics.Students.PendingRegistration do
   @spec handle_params(any(), any(), Phoenix.LiveView.Socket.t()) :: {:noreply, map()}
   def handle_params(params, _url, socket) do
     if connected?(socket), do: send(self(), {:fetch_registrations, params})
+
     {
       :noreply,
       socket
@@ -104,34 +104,57 @@ defmodule CuzCoreConnectWeb.Academics.Students.PendingRegistration do
   end
 
   defp approve_registration(registration_id) do
-    registration = Repo.get(Registration, registration_id)
+    registration = Registrations.get_registration!(registration_id)
 
-    registration
-    |> Ecto.Changeset.change(%{
+    Registrations.update_registration(registration, %{
+      registration_status: "APPROVED",
       approval_level: "approved",
-      approved_by: %{
-        # Will be set with current user when auth is implemented
-        user_id: nil,
-        approved_at: DateTime.utc_now(),
-        notes: "Approved by administrator"
-      }
+      payment_status: "APPROVED",
+      financial_status: "APPROVED",
+      accademics_status: "APPROVED",
+      hod_status: "APPROVED",
+      retention_status: "APPROVED"
     })
-    |> Repo.update()
+    |> case do
+      {:ok, updated} ->
+        Registrations.record_registration_action(
+          updated,
+          nil,
+          "admin_override",
+          "approved",
+          "Approved by administrator"
+        )
+
+        {:ok, updated}
+
+      error ->
+        error
+    end
   end
 
   defp reject_registration(registration_id) do
-    registration = Repo.get(Registration, registration_id)
+    registration = Registrations.get_registration!(registration_id)
 
-    registration
-    |> Ecto.Changeset.change(%{
+    Registrations.update_registration(registration, %{
+      registration_status: "REJECTED",
       approval_level: "rejected",
-      approved_by: %{
-        # Will be set with current user when auth is implemented
-        user_id: nil,
-        approved_at: DateTime.utc_now(),
-        notes: "Rejected by administrator"
-      }
+      rejection_reason: "Rejected by administrator",
+      rejected_stage: "admin"
     })
-    |> Repo.update()
+    |> case do
+      {:ok, updated} ->
+        Registrations.record_registration_action(
+          updated,
+          nil,
+          "admin_override",
+          "rejected",
+          "Rejected by administrator"
+        )
+
+        {:ok, updated}
+
+      error ->
+        error
+    end
   end
 end

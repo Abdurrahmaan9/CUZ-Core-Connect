@@ -114,7 +114,9 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.PersonalInfo do
 
       <%= if Enum.any?(@errors) do %>
         <div class="mt-4 p-3 bg-error/10 border border-error/200 rounded-lg">
-          <p class="text-sm text-error font-medium">Please correct the errors above before continuing.</p>
+          <p class="text-sm text-error font-medium">
+            Please correct the errors above before continuing.
+          </p>
         </div>
       <% end %>
 
@@ -153,12 +155,16 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.PersonalInfo do
     errors = validate(socket.assigns)
 
     if map_size(errors) == 0 do
-      send(self(), {:next_step, %{
-        student_id: socket.assigns.student_id,
-        student_names: socket.assigns.student_names,
-        student_email: socket.assigns.student_email,
-        student_contact: socket.assigns.student_contact
-      }})
+      send(
+        self(),
+        {:next_step,
+         %{
+           student_id: socket.assigns.student_id,
+           student_names: socket.assigns.student_names,
+           student_email: socket.assigns.student_email,
+           student_contact: socket.assigns.student_contact
+         }}
+      )
 
       {:noreply, socket}
     else
@@ -171,29 +177,52 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.PersonalInfo do
   defp validate(assigns) do
     %{}
     |> maybe_add_error(:student_id, assigns.student_id == "", "Student ID is required.")
-    |> maybe_add_error(:student_id, not valid_student_id_format?(assigns.student_id), "Student ID should be numeric and at least 6 digits.")
+    |> maybe_add_error(
+      :student_id,
+      not valid_student_id_format?(assigns.student_id),
+      "Student ID should be numeric and at least 6 digits."
+    )
     |> maybe_add_error(:student_names, assigns.student_names == "", "Full name is required.")
-    |> maybe_add_error(:student_names, String.length(assigns.student_names) < 3, "Name must be at least 3 characters.")
+    |> maybe_add_error(
+      :student_names,
+      String.length(assigns.student_names) < 3,
+      "Name must be at least 3 characters."
+    )
     |> maybe_add_error(:student_email, assigns.student_email == "", "Email address is required.")
-    |> maybe_add_error(:student_email, not valid_email_format?(assigns.student_email), "Please enter a valid email address.")
-    |> maybe_add_error(:student_contact, assigns.student_contact == "", "Contact number is required.")
-    |> maybe_add_error(:student_contact, not valid_contact_format?(assigns.student_contact), "Please enter a valid contact number.")
+    |> maybe_add_error(
+      :student_email,
+      not valid_email_format?(assigns.student_email),
+      "Please enter a valid email address."
+    )
+    |> maybe_add_error(
+      :student_contact,
+      assigns.student_contact == "",
+      "Contact number is required."
+    )
+    |> maybe_add_error(
+      :student_contact,
+      not valid_contact_format?(assigns.student_contact),
+      "Please enter a valid contact number."
+    )
   end
 
   defp maybe_add_error(errors, _key, false, _msg), do: errors
   defp maybe_add_error(errors, key, true, msg), do: Map.put(errors, key, msg)
 
   defp valid_student_id_format?(""), do: false
+
   defp valid_student_id_format?(student_id) do
     Regex.match?(~r/^\d{6,}$/, student_id)
   end
 
   defp valid_email_format?(""), do: false
+
   defp valid_email_format?(email) do
     Regex.match?(~r/^[^\s]+@[^\s]+\.[^\s]+$/, email)
   end
 
   defp valid_contact_format?(""), do: false
+
   defp valid_contact_format?(contact) do
     # Basic validation for phone numbers with optional + prefix
     Regex.match?(~r/^\+?\d{7,}$/, String.replace(contact, ~r/\s/, ""))

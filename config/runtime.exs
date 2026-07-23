@@ -23,20 +23,25 @@ end
 config :cuz_core_connect, CuzCoreConnectWeb.Endpoint,
   http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
-
 if config_env() == :dev do
   database_username =
-    System.get_env("PHX_DATABASE_USERNAME") ||"postgres"
+    System.get_env("PHX_DATABASE_USERNAME") || "postgres"
+
   database_password =
-    System.get_env("PHX_DATABASE_PASSWORD") ||"postgres"
+    System.get_env("PHX_DATABASE_PASSWORD") || "postgres"
+
   database_hostname =
-    System.get_env("PHX_DATABASE_HOSTNAME") ||"localhost"
+    System.get_env("PHX_DATABASE_HOSTNAME") || "localhost"
+
+  database_port =
+    String.to_integer(System.get_env("PHX_DATABASE_PORT") || "5432")
 
   # Configure your database
   config :cuz_core_connect, CuzCoreConnect.Repo,
     username: database_username,
     password: database_password,
     hostname: database_hostname,
+    port: database_port,
     database: "cuz_core_connect_dev",
     stacktrace: true,
     show_sensitive_data_on_connection_error: true,

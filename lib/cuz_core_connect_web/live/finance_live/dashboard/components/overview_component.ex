@@ -25,16 +25,30 @@ defmodule CuzCoreConnectWeb.FinanceLive.Dashboard.OverviewComponent do
       </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <.stat_card label="Pending Verification" value={@stats.pending} color="warning" icon="hero-banknotes" />
-        <.stat_card label="Verified Today" value={@stats.verified_today} color="success" icon="hero-check-circle" />
+        <.stat_card
+          label="Pending Verification"
+          value={@stats.pending}
+          color="warning"
+          icon="hero-banknotes"
+        />
+        <.stat_card
+          label="Verified Today"
+          value={@stats.verified_today}
+          color="success"
+          icon="hero-check-circle"
+        />
         <.stat_card label="Rejected" value={@stats.rejected} color="error" icon="hero-x-circle" />
-        <.stat_card label="Total Verified" value={@stats.total_verified} color="info" icon="hero-document-check" />
+        <.stat_card
+          label="Total Verified"
+          value={@stats.total_verified}
+          color="info"
+          icon="hero-document-check"
+        />
       </div>
 
       <div class="bg-base-200/40 rounded-r p-6">
         <h3 class="font-medium mb-4 flex items-center gap-2">
-          <.icon name="hero-bolt" class="h-5 w-5 text-primary" />
-          Quick Actions
+          <.icon name="hero-bolt" class="h-5 w-5 text-primary" /> Quick Actions
         </h3>
         <div class="flex flex-wrap gap-3">
           <.button phx-click="switch_tab" phx-value-tab="pending" phx-target={@myself}>

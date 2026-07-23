@@ -20,7 +20,8 @@ defmodule CuzCoreConnect.Application do
       # cachex for keeping token in the memory
       Supervisor.child_spec(
         {Cachex,
-         name: :cuz_core_connect_cache, opts: [expiration: expiration(interval: :timer.minutes(10))]},
+         name: :cuz_core_connect_cache,
+         opts: [expiration: expiration(interval: :timer.minutes(10))]},
         id: :cuz_core_connect_cache
       )
     ]

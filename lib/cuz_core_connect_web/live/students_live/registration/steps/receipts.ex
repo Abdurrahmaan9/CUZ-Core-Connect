@@ -37,7 +37,9 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Receipts do
               <.icon name="hero-arrow-up-tray" class="w-7 h-7 text-primary" />
             </div>
             <p class="mt-3 text-sm font-medium text-base-content">Drag and drop receipts here</p>
-            <p class="mt-1 text-xs text-base-content/60">Or choose files from your device and wait for the upload to complete.</p>
+            <p class="mt-1 text-xs text-base-content/60">
+              Or choose files from your device and wait for the upload to complete.
+            </p>
 
             <div class="mt-4">
               <.live_file_input
@@ -105,7 +107,12 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Receipts do
         <button type="button" phx-click="back" phx-target={@myself} class="btn btn-ghost">
           ← Back
         </button>
-        <button type="button" phx-click="next_receipt_step" phx-target={@myself} class="btn btn-primary px-8">
+        <button
+          type="button"
+          phx-click="next_receipt_step"
+          phx-target={@myself}
+          class="btn btn-primary px-8"
+        >
           Review →
         </button>
       </div>

@@ -3,37 +3,52 @@ defmodule CuzCoreConnectWeb.ReceiptController do
 
   alias CuzCoreConnect.Registrations
 
+  # Staff roles allowed to review any student's payment receipt.
+  @staff_roles ~w(admin academics finance hod retention)
+
   def show(conn, %{"id" => id}) do
-    case Registrations.get_payment_receipt(id) do
-      nil ->
+    with %{} = user <- conn.assigns[:current_scope] && conn.assigns.current_scope.user,
+         receipt when not is_nil(receipt) <- Registrations.get_payment_receipt(id),
+         :ok <- authorize(user, receipt),
+         {:ok, data, _path} <- Registrations.read_receipt_file(receipt) do
+      filename = receipt.original_filename || "receipt"
+
+      conn
+      |> put_resp_content_type(receipt.content_type || "application/octet-stream")
+      |> put_resp_header("content-disposition", ~s(inline; filename="#{filename}"))
+      |> send_resp(200, data)
+    else
+      {:error, :not_found} ->
+        conn
+        |> put_status(:not_found)
+        |> text("Receipt file is missing on the server. Ask the student to resubmit the registration with the receipt.")
+
+      _ ->
         conn
         |> put_status(:not_found)
         |> text("Receipt not found")
+    end
+  end
 
-      receipt ->
-        # Try reading the stored path directly; if that fails, try priv/static/uploads/<storage_key>
-        storage_path = receipt.storage_key || ""
+  defp authorize(user, receipt) do
+    cond do
+      user.user_role in @staff_roles -> :ok
+      owns_receipt?(user, receipt) -> :ok
+      true -> :error
+    end
+  end
 
-        paths_to_try = [storage_path, Path.join([:code.priv_dir(:cuz_core_connect) |> to_string(), "static", "uploads", storage_path])]
+  defp owns_receipt?(user, receipt) do
+    with %{student_registration_id: registration_id} <- receipt,
+         registration when not is_nil(registration) <-
+           Registrations.get_registration(registration_id) do
+      student_id = to_string(registration.student_id || "")
+      email = String.downcase(to_string(registration.student_email || ""))
 
-        result = Enum.find_value(paths_to_try, fn path ->
-          case File.read(path) do
-            {:ok, data} -> {:ok, data}
-            _ -> nil
-          end
-        end)
-
-        case result do
-          {:ok, data} ->
-            conn
-            |> put_resp_content_type(receipt.content_type)
-            |> send_resp(200, data)
-
-          _ ->
-            conn
-            |> put_status(:not_found)
-            |> text("Receipt not found")
-        end
+      to_string(user.id) == student_id or
+        String.downcase(to_string(user.email || "")) == email
+    else
+      _ -> false
     end
   end
 end

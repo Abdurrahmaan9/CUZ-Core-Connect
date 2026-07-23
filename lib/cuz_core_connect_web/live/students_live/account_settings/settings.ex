@@ -8,7 +8,13 @@ defmodule CuzCoreConnectWeb.UserLive.Settings do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.user flash={@flash} current_scope={@current_scope} page_title={@page_title}, current_page={@current_page}>
+    <Layouts.user
+      flash={@flash}
+      current_scope={@current_scope}
+      page_title={@page_title}
+      ,
+      current_page={@current_page}
+    >
       <div class="text-center">
         <.header>
           Account Settings
@@ -81,11 +87,10 @@ defmodule CuzCoreConnectWeb.UserLive.Settings do
       end
 
     {:ok,
-    socket
-    |> push_navigate(to: ~p"/users/settings")
-      |> assign(:page_title, "Email changed")
-      |> assign(:current_page, :user_account_settings)
-  }
+     socket
+     |> push_navigate(to: ~p"/users/settings")
+     |> assign(:page_title, "Email changed")
+     |> assign(:current_page, :user_account_settings)}
   end
 
   def mount(_params, _session, socket) do

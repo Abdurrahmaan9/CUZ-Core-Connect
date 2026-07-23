@@ -36,6 +36,14 @@ config :cuz_core_connect, CuzCoreConnectWeb.Endpoint,
   pubsub_server: CuzCoreConnect.PubSub,
   live_view: [signing_salt: "EV1Tb0Ng"]
 
+# Redact sensitive params from Phoenix request logs.
+config :phoenix, :filter_parameters, [
+  "password",
+  "password_confirmation",
+  "hashed_password",
+  "token"
+]
+
 # Configure the mailer
 #
 # By default it uses the "Local" adapter which stores the emails

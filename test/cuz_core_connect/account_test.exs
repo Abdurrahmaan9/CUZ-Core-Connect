@@ -33,6 +33,17 @@ defmodule CuzCoreConnect.AccountTest do
       assert %User{id: ^id} =
                Accounts.get_user_by_email_and_password(user.email, valid_user_password())
     end
+
+    test "does not return a deactivated user even with a valid password" do
+      user = user_fixture() |> set_password()
+
+      {:ok, _user} =
+        user
+        |> Ecto.Changeset.change(%{is_active: false})
+        |> Repo.update()
+
+      refute Accounts.get_user_by_email_and_password(user.email, valid_user_password())
+    end
   end
 
   describe "get_user!/1" do
@@ -77,13 +88,33 @@ defmodule CuzCoreConnect.AccountTest do
       assert "has already been taken" in errors_on(changeset).email
     end
 
-    test "registers users without password" do
+    test "registers users with an auto-generated password when none is given" do
+      # This app always requires a hashed_password on the user record, so when no
+      # password is supplied one is auto-generated (e.g. for admin-invited accounts).
       email = unique_user_email()
       {:ok, user} = Accounts.register_user(valid_user_attributes(email: email))
       assert user.email == email
-      assert is_nil(user.hashed_password)
+      refute is_nil(user.hashed_password)
       assert is_nil(user.confirmed_at)
       assert is_nil(user.password)
+    end
+
+    test "emails temporary credentials when notify: true" do
+      import Swoosh.TestAssertions
+
+      email = unique_user_email()
+
+      {:ok, user} =
+        Accounts.register_user(valid_user_attributes(email: email, user_role: "finance"),
+          notify: true
+        )
+
+      assert user.email == email
+
+      assert_email_sent(
+        to: email,
+        subject: "Your CUZ Core Connect account"
+      )
     end
   end
 
@@ -350,14 +381,17 @@ defmodule CuzCoreConnect.AccountTest do
       assert {:error, :not_found} = Accounts.login_user_by_magic_link(encoded_token)
     end
 
-    test "raises when unconfirmed user has password set" do
+    test "confirms and logs in unconfirmed user even though a password is set" do
+      # Unlike the default `phx.gen.auth` implementation, every account here always has
+      # a (possibly auto-generated) password, so magic link login must still work.
       user = unconfirmed_user_fixture()
-      {1, nil} = Repo.update_all(User, set: [hashed_password: "hashed"])
+      assert user.hashed_password
       {encoded_token, _hashed_token} = generate_user_magic_link_token(user)
 
-      assert_raise RuntimeError, ~r/magic link log in is not allowed/, fn ->
-        Accounts.login_user_by_magic_link(encoded_token)
-      end
+      assert {:ok, {confirmed_user, _expired_tokens}} =
+               Accounts.login_user_by_magic_link(encoded_token)
+
+      assert confirmed_user.confirmed_at
     end
   end
 

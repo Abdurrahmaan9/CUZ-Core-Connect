@@ -9,7 +9,7 @@ defmodule CuzCoreConnectWeb.Admin.AcademicManagement.Courses.FormComponent do
     ~H"""
     <div>
       <.header>
-        <%= @title %>
+        {@title}
         <:subtitle>Manage course details</:subtitle>
       </.header>
 
@@ -28,7 +28,7 @@ defmodule CuzCoreConnectWeb.Admin.AcademicManagement.Courses.FormComponent do
         <.input field={@form[:is_active]} type="checkbox" label="Active" />
 
         <div class="flex justify-end space-x-2">
-          <.link patch={~p"/admin/student/courses"}>
+          <.link patch={~p"/admin/courses"}>
             <.button>Cancel</.button>
           </.link>
 

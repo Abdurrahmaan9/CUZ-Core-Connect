@@ -19,6 +19,38 @@ defmodule CuzCoreConnect.Accounts.UserNotifier do
   end
 
   @doc """
+  Deliver temporary login credentials after an admin creates an account.
+  In development this lands in the local Swoosh mailbox at `/dev/mailbox`.
+  """
+  def deliver_account_credentials(user, password, login_url)
+      when is_binary(password) and is_binary(login_url) do
+    name = user.username || user.email
+
+    deliver(user.email, "Your CUZ Core Connect account", """
+
+    ==============================
+
+    Hi #{name},
+
+    An account has been created for you on CUZ Core Connect.
+
+    Email:    #{user.email}
+    Username: #{user.username}
+    Role:     #{user.user_role}
+    Password: #{password}
+
+    Sign in here:
+    #{login_url}
+
+    Please change your password after your first login.
+
+    If you did not expect this email, contact the system administrator.
+
+    ==============================
+    """)
+  end
+
+  @doc """
   Deliver instructions to update a user email.
   """
   def deliver_update_email_instructions(user, url) do

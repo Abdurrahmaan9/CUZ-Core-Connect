@@ -30,23 +30,24 @@ import { PasswordToggle } from "./hooks/password_toggle";
 import { TutorialSpotlight } from "./hooks/tutorial_spotlight";
 import { SearchableSelect } from "./hooks/searchable_select";
 import { MultiSelect } from "./hooks/multi_select";
+import { ModalPortal } from "./hooks/modal_portal";
 
 
 // Define Hooks HERE!
 const Hooks = {
   AutoFade,
-  colocatedHooks,
   CopyToClipboard,
   PasswordToggle,
   TutorialSpotlight,
   SearchableSelect,
   MultiSelect,
+  ModalPortal,
 };
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: Hooks,
+  hooks: {...colocatedHooks, ...Hooks},
 })
 
 // Show progress bar on live navigation and form submits

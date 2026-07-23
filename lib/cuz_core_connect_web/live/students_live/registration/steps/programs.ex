@@ -1,17 +1,11 @@
 defmodule CuzCoreConnectWeb.Student.Registration.Steps.Programmes do
   use CuzCoreConnectWeb, :live_component
 
-  # TODO: alias CuzCoreConnect.Academics
+  alias CuzCoreConnect.Academic
 
   @impl true
   def update(assigns, socket) do
-    # TODO: replace with Academics.list_programs()
-    programmes = [
-      %{id: 1, code: "BSCS", name: "Bachelor of Science in Computer Science"},
-      %{id: 2, code: "BBA",  name: "Bachelor of Business Administration"},
-      %{id: 3, code: "BE",   name: "Bachelor of Engineering"},
-      %{id: 4, code: "BSIT", name: "Bachelor of Science in Information Technology"}
-    ]
+    programmes = Academic.list_active_programs()
 
     {:ok,
      socket
@@ -30,56 +24,43 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Programmes do
         Choose the academic programme you are currently enrolled in.
       </p>
 
-      <div class="mt-6 space-y-3">
-        <%= for programme <- @programmes do %>
-          <button
-            type="button"
-            phx-click="select_program"
-            phx-value-id={programme.id}
-            phx-value-name={programme.name}
-            phx-target={@myself}
-            class={[
-              "w-full text-left px-4 py-4 rounded-xl border-2 transition-all",
-              @selected_id == programme.id &&
-                "border-primary bg-primary/5",
-              @selected_id != programme.id &&
-                "border-base-200 hover:border-base-300"
-            ]}
-          >
-            <span class="text-xs font-bold text-base-content/40 block mb-0.5">{programme.code}</span>
-            <span class={[
-              "text-sm font-medium",
-              @selected_id == programme.id && "text-primary",
-              @selected_id != programme.id && "text-base-content"
-            ]}>
-              {programme.name}
-            </span>
-          </button>
-        <% end %>
-      </div>
+      <%= if Enum.empty?(@programmes) do %>
+        <div class="mt-6 border-2 border-dashed border-base-300 rounded-xl p-8 text-center">
+          <p class="font-medium">No programmes available yet</p>
+          <p class="text-sm text-base-content/50 mt-1">
+            Ask an administrator to create an active programme first.
+          </p>
+        </div>
+      <% else %>
+        <div class="mt-6 space-y-3">
+          <%= for programme <- @programmes do %>
+            <button
+              type="button"
+              phx-click="select_program"
+              phx-value-id={programme.id}
+              phx-value-name={programme.name}
+              phx-target={@myself}
+              class={[
+                "w-full text-left px-4 py-3 rounded-xl border transition-all",
+                @selected_id == programme.id && "border-primary bg-primary/5",
+                @selected_id != programme.id && "border-base-200 hover:border-base-300"
+              ]}
+            >
+              <span class="text-xs font-bold text-base-content/40">{programme.code}</span>
+              <p class="text-sm font-medium text-base-content">{programme.name}</p>
+            </button>
+          <% end %>
+        </div>
+      <% end %>
 
       <%= if @error do %>
-        <p class="mt-3 text-sm text-error flex items-center gap-1">
+        <p class="mt-2 text-sm text-error flex items-center gap-1">
           <.icon name="hero-exclamation-circle" class="w-4 h-4" /> {@error}
         </p>
       <% end %>
 
-      <div class="mt-8 flex justify-between">
-        <button
-          type="button"
-          phx-click="back"
-          phx-target={@myself}
-          class="btn btn-ghost"
-        >
-          ← Back
-        </button>
-
-        <button
-          type="button"
-          phx-click="next"
-          phx-target={@myself}
-          class="btn btn-primary px-8"
-        >
+      <div class="mt-8 flex justify-end">
+        <button type="button" phx-click="next" phx-target={@myself} class="btn btn-primary px-8">
           Next <span aria-hidden="true">→</span>
         </button>
       </div>
@@ -89,27 +70,24 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Programmes do
 
   @impl true
   def handle_event("select_program", %{"id" => id, "name" => name}, socket) do
-    {:noreply, assign(socket, selected_id: String.to_integer(id), selected_name: name, error: nil)}
+    {:noreply,
+     assign(socket, selected_id: String.to_integer(id), selected_name: name, error: nil)}
   end
 
   def handle_event("next", _params, socket) do
-    case socket.assigns.selected_id do
-      nil ->
-        {:noreply, assign(socket, error: "Please select a programme to continue.")}
+    if is_nil(socket.assigns.selected_id) do
+      {:noreply, assign(socket, error: "Please select a programme to continue.")}
+    else
+      send(
+        self(),
+        {:next_step,
+         %{
+           program_id: socket.assigns.selected_id,
+           program_name: socket.assigns.selected_name
+         }}
+      )
 
-      _id ->
-        send(self(), {:next_step, %{
-          program_id: socket.assigns.selected_id,
-          program_name: socket.assigns.selected_name
-        }})
-
-        {:noreply, socket}
+      {:noreply, socket}
     end
-  end
-
-  @impl true
-  def handle_event("back", _params, socket) do
-    send(self(), :prev_step)
-    {:noreply, socket}
   end
 end

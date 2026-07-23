@@ -10,6 +10,26 @@ defmodule CuzCoreConnectWeb.StudentLive.Dashboard.MyRegistrationsComponent do
   end
 
   @impl true
+  def handle_event("resubmit", %{"id" => id}, socket) do
+    registration = Registrations.get_registration!(id)
+    actor = socket.assigns.current_scope && socket.assigns.current_scope.user
+
+    case Registrations.resubmit_registration(registration, actor) do
+      {:ok, _} ->
+        registrations =
+          Registrations.list_registrations_by_student(socket.assigns.current_scope.user.id)
+
+        {:noreply,
+         socket
+         |> put_flash(:info, "Registration resubmitted for review.")
+         |> assign(:registrations, registrations)}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Unable to resubmit this registration.")}
+    end
+  end
+
+  @impl true
   def render(assigns) do
     ~H"""
     <div>
@@ -51,6 +71,36 @@ defmodule CuzCoreConnectWeb.StudentLive.Dashboard.MyRegistrationsComponent do
                   </div>
                 <% end %>
               </div>
+
+              <%= if reg.registration_status == "REJECTED" do %>
+                <div class="mt-4 p-3 rounded-lg bg-error/10 border border-error/20 flex flex-wrap items-center justify-between gap-3">
+                  <p class="text-sm text-error">
+                    Rejected at <strong>{String.capitalize(reg.rejected_stage || "a stage")}</strong>: {reg.rejection_reason ||
+                      "No reason provided."}
+                  </p>
+                  <.button
+                    phx-click="resubmit"
+                    phx-value-id={reg.id}
+                    phx-target={@myself}
+                    data-confirm="Resubmit this registration for review?"
+                    class="btn-xs bg-primary text-primary-content"
+                  >
+                    Revise &amp; Resubmit
+                  </.button>
+                </div>
+              <% end %>
+
+              <%= if reg.registration_status == "APPROVED" do %>
+                <div class="mt-4 flex justify-end">
+                  <.link
+                    href={~p"/registration/tracking/#{reg.tracking_number}/proof"}
+                    target="_blank"
+                    class="btn btn-sm bg-indigo-600 text-white hover:bg-indigo-700"
+                  >
+                    <.icon name="hero-document-check" class="w-4 h-4" /> Proof of Registration
+                  </.link>
+                </div>
+              <% end %>
             </div>
           <% end %>
         </div>

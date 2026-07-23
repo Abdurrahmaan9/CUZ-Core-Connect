@@ -23,11 +23,11 @@ defmodule CuzCoreConnect.Pages.PageSeeds do
 
   defp all_pages do
     admin_pages() ++
-    academics_pages() ++
-    finance_pages() ++
-    hod_pages() ++
-    retention_pages() ++
-    student_pages()
+      academics_pages() ++
+      finance_pages() ++
+      hod_pages() ++
+      retention_pages() ++
+      student_pages()
   end
 
   # ── Admin ─────────────────────────────────────────────────────────────────

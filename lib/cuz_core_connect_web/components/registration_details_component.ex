@@ -8,7 +8,13 @@ defmodule CuzCoreConnectWeb.RegistrationDetailsComponent do
 
   @impl true
   def handle_event("close", _, socket) do
-    send(self(), {:close_details, nil})
+    # Close by clearing selection on the parent pending-list live_component.
+    if socket.assigns[:parent_module] && socket.assigns[:parent_id] do
+      send_update(socket.assigns.parent_module, id: socket.assigns.parent_id, selected: :clear)
+    else
+      send(self(), {:close_details, nil})
+    end
+
     {:noreply, socket}
   end
 
@@ -20,19 +26,30 @@ defmodule CuzCoreConnectWeb.RegistrationDetailsComponent do
   @impl true
   def render(assigns) do
     ~H"""
-    <div class="fixed inset-0 bg-black/50 z-40 flex items-center justify-center" phx-click="close" phx-target={@myself}>
+    <div
+      id={"registration-details-overlay-#{@id}"}
+      phx-hook="ModalPortal"
+      class="fixed inset-0 z-[100] grid place-items-center bg-black/50 p-4 sm:p-6"
+      phx-click="close"
+      phx-target={@myself}
+      phx-window-keydown="close"
+      phx-key="Escape"
+    >
       <div
-        class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+        class="relative z-[101] flex max-h-[min(90vh,900px)] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-base-100 shadow-2xl"
         phx-click="click_modal"
         phx-target={@myself}
       >
         <%!-- Header --%>
-        <div class="sticky top-0 bg-gradient-to-r from-base-200 to-base-100 px-6 py-4 border-b border-base-300 flex items-center justify-between">
+        <div class="sticky top-0 z-10 flex items-center justify-between border-b border-base-300 bg-gradient-to-r from-base-200 to-base-100 px-6 py-4">
           <div>
             <h2 class="text-2xl font-bold">{@registration.student_names}</h2>
-            <p class="text-sm text-base-content/60 mt-1">Tracking #{@registration.tracking_number}</p>
+            <p class="mt-1 text-sm text-base-content/60">
+              Tracking #{@registration.tracking_number}
+            </p>
           </div>
           <button
+            type="button"
             phx-click="close"
             phx-target={@myself}
             class="btn btn-ghost btn-circle btn-sm"
@@ -43,7 +60,7 @@ defmodule CuzCoreConnectWeb.RegistrationDetailsComponent do
         </div>
 
         <%!-- Content --%>
-        <div class="p-6 space-y-6">
+        <div class="flex-1 space-y-6 overflow-y-auto p-6">
           <%!-- Personal Information --%>
           <section class="space-y-4">
             <h3 class="text-lg font-semibold border-b border-base-300 pb-3">Personal Information</h3>
@@ -62,7 +79,9 @@ defmodule CuzCoreConnectWeb.RegistrationDetailsComponent do
               </div>
               <div>
                 <p class="text-sm font-medium text-base-content/70">Submitted</p>
-                <p class="text-base">{Calendar.strftime(@registration.inserted_at, "%b %d, %Y at %H:%M")}</p>
+                <p class="text-base">
+                  {Calendar.strftime(@registration.inserted_at, "%b %d, %Y at %H:%M")}
+                </p>
               </div>
             </div>
           </section>
@@ -73,19 +92,27 @@ defmodule CuzCoreConnectWeb.RegistrationDetailsComponent do
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <p class="text-sm font-medium text-base-content/70">Program</p>
-                <p class="text-base">{get_in(@registration.student_program_details, ["program_name"]) || "—"}</p>
+                <p class="text-base">
+                  {get_in(@registration.student_program_details, ["program_name"]) || "—"}
+                </p>
               </div>
               <div>
                 <p class="text-sm font-medium text-base-content/70">Academic Year</p>
-                <p class="text-base">{get_in(@registration.student_program_details, ["academic_year"]) || "—"}</p>
+                <p class="text-base">
+                  {get_in(@registration.student_program_details, ["academic_year"]) || "—"}
+                </p>
               </div>
               <div>
                 <p class="text-sm font-medium text-base-content/70">Semester</p>
-                <p class="text-base">{get_in(@registration.student_program_details, ["semester"]) || "—"}</p>
+                <p class="text-base">
+                  {get_in(@registration.student_program_details, ["semester"]) || "—"}
+                </p>
               </div>
               <div>
                 <p class="text-sm font-medium text-base-content/70">Intake</p>
-                <p class="text-base">{get_in(@registration.student_program_details, ["intake"]) || "—"}</p>
+                <p class="text-base">
+                  {get_in(@registration.student_program_details, ["intake"]) || "—"}
+                </p>
               </div>
             </div>
           </section>
@@ -101,10 +128,10 @@ defmodule CuzCoreConnectWeb.RegistrationDetailsComponent do
                       <p class="font-mono font-medium text-sm">{course["code"]}</p>
                       <p class="text-sm text-base-content/70">{course["name"]}</p>
                     </div>
-                    <%= if course["credit_hours"] do %>
+                    <%= if course["credits"] do %>
                       <div class="text-right">
                         <p class="text-xs font-medium text-base-content/60">Credits</p>
-                        <p class="font-semibold">{course["credit_hours"]}</p>
+                        <p class="font-semibold">{course["credits"]}</p>
                       </div>
                     <% end %>
                   </div>
@@ -114,19 +141,21 @@ defmodule CuzCoreConnectWeb.RegistrationDetailsComponent do
           <% end %>
 
           <%!-- Payment Receipts --%>
-          <%= if @registration.payment_receipts != [] do %>
+          <%= if receipts(@registration) != [] do %>
             <section class="space-y-4">
               <h3 class="text-lg font-semibold border-b border-base-300 pb-3">Payment Receipts</h3>
               <div class="space-y-3">
-                <%= for receipt <- @registration.payment_receipts do %>
+                <%= for receipt <- receipts(@registration) do %>
                   <div class="border border-base-300 rounded-lg overflow-hidden">
                     <%!-- Image preview --%>
-                    <%= if String.starts_with?(receipt.content_type, "image/") do %>
-                      <img
-                        src={~p"/receipts/#{receipt.id}"}
-                        alt={receipt.original_filename}
-                        class="w-full max-h-96 object-contain bg-base-200"
-                      />
+                    <%= if String.starts_with?(receipt.content_type || "", "image/") do %>
+                      <a href={~p"/receipts/#{receipt.id}"} target="_blank" rel="noopener noreferrer">
+                        <img
+                          src={~p"/receipts/#{receipt.id}"}
+                          alt={receipt.original_filename}
+                          class="w-full max-h-96 object-contain bg-base-200"
+                        />
+                      </a>
                     <% end %>
                     <%!-- File info bar --%>
                     <div class="flex items-center gap-3 p-3 bg-base-100">
@@ -134,16 +163,32 @@ defmodule CuzCoreConnectWeb.RegistrationDetailsComponent do
                       <div class="flex-1 min-w-0">
                         <p class="text-sm font-medium truncate">{receipt.original_filename}</p>
                         <p class="text-xs text-base-content/50">
-                          {receipt.content_type} · {format_file_size(receipt.file_size)}
+                          {receipt.content_type} · {format_file_size(receipt.file_size || 0)}
                         </p>
                       </div>
-                      <p class="text-xs text-base-content/40 shrink-0">
+                      <div title="view" class="inline-flex">
+                        <a
+                          href={~p"/receipts/#{receipt.id}"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          class="btn btn-ghost btn-sm btn-square text-info hover:bg-info/10"
+                          aria-label="View receipt"
+                        >
+                          <.icon name="hero-eye" class="size-5" />
+                        </a>
+                      </div>
+                      <p class="text-xs text-base-content/40 shrink-0 hidden sm:block">
                         {Calendar.strftime(receipt.inserted_at, "%b %d, %Y")}
                       </p>
                     </div>
                   </div>
                 <% end %>
               </div>
+            </section>
+          <% else %>
+            <section class="space-y-2">
+              <h3 class="text-lg font-semibold border-b border-base-300 pb-3">Payment Receipts</h3>
+              <p class="text-sm text-base-content/60">No payment receipts were uploaded with this registration.</p>
             </section>
           <% end %>
 
@@ -204,8 +249,9 @@ defmodule CuzCoreConnectWeb.RegistrationDetailsComponent do
         </div>
 
         <%!-- Footer --%>
-        <div class="bg-base-100 px-6 py-4 border-t border-base-300 flex justify-end gap-2">
+        <div class="shrink-0 flex justify-end gap-2 border-t border-base-300 bg-base-100 px-6 py-4">
           <button
+            type="button"
             phx-click="close"
             phx-target={@myself}
             class="btn btn-outline btn-sm"
@@ -223,10 +269,9 @@ defmodule CuzCoreConnectWeb.RegistrationDetailsComponent do
   defp status_badge_color("PENDING"), do: "badge-warning"
   defp status_badge_color(_), do: "badge-info"
 
-  defp has_receipts?(%{payment_receipts: receipts}) do
-    is_list(receipts) && Enum.any?(receipts)
-  end
-  defp has_receipts?(_), do: false
+  defp receipts(%{payment_receipts: %Ecto.Association.NotLoaded{}}), do: []
+  defp receipts(%{payment_receipts: receipts}) when is_list(receipts), do: receipts
+  defp receipts(_), do: []
 
   defp format_file_size(bytes) when bytes < 1024, do: "#{bytes} B"
   defp format_file_size(bytes) when bytes < 1_048_576, do: "#{Float.round(bytes / 1024, 1)} KB"

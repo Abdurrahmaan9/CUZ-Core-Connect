@@ -11,7 +11,7 @@ defmodule CuzCoreConnect.Accounts.User do
     field :authenticated_at, :utc_datetime, virtual: true
     field :user_role, :string, default: "student"
     field :status, :string, default: "PENDING"
-    field :is_active, :boolean, default: false
+    field :is_active, :boolean, default: true
     field :deleted_at, :naive_datetime
 
     timestamps(type: :utc_datetime)
@@ -35,9 +35,20 @@ defmodule CuzCoreConnect.Accounts.User do
   end
 
   @doc """
-  A user changeset for registration.
+  Changeset for admin create/edit of existing users (role, active flag, etc.).
+  """
+  def admin_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:email, :username, :user_role, :status, :is_active])
+    |> validate_required([:email, :username, :user_role])
+    |> validate_inclusion(:user_role, ~w(admin academics finance hod student retention))
+    |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must have the @ sign and no spaces")
+    |> unique_constraint(:email)
+    |> unique_constraint(:username)
+  end
 
-  It validates email, password, and other user fields for new user registration.
+  @doc """
+  A user changeset for registration.
   """
   def registration_changeset(user, attrs, opts \\ []) do
     user

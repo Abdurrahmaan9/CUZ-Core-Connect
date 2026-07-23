@@ -3,18 +3,29 @@ defmodule CuzCoreConnectWeb.Admin.UserAccounts.Internal do
 
   alias CuzCoreConnect.Accounts
   alias CuzCoreConnect.Accounts.User
-  alias CuzCoreConnectWeb.Layouts
+
+  @internal_roles [
+    {"Admin", "admin"},
+    {"Academics", "academics"},
+    {"Finance", "finance"},
+    {"HOD", "hod"},
+    {"Retention", "retention"}
+  ]
 
   @impl true
   def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> assign(:page_title, "Internal User Management")
-     |> assign(:current_page, :internal_users)
-     |> assign(:show_user_page_access_component, false)
-     |> assign(:user, nil)
-     |> assign(:users, list_users())
-     |> assign(:form, to_form(%{}))}
+     |> assign(
+       page_title: "Internal Users",
+       current_page: :internal_users,
+       show_form: false,
+       form: nil,
+       show_page_access: false,
+       access_user: nil,
+       query: ""
+     )
+     |> load_users()}
   end
 
   @impl true
@@ -23,265 +34,391 @@ defmodule CuzCoreConnectWeb.Admin.UserAccounts.Internal do
   end
 
   defp apply_action(socket, :new, _params) do
+    form =
+      %User{is_active: true, status: "ACTIVE", user_role: "academics"}
+      |> User.admin_changeset(%{})
+      |> to_form()
+
     socket
-    |> assign(:page_title, "New User")
-    |> assign(:user, %User{})
-    |> assign(:changeset, User.email_changeset(%User{}, %{}))
+    |> assign(page_title: "New Internal User", show_form: true, form: form, access_user: nil)
   end
 
   defp apply_action(socket, :edit, %{"id" => id}) do
-    case Accounts.get_user!(id) do
-      %User{} = user ->
-        socket
-        |> assign(:page_title, "Edit User")
-        |> assign(:user, user)
-        |> assign(:changeset, User.email_changeset(user, %{}))
+    user = Accounts.get_user!(id)
 
-      _ ->
-        socket
-        |> put_flash(:error, "User not found")
-        |> redirect(to: ~p"/admin/user-accounts/internal")
+    if user.user_role == "student" do
+      socket
+      |> put_flash(:error, "That account is an external (student) user.")
+      |> push_navigate(to: ~p"/admin/user-accounts/internal")
+    else
+      form = user |> User.admin_changeset(%{}) |> to_form()
+
+      socket
+      |> assign(page_title: "Edit Internal User", show_form: true, form: form, access_user: nil)
     end
   end
 
   defp apply_action(socket, :index, _params) do
     socket
-    |> assign(:page_title, "User Management")
-    |> assign(:user, nil)
+    |> assign(
+      page_title: "Internal Users",
+      show_form: false,
+      form: nil,
+      access_user: nil,
+      show_page_access: false
+    )
   end
 
   @impl true
-  def handle_info({:create_user, user_params}, socket) do
-    case Accounts.register_user(user_params) do
-      {:ok, _user} ->
-        {:noreply,
-         socket
-         |> put_flash(:info, "User created successfully")
-         |> push_navigate(to: ~p"/admin/user-accounts/internal")}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply,
-         socket
-         |> assign(:changeset, changeset)}
-    end
+  def handle_event("search", %{"query" => query}, socket) do
+    {:noreply, socket |> assign(:query, query) |> load_users()}
   end
 
-  @impl true
-  def handle_info({:update_user, _user_params, _user_id}, socket) do
-    # TODO: Implement user update logic
+  def handle_event("new", _params, socket) do
+    {:noreply, push_patch(socket, to: ~p"/admin/user-accounts/internal/new")}
+  end
+
+  def handle_event("close", _params, socket) do
     {:noreply,
      socket
-     |> put_flash(:info, "User updated successfully")
-     |> push_navigate(to: ~p"/admin/user-accounts/internal")}
+     |> assign(show_form: false, form: nil, show_page_access: false, access_user: nil)
+     |> push_patch(to: ~p"/admin/user-accounts/internal")}
   end
 
-  @impl true
-  def handle_info({CuzCoreConnectWeb.Admin.UserPageAccessComponent, {key, msg}}, socket) do
-    socket =
-      case key do
-        :error ->
-          socket
-          |> put_flash(:error, msg)
+  def handle_event("validate", %{"user" => params}, socket) do
+    form =
+      socket.assigns.form.data
+      |> User.admin_changeset(params)
+      |> Map.put(:action, :validate)
+      |> to_form()
 
-        :success ->
-          socket
-          |> put_flash(:info, msg)
+    {:noreply, assign(socket, :form, form)}
+  end
 
-        _ ->
-          socket
-          |> put_flash(:info, msg)
+  def handle_event("save", %{"user" => params}, socket) do
+    params = normalize_params(params, default_role: "academics")
+
+    result =
+      case socket.assigns.form.data.id do
+        nil -> Accounts.register_user(params, notify: true)
+        _id -> Accounts.update_user(socket.assigns.form.data, params)
       end
 
+    case result do
+      {:ok, user} ->
+        flash =
+          if is_nil(socket.assigns.form.data.id) do
+            "User created. Login credentials were emailed to #{user.email}."
+          else
+            "User updated successfully."
+          end
+
+        {:noreply,
+         socket
+         |> put_flash(:info, flash)
+         |> assign(show_form: false, form: nil)
+         |> load_users()
+         |> push_patch(to: ~p"/admin/user-accounts/internal")}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply, assign(socket, :form, to_form(changeset))}
+    end
+  end
+
+  def handle_event("delete_user", %{"id" => id}, socket) do
+    user = Accounts.get_user!(id)
+
+    case Accounts.deactivate_user(user) do
+      {:ok, _} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "User deactivated.")
+         |> load_users()}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Failed to deactivate user.")}
+    end
+  end
+
+  def handle_event("edit_user_page_access", %{"id" => id}, socket) do
+    user = Accounts.get_user!(id)
+
     {:noreply,
      socket
-      |> assign(:show_user_page_access_component, false)
-      |> assign(:user, nil)
+     |> assign(show_page_access: true, access_user: user, show_form: false)}
+  end
+
+  def handle_event("noop", _params, socket), do: {:noreply, socket}
+
+  @impl true
+  def handle_info({CuzCoreConnectWeb.Admin.UserPageAccessComponent, {_key, msg}}, socket) do
+    {:noreply,
+     socket
+     |> put_flash(:info, msg)
+     |> assign(show_page_access: false, access_user: nil)}
+  end
+
+  # Swoosh.Adapters.Test (and Local in some setups) notifies the calling process.
+  def handle_info({:email, _email}, socket), do: {:noreply, socket}
+
+  defp load_users(socket) do
+    query = String.trim(socket.assigns[:query] || "")
+    all_users = Accounts.list_all_internal_users()
+
+    users =
+      Enum.filter(all_users, fn user ->
+        query == "" or
+          String.contains?(String.downcase(user.email || ""), String.downcase(query)) or
+          String.contains?(String.downcase(user.username || ""), String.downcase(query))
+      end)
+
+    stats = %{
+      total: length(all_users),
+      active: Enum.count(all_users, & &1.is_active),
+      inactive: Enum.count(all_users, &(not &1.is_active))
     }
+
+    socket
+    |> assign(:users, users)
+    |> assign(:stats, stats)
   end
 
-  @impl true
-  def handle_event("delete_user", %{"id" => id}, socket) do
-    case Accounts.get_user!(id) do
-      %User{} = _user ->
-        # Here you would implement user deletion logic
-        # For now, we'll just show a success message
-        {:noreply,
-         socket
-         |> put_flash(:info, "User deleted successfully")
-         |> assign(:users, list_users())}
+  defp normalize_params(params, opts) do
+    default_role = Keyword.get(opts, :default_role, "academics")
 
-      _ ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "User not found")}
-    end
+    params =
+      params
+      |> Map.new(fn {k, v} -> {to_string(k), v} end)
+      |> Map.put_new("is_active", "false")
+      |> Map.put_new("status", "ACTIVE")
+      |> Map.put_new("user_role", default_role)
+
+    params =
+      case params["is_active"] do
+        v when v in [true, "true", "on", "1"] -> Map.put(params, "is_active", true)
+        _ -> Map.put(params, "is_active", false)
+      end
+
+    username =
+      case String.trim(params["username"] || "") do
+        "" ->
+          params["email"]
+          |> to_string()
+          |> String.split("@")
+          |> List.first()
+          |> Kernel.||("user")
+
+        name ->
+          name
+      end
+
+    Map.put(params, "username", username)
   end
 
-  @impl true
-  def handle_event("edit_user_page_access", %{"id" => id}, socket) do
-    case Accounts.get_user!(id) do
-      %User{} = user ->
-        {:noreply,
-         socket
-         |> assign(:show_user_page_access_component, true)
-         |> assign(:user, user)}
-
-      _ ->
-        {:noreply,
-         socket
-         |> put_flash(:error, "User not found")}
-    end
-  end
-
-  # Helper functions
-  defp list_users do
-    Accounts.list_all_internal_users()
-  end
+  defp role_badge("admin"), do: "badge-primary"
+  defp role_badge("academics"), do: "badge-info"
+  defp role_badge("finance"), do: "badge-success"
+  defp role_badge("hod"), do: "badge-warning"
+  defp role_badge("retention"), do: "badge-secondary"
+  defp role_badge(_), do: "badge-neutral"
 
   @impl true
   def render(assigns) do
+    assigns = assign(assigns, :role_options, @internal_roles)
+
     ~H"""
-    <Layouts.user flash={@flash} current_scope={@current_scope} page_title={@page_title} current_page={@current_page}>
-      <div class="min-h-screen bg-base-100">
-        <!-- Admin Header -->
-        <div class="bg-base-200 border-b border-base-300">
-          <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center py-6">
-              <div>
-                <h1 class="text-2xl font-bold text-base-content">User Management</h1>
-                <p class="text-sm text-base-content/70 mt-1">Manage system users and permissions</p>
-              </div>
-              <div class="flex items-center space-x-4">
-                <.link href={~p"/admin/dashboard"} class="btn btn-ghost btn-sm">
-                  Back to Dashboard
-                </.link>
-                <.link href={~p"/admin/user-accounts/internal/new"} class="btn btn-primary btn-sm">Add User</.link>
-              </div>
-            </div>
+    <Layouts.user
+      flash={@flash}
+      current_scope={@current_scope}
+      page_title={@page_title}
+      current_page={@current_page}
+    >
+      <div class="space-y-6">
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 class="text-2xl font-bold text-base-content">Internal Users</h1>
+            <p class="text-sm text-base-content/60">
+              Staff accounts (admin, academics, finance, HOD, retention).
+            </p>
+          </div>
+          <button type="button" phx-click="new" class="btn btn-primary btn-sm gap-2">
+            <.icon name="hero-plus" class="size-4" /> New user
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div class="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
+            <p class="text-sm text-base-content/60">Total</p>
+            <p class="text-xl font-semibold">{@stats.total}</p>
+          </div>
+          <div class="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
+            <p class="text-sm text-base-content/60">Active</p>
+            <p class="text-xl font-semibold text-success">{@stats.active}</p>
+          </div>
+          <div class="rounded-box border border-base-300 bg-base-100 p-5 shadow-sm">
+            <p class="text-sm text-base-content/60">Inactive</p>
+            <p class="text-xl font-semibold text-error">{@stats.inactive}</p>
           </div>
         </div>
 
-    <!-- Main Content -->
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <%= case @live_action do %>
-            <% :new -> %>
-              <.live_component
-                module={__MODULE__.FormComponent}
-                id="user-form"
-                user={@user}
-                changeset={@changeset}
-                current_user={@current_scope.user}
+        <div class="rounded-box border border-base-300 bg-base-100 shadow-sm">
+          <div class="flex flex-col gap-3 border-b border-base-300 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <h2 class="font-semibold text-base-content">All internal users</h2>
+            <form phx-change="search" id="internal-user-search" class="w-full sm:w-72">
+              <input
+                type="search"
+                name="query"
+                value={@query}
+                placeholder="Search email or username…"
+                class="input input-bordered input-sm w-full"
               />
-            <% :edit -> %>
-              <.live_component
-                module={__MODULE__.FormComponent}
-                id="user-form-edit"
-                user={@user}
-                changeset={@changeset}
-                current_user={@current_scope.user}
-              />
-            <% _ -> %>
-              <div class="bg-base-100 shadow-lg rounded-box">
-                <div class="px-4 py-5 sm:p-6">
-                  <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-lg font-semibold text-base-content">All Users</h3>
-                    <div class="flex items-center space-x-2">
-                      <input
-                        type="text"
-                        placeholder="Search users..."
-                        class="input input-bordered input-sm w-full max-w-xs"
-                      />
-                      <button class="btn btn-outline btn-sm">Search</button>
-                    </div>
-                  </div>
+            </form>
+          </div>
 
-                  <div class="overflow-hidden shadow ring-1 ring-base-300 md:rounded-lg">
-                    <table class="table table-zebra w-full">
-                      <thead>
-                        <tr>
-                          <th class="text-left text-xs font-medium text-base-content/70">User</th>
-                          <th class="text-left text-xs font-medium text-base-content/70">Role</th>
-                          <th class="text-left text-xs font-medium text-base-content/70">Status</th>
-                          <th class="text-left text-xs font-medium text-base-content/70">Created</th>
-                          <th class="text-left text-xs font-medium text-base-content/70">Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <%= for user <- @users do %>
-                          <tr>
-                            <td>
-                              <div class="flex items-center space-x-3">
-                                <div class="avatar placeholder">
-                                  <div class="bg-neutral text-neutral-content rounded-full w-10 h-10">
-                                    <span class="text-sm font-medium">
-                                      {String.first(user.email)}
-                                    </span>
-                                  </div>
-                                </div>
-                                <div>
-                                  <div class="text-sm font-medium text-base-content">{user.email}</div>
-                                  <div class="text-sm text-base-content/50">ID: {user.id}</div>
-                                </div>
-                              </div>
-                            </td>
-                            <td>
-                              <div class={"badge badge-sm " <>
-                                case user.user_role do
-                                  "admin" -> "badge-primary"
-                                  "academics" -> "badge-info"
-                                  "finance" -> "badge-success"
-                                  "hod" -> "badge-warning"
-                                  "student" -> "badge-secondary"
-                                  _ -> "badge-neutral"
-                                end}>
-                                {user.user_role}
-                              </div>
-                            </td>
-                            <td>
-                              <div class={"badge badge-sm " <>
-                                if(user.is_active, do: "badge-success", else: "badge-error")}>
-                                {if(user.is_active, do: "Active", else: "Inactive")}
-                              </div>
-                            </td>
-                            <td class="text-sm text-base-content/70">
-                              {format_display_datetime(user.inserted_at)}
-                            </td>
-                            <td>
-                              <div class="flex space-x-2">
-                                <.link href={~p"/admin/user-accounts/internal/#{user.id}/edit"} class="btn btn-xs btn-primary">Edit</.link>
-                                <button
-                                  phx-click="edit_user_page_access"
-                                  phx-value-id={user.id}
-                                  class="btn btn-xs btn-error"
-                                >
-                                  privileges
-                                </button>
-                                <button
-                                  phx-click="delete_user"
-                                  phx-value-id={user.id}
-                                  class="btn btn-xs btn-error"
-                                  onclick="return confirm('Are you sure you want to delete this user?')"
-                                >
-                                  Delete
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-          <% end %>
+          <div class="overflow-x-auto">
+            <table class="table">
+              <thead>
+                <tr class="text-xs text-base-content/60">
+                  <th>User</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                  <th class="text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr :for={user <- @users} id={"internal-user-#{user.id}"} class="hover">
+                  <td>
+                    <div class="flex items-center gap-3">
+                      <div class="flex size-10 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                        {user.email |> String.first() |> String.upcase()}
+                      </div>
+                      <div>
+                        <p class="font-medium text-base-content">{user.email}</p>
+                        <p class="text-xs text-base-content/50">@{user.username}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span class={["badge badge-sm capitalize", role_badge(user.user_role)]}>
+                      {user.user_role}
+                    </span>
+                  </td>
+                  <td>
+                    <span class={[
+                      "badge badge-sm",
+                      if(user.is_active, do: "badge-success", else: "badge-error")
+                    ]}>
+                      {if(user.is_active, do: "Active", else: "Inactive")}
+                    </span>
+                  </td>
+                  <td class="text-sm text-base-content/70">
+                    {format_display_datetime(user.inserted_at)}
+                  </td>
+                  <td>
+                    <div class="flex justify-end gap-1">
+                      <.link
+                        patch={~p"/admin/user-accounts/internal/#{user.id}/edit"}
+                        class="btn btn-ghost btn-xs"
+                        title="Edit"
+                      >
+                        <.icon name="hero-pencil-square" class="size-4" />
+                      </.link>
+                      <button
+                        type="button"
+                        phx-click="edit_user_page_access"
+                        phx-value-id={user.id}
+                        class="btn btn-ghost btn-xs"
+                        title="Privileges"
+                      >
+                        <.icon name="hero-key" class="size-4" />
+                      </button>
+                      <button
+                        type="button"
+                        phx-click="delete_user"
+                        phx-value-id={user.id}
+                        data-confirm="Deactivate this user?"
+                        class="btn btn-ghost btn-xs text-error"
+                        title="Deactivate"
+                      >
+                        <.icon name="hero-trash" class="size-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                <tr :if={@users == []}>
+                  <td colspan="5" class="py-10 text-center text-base-content/50">
+                    No internal users found.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div
+        :if={@show_form && @form}
+        id="internal-user-form-modal"
+        class="fixed inset-0 z-[100] grid place-items-center bg-black/50 p-4"
+        phx-window-keydown="close"
+        phx-key="Escape"
+      >
+        <div class="w-full max-w-lg rounded-2xl bg-base-100 p-6 shadow-2xl" phx-click="noop">
+          <h3 class="mb-1 text-lg font-bold">
+            {if @form.data.id, do: "Edit internal user", else: "Create internal user"}
+          </h3>
+          <p class="mb-4 text-sm text-base-content/60">
+            {if @form.data.id,
+              do: "Update account details and role.",
+              else: "A secure password is generated automatically."}
+          </p>
+
+          <.form
+            for={@form}
+            id="internal-user-form"
+            phx-change="validate"
+            phx-submit="save"
+            class="space-y-4"
+          >
+            <.input field={@form[:email]} type="email" label="Email" required />
+            <.input field={@form[:username]} type="text" label="Username" required />
+            <.input
+              field={@form[:user_role]}
+              type="select"
+              label="Role"
+              options={@role_options}
+              required
+            />
+            <.input field={@form[:is_active]} type="checkbox" label="Active user" />
+
+            <div
+              :if={is_nil(@form.data.id)}
+              class="rounded-box border border-info/30 bg-info/10 p-3 text-sm text-base-content/80"
+            >
+              <.icon name="hero-information-circle" class="mr-1 inline size-4 text-info" />
+              A secure password is generated and emailed to this address. In development, open
+              <a href="/dev/mailbox" class="link link-primary" target="_blank" rel="noopener">
+                /dev/mailbox
+              </a>
+              to view the message.
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2">
+              <button type="button" phx-click="close" class="btn btn-ghost">Cancel</button>
+              <button type="submit" class="btn btn-primary">
+                {if @form.data.id, do: "Update user", else: "Create user"}
+              </button>
+            </div>
+          </.form>
         </div>
       </div>
 
       <.live_component
-        :if={@show_user_page_access_component && not is_nil(@user)}
+        :if={@show_page_access && @access_user}
         module={CuzCoreConnectWeb.Admin.UserPageAccessComponent}
-        id={"page-access-#{@user.id}"}
-        user={@user}
+        id={"page-access-#{@access_user.id}"}
+        user={@access_user}
       />
     </Layouts.user>
     """

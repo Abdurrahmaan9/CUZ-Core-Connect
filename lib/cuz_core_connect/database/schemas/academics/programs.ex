@@ -11,7 +11,6 @@ defmodule CuzCoreConnect.Academics.Programmes do
 
     has_many :program_courses, CuzCoreConnect.Academics.ProgramCourse, foreign_key: :program_id
 
-
     timestamps()
   end
 
@@ -22,5 +21,4 @@ defmodule CuzCoreConnect.Academics.Programmes do
     |> validate_required([:name, :code])
     |> unique_constraint(:code)
   end
-
 end

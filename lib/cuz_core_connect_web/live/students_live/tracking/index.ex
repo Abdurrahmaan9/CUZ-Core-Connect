@@ -7,7 +7,8 @@ defmodule CuzCoreConnectWeb.Student.Tracking.Index do
   def mount(_params, _session, socket) do
     {:ok,
      socket
-     |> assign(:current_scope, nil)
+     |> assign(:page_title, "Track Registration")
+     |> assign(:current_page, :student_registration_tracking)
      |> assign(:tracking_number, "")
      |> assign(:registration, nil)
      |> assign(:searched, false)
@@ -16,256 +17,17 @@ defmodule CuzCoreConnectWeb.Student.Tracking.Index do
   end
 
   @impl true
-  def render(assigns) do
-    ~H"""
-    <Layouts.unauth flash={@flash}>
-      <:header>
-        <CuzCoreConnectWeb.Navigations.Unauth.header show_mobile_menu={@show_mobile_menu} />
-      </:header>
-      <div class="max-w-4xl mx-auto py-8 px-4 sm:px-6">
-        <div class="text-center mb-8">
-          <h1 class="text-2xl sm:text-3xl font-bold text-base-content mb-2">Track Your Registration</h1>
-          <p class="text-sm sm:text-base text-base-content/70">
-            Enter your tracking number to check your registration status
-          </p>
-        </div>
-
-        <div class="bg-base-100 rounded-2xl shadow-sm border border-base-200 p-4 sm:p-6 lg:p-8">
-          <!-- Search Form -->
-          <div class="mb-8">
-            <form phx-submit="search_tracking" class="flex flex-col sm:flex-row gap-4">
-              <div class="flex-1">
-                <input
-                  type="text"
-                  name="tracking_number"
-                  id="tracking_number"
-                  value={@tracking_number}
-                  placeholder="Enter tracking number (e.g., REG-17143584000-a1b2c3)"
-                  class="w-full px-3 py-2 sm:px-4 sm:py-3 text-sm sm:text-lg border border-base-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
-                  required
-                />
-              </div>
-              <button
-                type="submit"
-                phx-disable-with="Searching..."
-                class="w-full sm:w-auto px-4 py-2 sm:px-6 sm:py-3 bg-primary text-primary-content rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-colors flex items-center justify-center"
-              >
-                <.icon name="hero-magnifying-glass" class="w-4 h-4 sm:w-5 sm:h-5 mr-2" /> Track
-              </button>
-            </form>
-          </div>
-
-    <!-- Loading State -->
-          <%= if @loading do %>
-            <div class="text-center py-8 sm:py-12">
-              <div class="inline-block animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-primary">
-              </div>
-              <p class="mt-4 text-sm sm:text-base text-base-content/70">Searching for your registration...</p>
-            </div>
-          <% end %>
-
-    <!-- Registration Results -->
-          <%= if @searched && !@loading do %>
-            <%= if @registration do %>
-              <div class="space-y-4 sm:space-y-6">
-                <!-- Success Message -->
-                <div class="bg-success/10 border border-success/20 rounded-lg p-3 sm:p-4">
-                  <div class="flex items-center">
-                    <.icon name="hero-check-circle" class="w-5 h-5 sm:w-6 sm:h-6 text-success mr-2 sm:mr-3" />
-                    <div>
-                      <h3 class="text-success font-semibold text-sm sm:text-base">Registration Found</h3>
-                      <p class="text-success/80 text-xs sm:text-sm">Your registration details are shown below</p>
-                    </div>
-                  </div>
-                </div>
-
-    <!-- Registration Details -->
-                <div class="space-y-4 sm:space-y-6">
-                  <!-- Student ID -->
-                  <%= if @registration.student_id do %>
-                    <div class="bg-base-200 rounded-lg p-4 sm:p-6">
-                      <h3 class="text-base sm:text-lg font-semibold text-base-content mb-3 sm:mb-4 flex items-center">
-                        <.icon name="hero-identification" class="w-4 h-4 sm:w-5 sm:h-5 mr-2" /> Student Information
-                      </h3>
-                      <div>
-                        <span class="text-xs sm:text-sm font-medium text-base-content/70">Student Number:</span>
-                        <p class="text-base-content font-mono font-semibold text-base sm:text-lg break-all">
-                          {@registration.student_id}
-                        </p>
-                      </div>
-                    </div>
-                  <% end %>
-
-    <!-- Registration Status -->
-                  <div class="bg-base-200 rounded-lg p-4 sm:p-6">
-                    <h3 class="text-base sm:text-lg font-semibold text-base-content mb-3 sm:mb-4 flex items-center">
-                      <.icon name="hero-clipboard-document-check" class="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                      Registration Status
-                    </h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <span class="text-xs sm:text-sm font-medium text-base-content/70">Approval Status:</span>
-                        <div class="mt-1">
-                          <span class={[
-                            "inline-flex items-center px-2 py-1 sm:px-3 sm:py-1 rounded-full text-xs sm:text-sm font-medium",
-                            case @registration.approval_level do
-                              "approved" -> "bg-success/20 text-success"
-                              "pending" -> "bg-warning/20 text-warning"
-                              "rejected" -> "bg-error/20 text-error"
-                              _ -> "bg-base-300 text-base-content"
-                            end
-                          ]}>
-                            <.icon
-                              name={
-                                case @registration.approval_level do
-                                  "approved" -> "hero-check-circle"
-                                  "pending" -> "hero-clock"
-                                  "rejected" -> "hero-x-circle"
-                                  _ -> "hero-question-mark-circle"
-                                end
-                              }
-                              class="w-3 h-3 sm:w-4 sm:h-4 mr-1"
-                            />
-                            {String.capitalize(@registration.approval_level || "Unknown")}
-                          </span>
-                        </div>
-                      </div>
-                      <div>
-                        <span class="text-xs sm:text-sm font-medium text-base-content/70">Payment Status:</span>
-                        <div class="mt-1">
-                          <span class={[
-                            "inline-flex items-center px-2 py-1 sm:px-3 sm:py-1 rounded-full text-xs sm:text-sm font-medium",
-                            case @registration.payment_status do
-                              "verified" -> "bg-success/20 text-success"
-                              "pending" -> "bg-warning/20 text-warning"
-                              "rejected" -> "bg-error/20 text-error"
-                              _ -> "bg-base-300 text-base-content"
-                            end
-                          ]}>
-                            <.icon
-                              name={
-                                case @registration.payment_status do
-                                  "verified" -> "hero-check-circle"
-                                  "pending" -> "hero-clock"
-                                  "rejected" -> "hero-x-circle"
-                                  _ -> "hero-question-mark-circle"
-                                end
-                              }
-                              class="w-3 h-3 sm:w-4 sm:h-4 mr-1"
-                            />
-                            {String.capitalize(@registration.payment_status || "Unknown")}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-    <!-- Programme Details -->
-                <%= if @registration.student_program_details do %>
-                  <div class="bg-primary/10 rounded-lg p-4 sm:p-6">
-                    <h3 class="text-base sm:text-lg font-semibold text-base-content mb-3 sm:mb-4 flex items-center">
-                      <.icon name="hero-academic-cap" class="w-4 h-4 sm:w-5 sm:h-5 mr-2" /> Programme Details
-                    </h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      <div>
-                        <span class="text-xs sm:text-sm font-medium text-base-content/70">Programme:</span>
-                        <p class="text-sm sm:text-base text-base-content font-medium break-words">
-                          {@registration.student_program_details["program_name"]}
-                        </p>
-                      </div>
-                      <div>
-                        <span class="text-xs sm:text-sm font-medium text-base-content/70">Academic Year:</span>
-                        <p class="text-sm sm:text-base text-base-content">
-                          {@registration.student_program_details["academic_year"]}
-                        </p>
-                      </div>
-                      <div>
-                        <span class="text-xs sm:text-sm font-medium text-base-content/70">Semester:</span>
-                        <p class="text-sm sm:text-base text-base-content">
-                          {@registration.student_program_details["semester"]}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                <% end %>
-
-    <!-- Courses -->
-                <%= if @registration.student_courses && @registration.student_courses["selected_courses"] do %>
-                  <div class="bg-secondary/10 rounded-lg p-4 sm:p-6">
-                    <h3 class="text-base sm:text-lg font-semibold text-base-content mb-3 sm:mb-4 flex items-center">
-                      <.icon name="hero-book-open" class="w-4 h-4 sm:w-5 sm:h-5 mr-2" /> Registered Courses
-                    </h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                      <%= for course <- @registration.student_courses["selected_courses"] do %>
-                        <div class="bg-base-100 rounded-lg p-3 sm:p-4 border border-secondary/20">
-                          <div class="flex justify-between items-start mb-2">
-                            <span class="font-mono text-xs sm:text-sm text-secondary font-semibold break-all">
-                              {course["code"]}
-                            </span>
-                            <span class="text-xs sm:text-sm text-base-content/60 whitespace-nowrap">
-                              {course["credit_hours"]} cr
-                            </span>
-                          </div>
-                          <p class="text-xs sm:text-sm text-base-content font-medium break-words">{course["name"]}</p>
-                        </div>
-                      <% end %>
-                    </div>
-                    <div class="mt-4 pt-4 border-t border-secondary/20">
-                      <div class="flex justify-between items-center">
-                        <span class="text-xs sm:text-sm font-medium text-base-content/70">
-                          Total Credit Hours:
-                        </span>
-                        <span class="text-base sm:text-lg font-bold text-secondary">
-                          {@registration.student_courses["total_credit_hours"]}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                <% end %>
-              </div>
-            <% else %>
-              <!-- Not Found Message -->
-              <div class="text-center py-8 sm:py-12">
-                <.icon name="hero-exclamation-triangle" class="w-12 h-12 sm:w-16 sm:h-16 text-error mx-auto mb-4" />
-                <h3 class="text-lg sm:text-xl font-semibold text-base-content mb-2">Registration Not Found</h3>
-                <p class="text-sm sm:text-base text-base-content/70 mb-6 px-4">
-                  We couldn't find a registration with that tracking number. Please check the number and try again.
-                </p>
-                <div class="bg-base-200 rounded-lg p-3 sm:p-4 max-w-md mx-auto">
-                  <h4 class="font-medium text-base-content mb-2 text-sm sm:text-base">Tips:</h4>
-                  <ul class="text-xs sm:text-sm text-base-content/70 space-y-1 text-left">
-                    <li>• Make sure you entered the complete tracking number</li>
-                    <li>• Check for any typos or extra spaces</li>
-                    <li>• The format should be: REG-1234567890-abc123</li>
-                    <li>• Contact support if you continue to have issues</li>
-                  </ul>
-                </div>
-              </div>
-            <% end %>
-          <% end %>
-        </div>
-      </div>
-      <:footer>
-        <CuzCoreConnectWeb.Navigations.Unauth.footer />
-      </:footer>
-    </Layouts.unauth>
-    """
-  end
-
-    @impl true
   def handle_params(%{"tracking_number" => tracking_number}, _url, socket) do
-    if tracking_number && tracking_number != "" do
-      search_registration(socket, String.trim(tracking_number))
+    tracking_number = String.trim(tracking_number || "")
+
+    if tracking_number != "" do
+      search_registration(assign(socket, :tracking_number, tracking_number), tracking_number)
     else
       {:noreply, socket}
     end
   end
 
-  @impl true
-  def handle_params(%{}, _url, socket) do
-    {:noreply, socket}
-  end
+  def handle_params(_params, _url, socket), do: {:noreply, socket}
 
   @impl true
   def handle_event("search_tracking", %{"tracking_number" => tracking_number}, socket) do
@@ -281,12 +43,20 @@ defmodule CuzCoreConnectWeb.Student.Tracking.Index do
     search_registration(socket, tracking_number)
   end
 
-  @impl true
   def handle_event("toggle_mobile_menu", _params, socket) do
     {:noreply, assign(socket, :show_mobile_menu, !socket.assigns.show_mobile_menu)}
   end
 
-  # Private helper functions
+  def handle_event("clear_search", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:tracking_number, "")
+     |> assign(:registration, nil)
+     |> assign(:searched, false)
+     |> assign(:loading, false)
+     |> push_patch(to: ~p"/registration/tracking")}
+  end
+
   defp search_registration(socket, tracking_number) do
     case Registrations.get_registration_by_tracking_number(tracking_number) do
       nil ->
@@ -297,11 +67,452 @@ defmodule CuzCoreConnectWeb.Student.Tracking.Index do
          |> assign(:registration, nil)}
 
       registration ->
-        {:noreply,
-         socket
-         |> assign(:loading, false)
-         |> assign(:searched, true)
-         |> assign(:registration, registration)}
+        socket =
+          socket
+          |> assign(:loading, false)
+          |> assign(:searched, true)
+          |> assign(:registration, registration)
+
+        current_path = socket.assigns[:live_action]
+
+        # Avoid re-patching when already on the show route for this tracking number
+        # (handle_params already loaded it).
+        if current_path == :show and socket.assigns.tracking_number == registration.tracking_number do
+          {:noreply, socket}
+        else
+          {:noreply, push_patch(socket, to: ~p"/registration/tracking/#{registration.tracking_number}")}
+        end
     end
+  end
+
+  defp logged_in?(assigns) do
+    match?(%{user: %{id: _}}, assigns[:current_scope])
+  end
+
+  defp overall_status(registration) do
+    cond do
+      registration.registration_status in ["APPROVED", "REJECTED", "PENDING"] ->
+        registration.registration_status
+
+      registration.approval_level in ["approved", "rejected", "pending"] ->
+        String.upcase(registration.approval_level)
+
+      true ->
+        "PENDING"
+    end
+  end
+
+  defp overall_label("APPROVED"), do: "Approved"
+  defp overall_label("REJECTED"), do: "Rejected"
+  defp overall_label(_), do: "Pending"
+
+  defp overall_badge_class("APPROVED"), do: "bg-success/15 text-success border-success/30"
+  defp overall_badge_class("REJECTED"), do: "bg-error/15 text-error border-error/30"
+  defp overall_badge_class(_), do: "bg-warning/15 text-warning border-warning/30"
+
+  defp overall_icon("APPROVED"), do: "hero-check-badge"
+  defp overall_icon("REJECTED"), do: "hero-x-circle"
+  defp overall_icon(_), do: "hero-clock"
+
+  defp stage_status_icon("APPROVED"), do: "hero-check-circle"
+  defp stage_status_icon("REJECTED"), do: "hero-x-circle"
+  defp stage_status_icon(_), do: "hero-clock"
+
+  defp stage_tone("APPROVED"), do: "border-success/40 bg-success/10 text-success"
+  defp stage_tone("REJECTED"), do: "border-error/40 bg-error/10 text-error"
+  defp stage_tone(_), do: "border-warning/40 bg-warning/10 text-warning"
+
+  defp stage_connector("APPROVED"), do: "bg-success"
+  defp stage_connector("REJECTED"), do: "bg-error"
+  defp stage_connector(_), do: "bg-base-300"
+
+  defp payment_label("APPROVED"), do: "Verified"
+  defp payment_label("REJECTED"), do: "Rejected"
+  defp payment_label(_), do: "Pending"
+
+  defp format_datetime(%DateTime{} = dt), do: Calendar.strftime(dt, "%d %b %Y · %H:%M")
+  defp format_datetime(%NaiveDateTime{} = dt), do: Calendar.strftime(dt, "%d %b %Y · %H:%M")
+  defp format_datetime(_), do: "—"
+
+  defp approval_stages(registration) do
+    [
+      %{
+        key: "finance",
+        label: "Payment",
+        icon: "hero-banknotes",
+        status: registration.payment_status
+      },
+      %{
+        key: "academics",
+        label: "Academics",
+        icon: "hero-academic-cap",
+        status: registration.accademics_status
+      },
+      %{
+        key: "hod",
+        label: "HOD",
+        icon: "hero-building-office-2",
+        status: registration.hod_status
+      },
+      %{
+        key: "retention",
+        label: "Retention",
+        icon: "hero-clipboard-document-check",
+        status: registration.retention_status
+      }
+    ]
+  end
+
+  defp program_detail(registration, key) do
+    details = registration.student_program_details || %{}
+    Map.get(details, key) || Map.get(details, to_string(key))
+  end
+
+  defp selected_courses(registration) do
+    courses = registration.student_courses || %{}
+    Map.get(courses, "selected_courses") || Map.get(courses, :selected_courses) || []
+  end
+
+  defp total_credits(registration) do
+    courses = registration.student_courses || %{}
+    Map.get(courses, "total_credit_hours") || Map.get(courses, :total_credit_hours) || 0
+  end
+
+  @impl true
+  def render(assigns) do
+    overall = if assigns.registration, do: overall_status(assigns.registration), else: nil
+    stages = if assigns.registration, do: approval_stages(assigns.registration), else: []
+
+    assigns =
+      assigns
+      |> assign(:logged_in?, logged_in?(assigns))
+      |> assign(:overall, overall)
+      |> assign(:stages, stages)
+
+    ~H"""
+    <%= if @logged_in? do %>
+      <Layouts.user
+        flash={@flash}
+        current_scope={@current_scope}
+        page_title={@page_title}
+        current_page={@current_page}
+      >
+        <.tracking_body {assigns} />
+      </Layouts.user>
+    <% else %>
+      <Layouts.unauth flash={@flash} current_scope={@current_scope}>
+        <:header>
+          <CuzCoreConnectWeb.Navigations.Unauth.header show_mobile_menu={@show_mobile_menu} />
+        </:header>
+        <.tracking_body {assigns} />
+        <:footer>
+          <CuzCoreConnectWeb.Navigations.Unauth.footer />
+        </:footer>
+      </Layouts.unauth>
+    <% end %>
+    """
+  end
+
+  defp tracking_body(assigns) do
+    ~H"""
+    <div class={[
+      "mx-auto px-4 sm:px-6",
+      @logged_in? && "max-w-5xl py-2",
+      !@logged_in? && "max-w-5xl py-8 sm:py-12"
+    ]}>
+      <div class="relative overflow-hidden rounded-3xl border border-base-300/70 bg-gradient-to-br from-base-100 via-base-100 to-primary/5 shadow-sm">
+        <div class="pointer-events-none absolute -right-16 -top-16 size-56 rounded-full bg-primary/10 blur-3xl">
+        </div>
+        <div class="pointer-events-none absolute -bottom-20 -left-10 size-48 rounded-full bg-secondary/10 blur-3xl">
+        </div>
+
+        <div class="relative p-5 sm:p-8 lg:p-10 space-y-8">
+          <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div class="space-y-2">
+              <div class="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                <.icon name="hero-bolt" class="size-3.5" /> Live status check
+              </div>
+              <h1 class="text-2xl sm:text-3xl font-bold tracking-tight text-base-content">
+                Track Your Registration
+              </h1>
+              <p class="max-w-xl text-sm sm:text-base text-base-content/65">
+                Enter your tracking number to see approval progress across payment, academics, HOD, and retention.
+              </p>
+            </div>
+          </div>
+
+          <form
+            id="tracking-search-form"
+            phx-submit="search_tracking"
+            class="flex flex-col gap-3 sm:flex-row"
+          >
+            <label class="sr-only" for="tracking_number">Tracking number</label>
+            <div class="relative flex-1">
+              <.icon
+                name="hero-magnifying-glass"
+                class="pointer-events-none absolute left-3.5 top-1/2 size-5 -translate-y-1/2 text-base-content/40"
+              />
+              <input
+                type="text"
+                name="tracking_number"
+                id="tracking_number"
+                value={@tracking_number}
+                placeholder="e.g. REG-17143584000-a1b2c3"
+                autocomplete="off"
+                required
+                class="w-full rounded-2xl border border-base-300 bg-base-100 py-3.5 pl-11 pr-4 text-sm sm:text-base shadow-sm transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+              />
+            </div>
+            <button
+              type="submit"
+              phx-disable-with="Searching..."
+              class="inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-3.5 text-sm font-semibold text-primary-content shadow-sm transition hover:bg-primary/90 active:scale-[0.98]"
+            >
+              <.icon name="hero-magnifying-glass" class="size-5" /> Track
+            </button>
+            <button
+              :if={@searched}
+              type="button"
+              phx-click="clear_search"
+              class="inline-flex items-center justify-center gap-2 rounded-2xl border border-base-300 bg-base-100 px-5 py-3.5 text-sm font-medium text-base-content/70 transition hover:bg-base-200"
+            >
+              <.icon name="hero-arrow-path" class="size-4" /> Clear
+            </button>
+          </form>
+
+          <div :if={@loading} class="flex flex-col items-center justify-center gap-3 py-14">
+            <span class="loading loading-spinner loading-lg text-primary"></span>
+            <p class="text-sm text-base-content/60">Looking up your registration…</p>
+          </div>
+
+          <div :if={@searched && !@loading} class="space-y-6">
+            <%= if @registration do %>
+              <div class={[
+                "flex flex-col gap-4 rounded-2xl border p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5",
+                overall_badge_class(@overall)
+              ]}>
+                <div class="flex items-start gap-3">
+                  <div class="rounded-xl bg-base-100/70 p-2.5 shadow-sm">
+                    <.icon name={overall_icon(@overall)} class="size-6" />
+                  </div>
+                  <div>
+                    <p class="text-xs font-medium uppercase tracking-wide opacity-70">
+                      Approval Status
+                    </p>
+                    <p class="text-xl font-bold">{overall_label(@overall)}</p>
+                    <p class="mt-1 font-mono text-xs sm:text-sm opacity-80">
+                      {@registration.tracking_number}
+                    </p>
+                  </div>
+                </div>
+                <div class="flex flex-wrap gap-2 text-xs sm:justify-end">
+                  <span class="inline-flex items-center gap-1.5 rounded-full border border-current/20 bg-base-100/50 px-3 py-1.5">
+                    <.icon name="hero-calendar-days" class="size-3.5" />
+                    Submitted {format_datetime(@registration.registration_date || @registration.inserted_at)}
+                  </span>
+                  <span class="inline-flex items-center gap-1.5 rounded-full border border-current/20 bg-base-100/50 px-3 py-1.5">
+                    <.icon name="hero-banknotes" class="size-3.5" />
+                    Payment {payment_label(@registration.payment_status)}
+                  </span>
+                </div>
+              </div>
+
+              <div class="rounded-2xl border border-base-300 bg-base-100/80 p-4 sm:p-6">
+                <div class="mb-5 flex items-center gap-2">
+                  <.icon name="hero-arrows-right-left" class="size-5 text-primary" />
+                  <h2 class="text-base font-semibold sm:text-lg">Approval Pipeline</h2>
+                </div>
+
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <div
+                    :for={{stage, idx} <- Enum.with_index(@stages)}
+                    id={"stage-#{stage.key}"}
+                    class={[
+                      "relative rounded-2xl border p-4 transition duration-200 hover:-translate-y-0.5 hover:shadow-md",
+                      stage_tone(stage.status)
+                    ]}
+                  >
+                    <div
+                      :if={idx < length(@stages) - 1}
+                      class={[
+                        "absolute right-[-0.4rem] top-1/2 hidden h-0.5 w-3 -translate-y-1/2 lg:block",
+                        stage_connector(stage.status)
+                      ]}
+                    >
+                    </div>
+                    <div class="mb-3 flex items-center justify-between">
+                      <div class="rounded-xl bg-base-100/70 p-2">
+                        <.icon name={stage.icon} class="size-5" />
+                      </div>
+                      <.icon name={stage_status_icon(stage.status)} class="size-5" />
+                    </div>
+                    <p class="text-sm font-semibold">{stage.label}</p>
+                    <p class="mt-1 text-xs font-medium uppercase tracking-wide opacity-80">
+                      {String.capitalize(String.downcase(stage.status || "pending"))}
+                    </p>
+                  </div>
+                </div>
+
+                <div
+                  :if={@overall == "REJECTED"}
+                  class="mt-5 rounded-xl border border-error/30 bg-error/10 p-4 text-sm text-error"
+                >
+                  <div class="flex items-start gap-2">
+                    <.icon name="hero-exclamation-triangle" class="mt-0.5 size-5 shrink-0" />
+                    <div>
+                      <p class="font-semibold">
+                        Rejected at {String.capitalize(@registration.rejected_stage || "a stage")}
+                      </p>
+                      <p class="mt-1 opacity-90">
+                        {@registration.rejection_reason || "No reason was provided."}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  :if={@overall == "APPROVED"}
+                  class="mt-5 flex flex-col gap-3 rounded-xl border border-success/30 bg-success/10 p-4 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div class="flex items-start gap-2 text-success">
+                    <.icon name="hero-check-badge" class="mt-0.5 size-5 shrink-0" />
+                    <div>
+                      <p class="text-sm font-medium">
+                        Registration fully approved
+                      </p>
+                      <p class="mt-0.5 text-xs opacity-80">
+                        View or print your official Proof of Registration.
+                      </p>
+                    </div>
+                  </div>
+                  <div class="flex flex-wrap gap-2 sm:justify-end">
+                    <.link
+                      href={~p"/registration/tracking/#{@registration.tracking_number}/proof"}
+                      target="_blank"
+                      class="inline-flex items-center justify-center gap-2 rounded-xl border border-success/40 bg-base-100 px-4 py-2 text-sm font-semibold text-success transition hover:bg-success/10"
+                    >
+                      <.icon name="hero-eye" class="size-4" /> View Proof
+                    </.link>
+                    <.link
+                      href={~p"/registration/tracking/#{@registration.tracking_number}/proof"}
+                      target="_blank"
+                      class="inline-flex items-center justify-center gap-2 rounded-xl bg-success px-4 py-2 text-sm font-semibold text-success-content transition hover:bg-success/90"
+                    >
+                      <.icon name="hero-arrow-down-tray" class="size-4" /> Download / Print
+                    </.link>
+                  </div>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <div class="rounded-2xl border border-base-300 bg-base-100/80 p-4 sm:p-6">
+                  <div class="mb-4 flex items-center gap-2">
+                    <.icon name="hero-user-circle" class="size-5 text-primary" />
+                    <h2 class="text-base font-semibold">Student</h2>
+                  </div>
+                  <dl class="space-y-3 text-sm">
+                    <div class="flex items-start justify-between gap-4 border-b border-base-200 pb-3">
+                      <dt class="text-base-content/55">Student number</dt>
+                      <dd class="font-mono font-semibold text-right">{@registration.student_id}</dd>
+                    </div>
+                    <div class="flex items-start justify-between gap-4 border-b border-base-200 pb-3">
+                      <dt class="text-base-content/55">Name</dt>
+                      <dd class="font-medium text-right">{@registration.student_names}</dd>
+                    </div>
+                    <div class="flex items-start justify-between gap-4">
+                      <dt class="text-base-content/55">Email</dt>
+                      <dd class="text-right break-all">{@registration.student_email}</dd>
+                    </div>
+                  </dl>
+                </div>
+
+                <div class="rounded-2xl border border-base-300 bg-base-100/80 p-4 sm:p-6">
+                  <div class="mb-4 flex items-center gap-2">
+                    <.icon name="hero-building-library" class="size-5 text-primary" />
+                    <h2 class="text-base font-semibold">Programme</h2>
+                  </div>
+                  <dl class="space-y-3 text-sm">
+                    <div class="flex items-start justify-between gap-4 border-b border-base-200 pb-3">
+                      <dt class="text-base-content/55">Programme</dt>
+                      <dd class="font-medium text-right">
+                        {program_detail(@registration, "program_name") || "—"}
+                      </dd>
+                    </div>
+                    <div class="flex items-start justify-between gap-4 border-b border-base-200 pb-3">
+                      <dt class="text-base-content/55">Academic year</dt>
+                      <dd class="text-right">
+                        {program_detail(@registration, "academic_year") || "—"}
+                      </dd>
+                    </div>
+                    <div class="flex items-start justify-between gap-4">
+                      <dt class="text-base-content/55">Semester</dt>
+                      <dd class="text-right">{program_detail(@registration, "semester") || "—"}</dd>
+                    </div>
+                  </dl>
+                </div>
+              </div>
+
+              <div
+                :if={selected_courses(@registration) != []}
+                class="rounded-2xl border border-base-300 bg-base-100/80 p-4 sm:p-6"
+              >
+                <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <div class="flex items-center gap-2">
+                    <.icon name="hero-book-open" class="size-5 text-primary" />
+                    <h2 class="text-base font-semibold">Registered Courses</h2>
+                  </div>
+                  <span class="inline-flex items-center gap-1.5 rounded-full bg-secondary/10 px-3 py-1 text-xs font-semibold text-secondary">
+                    <.icon name="hero-academic-cap" class="size-3.5" />
+                    {total_credits(@registration)} credit hours
+                  </span>
+                </div>
+
+                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  <div
+                    :for={course <- selected_courses(@registration)}
+                    class="rounded-xl border border-base-200 bg-base-200/30 p-3.5 transition hover:border-primary/30 hover:bg-primary/5"
+                  >
+                    <div class="mb-1.5 flex items-start justify-between gap-2">
+                      <span class="font-mono text-xs font-semibold text-primary">
+                        {course["code"] || course[:code]}
+                      </span>
+                      <span class="text-xs text-base-content/50">
+                        {course["credits"] || course[:credits]} cr
+                      </span>
+                    </div>
+                    <p class="text-sm font-medium leading-snug">
+                      {course["name"] || course[:name]}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            <% else %>
+              <div class="rounded-2xl border border-error/20 bg-error/5 px-6 py-12 text-center">
+                <.icon name="hero-exclamation-triangle" class="mx-auto mb-4 size-12 text-error" />
+                <h3 class="text-lg font-semibold text-base-content">Registration not found</h3>
+                <p class="mx-auto mt-2 max-w-md text-sm text-base-content/65">
+                  We couldn’t find a registration with that tracking number. Double-check the code and try again.
+                </p>
+                <ul class="mx-auto mt-6 max-w-sm space-y-2 text-left text-xs text-base-content/60">
+                  <li class="flex items-start gap-2">
+                    <.icon name="hero-check-circle" class="mt-0.5 size-4 shrink-0 text-primary" />
+                    Use the full tracking number from your submission confirmation
+                  </li>
+                  <li class="flex items-start gap-2">
+                    <.icon name="hero-check-circle" class="mt-0.5 size-4 shrink-0 text-primary" />
+                    Format looks like <span class="font-mono">REG-1234567890-abc123</span>
+                  </li>
+                  <li class="flex items-start gap-2">
+                    <.icon name="hero-check-circle" class="mt-0.5 size-4 shrink-0 text-primary" />
+                    Avoid extra spaces before or after the code
+                  </li>
+                </ul>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+    """
   end
 end

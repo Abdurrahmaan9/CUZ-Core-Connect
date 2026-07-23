@@ -82,3 +82,8 @@ config :phoenix_live_view,
 
 # Disable swoosh api client as it is only required for production adapters.
 config :swoosh, :api_client, false
+# config :swoosh, :api_client, Swoosh.ApiClient.Req
+
+# config :cuz_core_connect, CuzCoreConnec.Mailer,
+#   adapter: Swoosh.Adapters.Resend,
+#   api_key: "re_Kw5q2UmC_FHsV28MdHSa31QmhdtGiKTvx"

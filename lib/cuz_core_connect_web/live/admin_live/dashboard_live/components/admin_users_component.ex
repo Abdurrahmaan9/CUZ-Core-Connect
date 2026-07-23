@@ -14,7 +14,7 @@ defmodule CuzCoreConnectWeb.AdminLiveAdminUsersComponent do
       <div class="px-4 py-5 sm:p-6">
         <div class="flex justify-between items-center mb-6">
           <h3 class="text-lg font-semibold text-base-content">User Management</h3>
-          <.link href={"/admin/users/new"} class="btn btn-primary btn-sm">Add User</.link>
+          <.link href="/admin/users/new" class="btn btn-primary btn-sm">Add User</.link>
         </div>
 
         <div class="overflow-hidden shadow ring-1 ring-base-300 md:rounded-lg">
@@ -69,8 +69,10 @@ defmodule CuzCoreConnectWeb.AdminLiveAdminUsersComponent do
                 </td>
                 <td>
                   <div class="flex space-x-2">
-                    <.link href={"/admin/users/#{user.id}/edit"} class="btn btn-xs btn-primary">Edit</.link>
-                    <.link href={"/admin/users"} class="btn btn-xs btn-secondary">View All</.link>
+                    <.link href={"/admin/users/#{user.id}/edit"} class="btn btn-xs btn-primary">
+                      Edit
+                    </.link>
+                    <.link href="/admin/users" class="btn btn-xs btn-secondary">View All</.link>
                   </div>
                 </td>
               </tr>

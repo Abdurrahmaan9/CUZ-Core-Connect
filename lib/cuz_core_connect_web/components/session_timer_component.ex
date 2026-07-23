@@ -52,8 +52,6 @@ defmodule CuzCoreConnectWeb.Components.SessionTimerComponent do
     {:noreply, assign(socket, countdown: seconds)}
   end
 
-
-
   def handle_info(:tick, %{assigns: %{countdown: 1}} = socket) do
     {:noreply,
      socket
@@ -90,13 +88,25 @@ defmodule CuzCoreConnectWeb.Components.SessionTimerComponent do
       data-target={@myself}
     >
       <%= if @show_timer do %>
-        <div class="session-timer-overlay" role="dialog" aria-modal="true" aria-label="Session timeout warning">
+        <div
+          class="session-timer-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Session timeout warning"
+        >
           <div class="session-timer-modal">
             <div class="session-timer-header">
               <div class="session-timer-icon">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="10"/>
-                  <polyline points="12 6 12 12 16 14"/>
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
                 </svg>
               </div>
               <span>Session Timeout</span>
@@ -110,14 +120,18 @@ defmodule CuzCoreConnectWeb.Components.SessionTimerComponent do
               <svg class="session-timer-ring" viewBox="0 0 120 120" width="140" height="140">
                 <circle
                   class="session-timer-ring-bg"
-                  cx="60" cy="60" r="52"
+                  cx="60"
+                  cy="60"
+                  r="52"
                   fill="none"
                   stroke-width="4"
                   stroke-dasharray="4 4"
                 />
                 <circle
                   class="session-timer-ring-progress"
-                  cx="60" cy="60" r="52"
+                  cx="60"
+                  cy="60"
+                  r="52"
                   fill="none"
                   stroke-width="5"
                   stroke-linecap="round"
@@ -126,7 +140,7 @@ defmodule CuzCoreConnectWeb.Components.SessionTimerComponent do
                   transform="rotate(-90 60 60)"
                 />
                 <text x="60" y="56" text-anchor="middle" class="session-timer-count">
-                  <%= @countdown %>
+                  {@countdown}
                 </text>
                 <text x="60" y="72" text-anchor="middle" class="session-timer-label">
                   seconds
@@ -156,5 +170,4 @@ defmodule CuzCoreConnectWeb.Components.SessionTimerComponent do
     </div>
     """
   end
-
 end

@@ -1,9 +1,14 @@
-<Layouts.user flash={@flash} current_scope={@current_scope} page_title={@page_title} current_page={@current_page}>
+<Layouts.user
+  flash={@flash}
+  current_scope={@current_scope}
+  page_title={@page_title}
+  current_page={@current_page}
+>
   <.header>
     Courses
     <:subtitle>Manage academic courses in the system</:subtitle>
     <:actions>
-      <.link patch={~p"/admin/student/courses/new"}>
+      <.link patch={~p"/admin/courses/new"}>
         <.button>New Course</.button>
       </.link>
     </:actions>
@@ -24,83 +29,80 @@
     </div>
 
     <div class="flex flex-wrap items-center gap-2 md:justify-end">
-    <button
-      type="button"
-      id={"#{@id}-export"}
-      class="inline-flex h-[30px] items-center rounded-md bg-primary px-3 text-[11px] font-bold tracking-wide text-primary-content transition duration-150 hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20"
-    >
-      Export
-    </button>
-    <button
-      type="button"
-      id={"#{@id}-filter"}
-      class="inline-flex h-[30px] items-center gap-1.5 rounded-md bg-primary px-3 text-[11px] font-bold tracking-wide text-primary-content transition duration-150 hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20"
-    >
-      <.icon name="hero-funnel" class="size-3.5" /> Filter
-    </button>
-    <button
-      type="button"
-      id={"#{@id}-reload"}
-      class="inline-flex h-[30px] items-center gap-1.5 rounded-md bg-primary px-3 text-[11px] font-bold tracking-wide text-primary-content transition duration-150 hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20"
-    >
-      <.icon name="hero-arrow-path" class="size-3.5" /> Reload
-    </button>
-  </div>
+      <button
+        type="button"
+        id={"#{@id}-export"}
+        class="inline-flex h-[30px] items-center rounded-md bg-primary px-3 text-[11px] font-bold tracking-wide text-primary-content transition duration-150 hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20"
+      >
+        Export
+      </button>
+      <button
+        type="button"
+        id={"#{@id}-filter"}
+        class="inline-flex h-[30px] items-center gap-1.5 rounded-md bg-primary px-3 text-[11px] font-bold tracking-wide text-primary-content transition duration-150 hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20"
+      >
+        <.icon name="hero-funnel" class="size-3.5" /> Filter
+      </button>
+      <button
+        type="button"
+        id={"#{@id}-reload"}
+        class="inline-flex h-[30px] items-center gap-1.5 rounded-md bg-primary px-3 text-[11px] font-bold tracking-wide text-primary-content transition duration-150 hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20"
+      >
+        <.icon name="hero-arrow-path" class="size-3.5" /> Reload
+      </button>
+    </div>
   </div>
 
   <.table
-      id="courses"
-      rows={@streams.courses}
-      class="shadow-sm"
-      empty_state_title="No courses found"
-      empty_state_description="No courses have been created yet."
-      row_click={fn {_id, course} -> JS.navigate(~p"/admin/student/courses/#{course}/edit") end}
-    >
-      <:col :let={{_id, course}} label="Code"><%= course.code %></:col>
-      <:col :let={{_id, course}} label="Title"><%= course.title %></:col>
-      <:col :let={{_id, course}} label="Credits"><%= course.credits %> credits</:col>
-      <:col :let={{_id, course}} label="Status">
-        <span class={[
-          "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
-          course.is_active && "bg-green-100 text-green-800",
-          !course.is_active && "bg-gray-100 text-gray-800"
-        ]}>
-          <%= if course.is_active, do: "Active", else: "Inactive" %>
-        </span>
-      </:col>
-      <:action :let={{_id, course}}>
-        <div class="sr-only">
-          <.link navigate={~p"/admin/student/courses/#{course}"}>Show</.link>
-        </div>
-        <.link patch={~p"/admin/student/courses/#{course}/edit"}>
-          <.button>Edit</.button>
-        </.link>
-      </:action>
-      <:action :let={{id, course}}>
-        <.link
-          phx-click={JS.push("delete", value: %{id: course.id}) |> hide("##{id}")}
-          data-confirm="Are you sure?"
-        >
-          <.button class="bg-red-600 hover:bg-red-700 text-white">Delete</.button>
-        </.link>
-      </:action>
-    </.table>
+    id="courses"
+    rows={@streams.courses}
+    class="shadow-sm"
+    empty_state_title="No courses found"
+    empty_state_description="No courses have been created yet."
+    row_click={fn {_id, course} -> JS.navigate(~p"/admin/courses/#{course}/edit") end}
+  >
+    <:col :let={{_id, course}} label="Code">{course.code}</:col>
+    <:col :let={{_id, course}} label="Title">{course.title}</:col>
+    <:col :let={{_id, course}} label="Credits">{course.credits} credits</:col>
+    <:col :let={{_id, course}} label="Status">
+      <span class={[
+        "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium",
+        course.is_active && "bg-green-100 text-green-800",
+        !course.is_active && "bg-gray-100 text-gray-800"
+      ]}>
+        {if course.is_active, do: "Active", else: "Inactive"}
+      </span>
+    </:col>
+    <:action :let={{_id, course}}>
+      <.link patch={~p"/admin/courses/#{course}/edit"}>
+        <.button>Edit</.button>
+      </.link>
+    </:action>
+    <:action :let={{id, course}}>
+      <.link
+        phx-click={JS.push("delete", value: %{id: course.id}) |> hide("##{id}")}
+        data-confirm="Are you sure?"
+      >
+        <.button class="bg-red-600 hover:bg-red-700 text-white">Delete</.button>
+      </.link>
+    </:action>
+  </.table>
 
   <div :if={@live_action in [:new, :edit]} class="fixed inset-0 z-50 overflow-y-auto">
-  <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" aria-hidden="true"></div>
-  <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0 relative z-10">
-    <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
-      <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
-        <.live_component
-          module={FormComponent}
-          id={@course.id || :new}
-          title={@page_title}
-          action={@live_action}
-          course={@course}
-          patch={~p"/admin/student/courses"}
-        />
+    <div class="fixed inset-0 bg-black/50 backdrop-blur-sm" aria-hidden="true"></div>
+    <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0 relative z-10">
+      <div class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+        <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+          <.live_component
+            module={FormComponent}
+            id={@course.id || :new}
+            title={@page_title}
+            action={@live_action}
+            course={@course}
+            patch={~p"/admin/courses"}
+          />
+        </div>
       </div>
     </div>
   </div>
-</div>
 </Layouts.user>

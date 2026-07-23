@@ -14,7 +14,8 @@ defmodule CuzCoreConnect.AccountFixtures do
 
   def valid_user_attributes(attrs \\ %{}) do
     Enum.into(attrs, %{
-      email: unique_user_email()
+      email: unique_user_email(),
+      username: "user#{System.unique_integer()}"
     })
   end
 

@@ -44,10 +44,14 @@ defmodule CuzCoreConnectWeb.Academics.Students do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.user flash={@flash} current_scope={@current_scope} page_title={@page_title} current_page={@current_page}>
+    <Layouts.user
+      flash={@flash}
+      current_scope={@current_scope}
+      page_title={@page_title}
+      current_page={@current_page}
+    >
       <Layouts.underconstruction_banner />
     </Layouts.user>
-
     """
   end
 end

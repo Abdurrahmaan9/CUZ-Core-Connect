@@ -9,28 +9,48 @@ defmodule CuzCoreConnect.Workflows do
     Repo.one(
       from w in RegistrationWorkflow,
         where: w.is_active == true and is_nil(w.deleted_at),
+        order_by: [desc: w.updated_at],
         limit: 1
     )
   end
 
-  def set_active_registration_flow(id) do
+  @doc """
+  Activates the given workflow and deactivates every other non-deleted workflow.
+  Only one registration workflow can be active at a time. New registrations
+  pick up the active workflow via `Registration.put_active_workflow/1`.
+  """
+  def set_active_registration_flow(id) when is_integer(id) do
     Repo.transaction(fn ->
-      # Deactivate all others first
-      Repo.update_all(
-        from(w in RegistrationWorkflow, where: w.id != ^id),
-        set: [is_active: false]
-      )
+      workflow =
+        RegistrationWorkflow
+        |> where([w], w.id == ^id and is_nil(w.deleted_at))
+        |> Repo.one()
 
-      workflow = Repo.get!(RegistrationWorkflow, id)
+      if is_nil(workflow) do
+        Repo.rollback(:not_found)
+      else
+        now = DateTime.utc_now() |> DateTime.truncate(:second)
 
-      workflow
-      |> RegistrationWorkflow.changeset(%{is_active: true})
-      |> Repo.update()
-      |> case do
-        {:ok, updated} -> updated
-        {:error, changeset} -> Repo.rollback(changeset)
+        # Turn off every other active workflow first.
+        Repo.update_all(
+          from(w in RegistrationWorkflow,
+            where: w.id != ^id and w.is_active == true and is_nil(w.deleted_at)
+          ),
+          set: [is_active: false, updated_at: now]
+        )
+
+        case workflow
+             |> RegistrationWorkflow.changeset(%{is_active: true})
+             |> Repo.update() do
+          {:ok, updated} -> updated
+          {:error, changeset} -> Repo.rollback(changeset)
+        end
       end
     end)
+  end
+
+  def set_active_registration_flow(id) when is_binary(id) do
+    set_active_registration_flow(String.to_integer(id))
   end
 
   # Count in-progress registrations still using a given workflow_id
@@ -87,9 +107,38 @@ defmodule CuzCoreConnect.Workflows do
   end
 
   def create_registration_flow(attrs) do
-    RegistrationWorkflow.changeset(%RegistrationWorkflow{}, attrs)
-    |> Repo.insert()
+    attrs = for {k, v} <- attrs, into: %{}, do: {to_string(k), v}
+    want_active? = truthy?(attrs["is_active"])
+
+    # Never insert as active directly — activate in a second step so we can
+    # guarantee only one active workflow exists.
+    insert_attrs = Map.put(attrs, "is_active", false)
+
+    Repo.transaction(fn ->
+      case %RegistrationWorkflow{}
+           |> RegistrationWorkflow.changeset(insert_attrs)
+           |> Repo.insert() do
+        {:ok, workflow} ->
+          if want_active? do
+            case set_active_registration_flow(workflow.id) do
+              {:ok, active} -> active
+              {:error, reason} -> Repo.rollback(reason)
+            end
+          else
+            workflow
+          end
+
+        {:error, changeset} ->
+          Repo.rollback(changeset)
+      end
+    end)
   end
+
+  defp truthy?(true), do: true
+  defp truthy?("true"), do: true
+  defp truthy?("1"), do: true
+  defp truthy?(1), do: true
+  defp truthy?(_), do: false
 
   def get_registration_flows_changeset(registration_flow \\ %RegistrationWorkflow{}, attrs \\ %{}) do
     RegistrationWorkflow.changeset(registration_flow, attrs)
@@ -101,6 +150,7 @@ defmodule CuzCoreConnect.Workflows do
   end
 
   defp maybe_filter_by_search(query, term) when term in [nil, ""], do: query
+
   defp maybe_filter_by_search(query, search_term) do
     where(query, [f], ilike(f.name, ^"%#{search_term}%"))
   end

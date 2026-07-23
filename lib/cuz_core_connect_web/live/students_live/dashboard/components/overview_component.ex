@@ -58,8 +58,7 @@ defmodule CuzCoreConnectWeb.StudentLive.Dashboard.OverviewComponent do
       <%= if @latest do %>
         <div class="bg-base-200/40 rounded-r p-6 mb-6">
           <h3 class="font-medium mb-4 flex items-center gap-2">
-            <.icon name="hero-document-text" class="h-5 w-5 text-primary" />
-            Latest Registration
+            <.icon name="hero-document-text" class="h-5 w-5 text-primary" /> Latest Registration
           </h3>
           <div class="flex flex-wrap gap-4 items-center justify-between">
             <div>

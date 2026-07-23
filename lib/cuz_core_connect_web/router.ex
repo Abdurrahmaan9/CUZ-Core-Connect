@@ -19,9 +19,18 @@ defmodule CuzCoreConnectWeb.Router do
 
   scope "/", CuzCoreConnectWeb do
     pipe_through [:browser]
+
     live_session :current_user,
       on_mount: [{CuzCoreConnectWeb.Plugs.UserAuth, :mount_current_scope}] do
       live "/users/log-in", UserLive.Login, :new
+      # Magic-link confirmation must remain reachable even when the visitor is
+      # already authenticated (e.g. clicking a confirmation link from another
+      # session) - the LiveView itself renders a different UI for that case.
+      live "/users/log-in/:token", UserLive.Confirmation, :new
+
+      # Public tracking works with or without authentication.
+      live "/registration/tracking", Student.Tracking.Index, :index
+      live "/registration/tracking/:tracking_number", Student.Tracking.Index, :show
 
       scope "/" do
         pipe_through [:redirect_if_user_is_authenticated]
@@ -29,13 +38,13 @@ defmodule CuzCoreConnectWeb.Router do
         live "/", LandingPageLive
         live "/learn-more", UserLive.LearnMore
         live "/student/registration", Student.Registration.RegistrationLive
-        live "/registration/tracking", Student.Tracking.Index, :index
-        live "/registration/tracking/:tracking_number", Student.Tracking.Index, :show
 
         live "/users/register", UserLive.Registration, :new
-        live "/users/log-in/:token", UserLive.Confirmation, :new
       end
     end
+
+    # Public proof of registration for approved tracking numbers.
+    get "/registration/tracking/:tracking_number/proof", CertificateController, :show_by_tracking
 
     post "/users/log-in", UserSessionController, :create
     delete "/users/log-out", UserSessionController, :delete
@@ -74,7 +83,6 @@ defmodule CuzCoreConnectWeb.Router do
         {CuzCoreConnectWeb.Plugs.UserAuth, :ensure_admin_role}
       ] do
       scope "/admin" do
-
         live "/dashboard", AdminLiveIndex, :index
 
         scope "/student" do
@@ -186,7 +194,12 @@ defmodule CuzCoreConnectWeb.Router do
       live "/users/settings/confirm-email/:token", UserLive.Settings, :confirm_email
     end
 
-    post "/users/update-password", UserSessionController, :update_password
+    scope "/" do
+      pipe_through [:require_authenticated_user]
+      post "/users/update-password", UserSessionController, :update_password
+    end
+
     get "/receipts/:id", ReceiptController, :show
+    get "/registrations/:id/certificate", CertificateController, :show
   end
 end

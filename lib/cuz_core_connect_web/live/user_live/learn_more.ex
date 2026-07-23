@@ -7,7 +7,10 @@ defmodule CuzCoreConnectWeb.UserLive.LearnMore do
      socket
      |> assign(:count, 0)
      |> assign(show_mobile_menu: false)
-     |> assign(:subtitle, "This page is powered by Phoenix LiveView, updating instantly without a page reload.")}
+     |> assign(
+       :subtitle,
+       "This page is powered by Phoenix LiveView, updating instantly without a page reload."
+     )}
   end
 
   @impl true
@@ -24,7 +27,6 @@ defmodule CuzCoreConnectWeb.UserLive.LearnMore do
       </:header>
       <div class="mt-26 mb-8 mx-auto w-full">
         <div class="space-y-8">
-
           <%!-- Registration Instructions --%>
           <div class="rounded-3xl bg-gradient-to-r from-primary/10 to-primary/5 p-8 border border-primary/20">
             <div class="flex items-center gap-3 mb-4">
@@ -33,21 +35,26 @@ defmodule CuzCoreConnectWeb.UserLive.LearnMore do
               </div>
               <div>
                 <h1 class="text-3xl font-bold text-base-content">Online Registration Guide</h1>
-                <p class="text-base-content/70 mt-1">Complete your course registration in 4 simple steps</p>
+                <p class="text-base-content/70 mt-1">
+                  Complete your course registration in 4 simple steps
+                </p>
               </div>
             </div>
 
             <div class="grid gap-6 mt-8">
               <%!-- Step 1 --%>
               <div class="flex gap-4 p-4 bg-base-100 rounded-xl border border-base-200">
-                <div class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-semibold flex-shrink-0">1</div>
+                <div class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-semibold flex-shrink-0">
+                  1
+                </div>
                 <div class="flex-1">
                   <h3 class="font-semibold text-base-content mb-1">Choose Your Programme</h3>
-                  <p class="text-sm text-base-content/70">Select your academic programme from the available options. This determines which courses you can register for.</p>
+                  <p class="text-sm text-base-content/70">
+                    Select your academic programme from the available options. This determines which courses you can register for.
+                  </p>
                   <div class="mt-3">
                     <.link navigate="/registration" class="btn btn-primary btn-sm">
-                      Start Registration
-                      <.icon name="hero-arrow-right" class="w-4 h-4 ml-1" />
+                      Start Registration <.icon name="hero-arrow-right" class="w-4 h-4 ml-1" />
                     </.link>
                   </div>
                 </div>
@@ -55,28 +62,40 @@ defmodule CuzCoreConnectWeb.UserLive.LearnMore do
 
               <%!-- Step 2 --%>
               <div class="flex gap-4 p-4 bg-base-100 rounded-xl border border-base-200">
-                <div class="w-8 h-8 rounded-full bg-base-200 text-base-content flex items-center justify-center text-sm font-semibold flex-shrink-0">2</div>
+                <div class="w-8 h-8 rounded-full bg-base-200 text-base-content flex items-center justify-center text-sm font-semibold flex-shrink-0">
+                  2
+                </div>
                 <div class="flex-1">
                   <h3 class="font-semibold text-base-content mb-1">Select Academic Period</h3>
-                  <p class="text-sm text-base-content/70">Enter your academic year (e.g., 2025/2026) and choose the semester you're registering for.</p>
+                  <p class="text-sm text-base-content/70">
+                    Enter your academic year (e.g., 2025/2026) and choose the semester you're registering for.
+                  </p>
                 </div>
               </div>
 
               <%!-- Step 3 --%>
               <div class="flex gap-4 p-4 bg-base-100 rounded-xl border border-base-200">
-                <div class="w-8 h-8 rounded-full bg-base-200 text-base-content flex items-center justify-center text-sm font-semibold flex-shrink-0">3</div>
+                <div class="w-8 h-8 rounded-full bg-base-200 text-base-content flex items-center justify-center text-sm font-semibold flex-shrink-0">
+                  3
+                </div>
                 <div class="flex-1">
                   <h3 class="font-semibold text-base-content mb-1">Add Your Courses</h3>
-                  <p class="text-sm text-base-content/70">Browse available courses and add them to your registration. Use the search to find specific courses and monitor your total credit hours.</p>
+                  <p class="text-sm text-base-content/70">
+                    Browse available courses and add them to your registration. Use the search to find specific courses and monitor your total credit hours.
+                  </p>
                 </div>
               </div>
 
               <%!-- Step 4 --%>
               <div class="flex gap-4 p-4 bg-base-100 rounded-xl border border-base-200">
-                <div class="w-8 h-8 rounded-full bg-base-200 text-base-content flex items-center justify-center text-sm font-semibold flex-shrink-0">4</div>
+                <div class="w-8 h-8 rounded-full bg-base-200 text-base-content flex items-center justify-center text-sm font-semibold flex-shrink-0">
+                  4
+                </div>
                 <div class="flex-1">
                   <h3 class="font-semibold text-base-content mb-1">Review & Submit</h3>
-                  <p class="text-sm text-base-content/70">Carefully review all your registration details before submitting. Once submitted, you may need to contact academic support for changes.</p>
+                  <p class="text-sm text-base-content/70">
+                    Carefully review all your registration details before submitting. Once submitted, you may need to contact academic support for changes.
+                  </p>
                 </div>
               </div>
             </div>
@@ -94,9 +113,16 @@ defmodule CuzCoreConnectWeb.UserLive.LearnMore do
                       <.icon name="hero-lifebuoy" class="w-5 h-5 text-primary" />
                       <h3 class="font-medium text-base-content">Academic Support</h3>
                     </div>
-                    <p class="text-sm text-base-content/70">Contact our academic advisors for programme guidance and registration assistance.</p>
+                    <p class="text-sm text-base-content/70">
+                      Contact our academic advisors for programme guidance and registration assistance.
+                    </p>
                     <div class="mt-2">
-                      <a href="mailto:support@cuz.coreconnect.edu" class="text-sm text-primary hover:underline">support@cuz.coreconnect.edu</a>
+                      <a
+                        href="mailto:support@cuz.coreconnect.edu"
+                        class="text-sm text-primary hover:underline"
+                      >
+                        support@cuz.coreconnect.edu
+                      </a>
                     </div>
                   </div>
 
@@ -115,7 +141,10 @@ defmodule CuzCoreConnectWeb.UserLive.LearnMore do
                 <label tabindex="0" class="btn btn-ghost btn-sm btn-circle">
                   <.icon name="hero-question-mark-circle" class="w-5 h-5" />
                 </label>
-                <div tabindex="0" class="dropdown-content menu p-4 shadow bg-base-100 rounded-box w-80 z-50">
+                <div
+                  tabindex="0"
+                  class="dropdown-content menu p-4 shadow bg-base-100 rounded-box w-80 z-50"
+                >
                   <div class="text-sm">
                     <h3 class="font-semibold text-base-content mb-2">Registration Tips</h3>
                     <ul class="space-y-2 text-base-content/60">
@@ -134,16 +163,13 @@ defmodule CuzCoreConnectWeb.UserLive.LearnMore do
           <%!-- Quick Actions --%>
           <div class="flex flex-wrap gap-4 justify-center">
             <.link navigate="/student/registration" class="btn btn-primary btn-lg">
-              <.icon name="hero-rocket-launch" class="w-5 h-5 mr-2" />
-              Start Registration Now
+              <.icon name="hero-rocket-launch" class="w-5 h-5 mr-2" /> Start Registration Now
             </.link>
             <.link navigate="/" class="btn btn-outline btn-lg">
-              <.icon name="hero-home" class="w-5 h-5 mr-2" />
-              Back to Home
+              <.icon name="hero-home" class="w-5 h-5 mr-2" /> Back to Home
             </.link>
           </div>
           <%!-- END Quick Actions --%>
-
         </div>
       </div>
       <:footer>

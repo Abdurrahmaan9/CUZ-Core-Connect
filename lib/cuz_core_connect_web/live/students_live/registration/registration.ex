@@ -67,81 +67,102 @@ defmodule CuzCoreConnectWeb.Student.Registration.RegistrationLive do
     assigns = assign(assigns, steps: @steps, step_labels: @step_labels)
 
     ~H"""
-      <Layouts.unauth flash={@flash}>
-        <:header>
-          <CuzCoreConnectWeb.Navigations.Unauth.header show_mobile_menu={@show_mobile_menu} />
-        </:header>
-        <div class="max-w-3xl mx-auto py-8 px-4">
-          <div class="mb-8">
-            <h1 class="text-2xl font-bold text-gray-900">Course Registration</h1>
-            <p class="text-sm text-gray-500 mt-1">
-              Complete all steps to register your courses for the semester.
-            </p>
-          </div>
-
-          <.step_indicator
-            current_step={@current_step}
-            steps={@steps}
-            step_labels={@step_labels}
-          />
-
-          <div class="mt-8 bg-base-100 rounded-2xl shadow-sm border border-base-200 p-6">
-            <%= case @current_step do %>
-              <% :personal_info -> %>
-                <.live_component module={PersonalInfo} id="step-personal-info" registration={@registration} />
-              <% :programme -> %>
-                <.live_component module={Programmes} id="step-programme" registration={@registration} />
-              <% :semester -> %>
-                <.live_component module={Semesters} id="step-semester" registration={@registration} />
-              <% :courses -> %>
-                <.live_component module={Courses} id="step-courses" registration={@registration} />
-              <% :receipts -> %>
-                <.live_component module={Receipts} id="step-receipts" registration={@registration} upload_config={@uploads.receipt} />
-              <% :review -> %>
-                <.live_component module={Review} id="step-review" registration={@registration} upload_config={@uploads.receipt} />
-            <% end %>
-          </div>
+    <Layouts.unauth flash={@flash}>
+      <:header>
+        <CuzCoreConnectWeb.Navigations.Unauth.header show_mobile_menu={@show_mobile_menu} />
+      </:header>
+      <div class="max-w-3xl mx-auto py-8 px-4">
+        <div class="mb-8">
+          <h1 class="text-2xl font-bold text-gray-900">Course Registration</h1>
+          <p class="text-sm text-gray-500 mt-1">
+            Complete all steps to register your courses for the semester.
+          </p>
         </div>
 
-        <%= if @show_success_modal do %>
-          <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-            <div class="bg-base-100 rounded-2xl shadow-xl max-w-md w-full mx-4 p-4 sm:p-6">
-              <div class="text-center">
-                <div class="mx-auto flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-green-100 mb-4">
-                  <.icon name="hero-check-circle" class="w-6 h-6 sm:w-8 sm:h-8 text-green-600" />
-                </div>
-                <h3 class="text-lg sm:text-xl font-bold text-base-content mb-2">Registration Submitted Successfully!</h3>
-                <p class="text-xs sm:text-sm text-base-content/70 mb-6">
-                  Your registration has been submitted for review. Please save your tracking number for future reference.
-                </p>
+        <.step_indicator
+          current_step={@current_step}
+          steps={@steps}
+          step_labels={@step_labels}
+        />
 
-                <div class="bg-base-200 rounded-xl p-3 sm:p-4 mb-6">
-                  <p class="text-xs text-base-content/50 mb-1">Tracking Number</p>
-                  <div class="flex items-center justify-center gap-2">
-                    <code class="text-base sm:text-lg font-mono font-bold text-primary break-all">{@tracking_number}</code>
-                    <button
-                      type="button"
-                      phx-click="copy_tracking_number"
-                      class="p-1.5 sm:p-2 hover:bg-base-300 rounded-lg transition-colors flex-shrink-0"
-                      title="Copy to clipboard"
-                    >
-                      <.icon name="hero-document-duplicate" class="w-4 h-4 sm:w-5 sm:h-5 text-base-content/70" />
-                    </button>
-                  </div>
-                </div>
+        <div class="mt-8 bg-base-100 rounded-2xl shadow-sm border border-base-200 p-6">
+          <%= case @current_step do %>
+            <% :personal_info -> %>
+              <.live_component
+                module={PersonalInfo}
+                id="step-personal-info"
+                registration={@registration}
+              />
+            <% :programme -> %>
+              <.live_component module={Programmes} id="step-programme" registration={@registration} />
+            <% :semester -> %>
+              <.live_component module={Semesters} id="step-semester" registration={@registration} />
+            <% :courses -> %>
+              <.live_component module={Courses} id="step-courses" registration={@registration} />
+            <% :receipts -> %>
+              <.live_component
+                module={Receipts}
+                id="step-receipts"
+                registration={@registration}
+                upload_config={@uploads.receipt}
+              />
+            <% :review -> %>
+              <.live_component
+                module={Review}
+                id="step-review"
+                registration={@registration}
+                upload_config={@uploads.receipt}
+              />
+          <% end %>
+        </div>
+      </div>
 
-                <button
-                  type="button"
-                  phx-click="close_success_modal"
-                  class="w-full btn btn-primary text-sm sm:text-base"
-                >
-                  Done
-                </button>
+      <%= if @show_success_modal do %>
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div class="bg-base-100 rounded-2xl shadow-xl max-w-md w-full mx-4 p-4 sm:p-6">
+            <div class="text-center">
+              <div class="mx-auto flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-green-100 mb-4">
+                <.icon name="hero-check-circle" class="w-6 h-6 sm:w-8 sm:h-8 text-green-600" />
               </div>
+              <h3 class="text-lg sm:text-xl font-bold text-base-content mb-2">
+                Registration Submitted Successfully!
+              </h3>
+              <p class="text-xs sm:text-sm text-base-content/70 mb-6">
+                Your registration has been submitted for review. Please save your tracking number for future reference.
+              </p>
+
+              <div class="bg-base-200 rounded-xl p-3 sm:p-4 mb-6">
+                <p class="text-xs text-base-content/50 mb-1">Tracking Number</p>
+                <div class="flex items-center justify-center gap-2">
+                  <code class="text-base sm:text-lg font-mono font-bold text-primary break-all">
+                    {@tracking_number}
+                  </code>
+                  <button
+                    type="button"
+                    phx-click="copy_tracking_number"
+                    class="p-1.5 sm:p-2 hover:bg-base-300 rounded-lg transition-colors flex-shrink-0"
+                    title="Copy to clipboard"
+                  >
+                    <.icon
+                      name="hero-document-duplicate"
+                      class="w-4 h-4 sm:w-5 sm:h-5 text-base-content/70"
+                    />
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                phx-click="close_success_modal"
+                class="w-full btn btn-primary text-sm sm:text-base"
+              >
+                Done
+              </button>
             </div>
           </div>
-        <% end %>
-      </Layouts.unauth>
+        </div>
+      <% end %>
+    </Layouts.unauth>
     """
   end
 
@@ -216,31 +237,55 @@ defmodule CuzCoreConnectWeb.Student.Registration.RegistrationLive do
     registration_data = socket.assigns.registration
 
     # Convert student_contact to integer as required by schema
-    registration_data = case registration_data.student_contact do
-      contact when is_binary(contact) ->
-        Map.put(registration_data, :student_contact, String.to_integer(contact))
-      _ ->
-        registration_data
-    end
+    registration_data =
+      case registration_data.student_contact do
+        contact when is_binary(contact) ->
+          Map.put(registration_data, :student_contact, String.to_integer(contact))
+
+        _ ->
+          registration_data
+      end
 
     case Registrations.create_registration(socket.assigns.current_scope, registration_data) do
       {:ok, registration} ->
-        # Handle uploaded receipts
-        consume_uploaded_entries(socket, :receipt, fn %{path: path}, entry ->
-          Registrations.create_payment_receipt(%{
-            original_filename: entry.client_name,
-            storage_key: path,
-            content_type: entry.client_type,
-            file_size: entry.client_size,
-            uploaded_by_student_id: registration_data.student_id,
-            student_registration_id: registration.id
-          })
-          {:ok, path}
-        end)
+        # Persist uploaded receipts out of the LiveView temp dir into
+        # priv/static/uploads/receipts so finance (and other staff) can
+        # retrieve them later via ReceiptController.
+        results =
+          consume_uploaded_entries(socket, :receipt, fn %{path: path}, entry ->
+            case Registrations.persist_payment_receipt(registration, path, %{
+                   client_name: entry.client_name,
+                   client_type: entry.client_type,
+                   client_size: entry.client_size,
+                   uploaded_by_student_id: registration_data.student_id
+                 }) do
+              {:ok, receipt} ->
+                {:ok, receipt.storage_key}
+
+              {:error, reason} ->
+                {:postpone, {:error, reason}}
+            end
+          end)
+
+        failed? =
+          Enum.any?(List.wrap(results), fn
+            {:error, _} -> true
+            _ -> false
+          end)
+
+        socket =
+          if failed? do
+            put_flash(
+              socket,
+              :error,
+              "Registration was saved, but one or more receipts failed to store. Please contact support with your tracking number."
+            )
+          else
+            put_flash(socket, :info, "Registration submitted successfully!")
+          end
 
         {:noreply,
          socket
-         |> put_flash(:info, "Registration submitted successfully!")
          |> assign(:show_success_modal, true)
          |> assign(:tracking_number, registration.tracking_number)}
 

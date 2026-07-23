@@ -16,7 +16,9 @@ defmodule CuzCoreConnectWeb.AdminLiveWorkflowsComponent do
               <h4 class="text-lg font-medium text-base-content">Student Registration</h4>
               <div class="badge badge-success badge-sm">Active</div>
             </div>
-            <p class="text-sm text-base-content/70 mb-4">Handles new student registration and approval workflows</p>
+            <p class="text-sm text-base-content/70 mb-4">
+              Handles new student registration and approval workflows
+            </p>
             <div class="flex justify-between items-center">
               <span class="text-xs text-base-content/50">245 requests this month</span>
               <.link href="#" class="text-primary text-sm font-medium">Manage</.link>
@@ -28,7 +30,9 @@ defmodule CuzCoreConnectWeb.AdminLiveWorkflowsComponent do
               <h4 class="text-lg font-medium text-base-content">Course Enrollment</h4>
               <div class="badge badge-success badge-sm">Active</div>
             </div>
-            <p class="text-sm text-base-content/70 mb-4">Manages course enrollment and prerequisite checking</p>
+            <p class="text-sm text-base-content/70 mb-4">
+              Manages course enrollment and prerequisite checking
+            </p>
             <div class="flex justify-between items-center">
               <span class="text-xs text-base-content/50">89 requests this month</span>
               <.link href="#" class="text-primary text-sm font-medium">Manage</.link>

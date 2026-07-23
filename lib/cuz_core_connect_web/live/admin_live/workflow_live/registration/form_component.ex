@@ -8,16 +8,25 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow.FormComponent do
   @user_role_types [
     {"Academic Officer", "academics"},
     {"Finance Officer", "finance"},
-    {"Head Of Department(HOD)", "hod"}
+    {"Head Of Department(HOD)", "hod"},
+    {"Retention Officer", "retention"}
   ]
 
   @impl true
   def render(assigns) do
     ~H"""
     <div id={@id}>
-      <.modal id={"#{@id}-modal"} show on_cancel={JS.push("cancel_form_component", target: @myself) |> JS.exec("phx-remove", to: "##{@id}-modal")}>
-
-        <:title>{if(@form_mode == :new, do: "Create New", else: "Edit")} Registration Work Flow</:title>
+      <.modal
+        id={"#{@id}-modal"}
+        show
+        on_cancel={
+          JS.push("cancel_form_component", target: @myself)
+          |> JS.exec("phx-remove", to: "##{@id}-modal")
+        }
+      >
+        <:title>
+          {if(@form_mode == :new, do: "Create New", else: "Edit")} Registration Work Flow
+        </:title>
 
         <.form
           :let={f}
@@ -28,7 +37,7 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow.FormComponent do
           phx-target={@myself}
           class="p-6"
         >
-          <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div class="grid grid-cols-1 gap-6 md:grid-cols-4">
             <div>
               <.input
                 field={f[:name]}
@@ -44,10 +53,14 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow.FormComponent do
                 placeholder="Enter description"
               />
             </div>
-              <div class="md:col-span-4 flex justify-end">
-              <%!-- <.input field={f[:is_active]} label="Active" type="checkbox" /> --%>
-              <.button type="button" phx-click="add_step" phx-target={@myself} class="gap-1 flex justify-center items-center mb-2 bg-green-400/30 px-1 pr-2 rounded rounded-sm">
-                <.icon name="hero-plus" class="h-4 w-4"/> Step
+            <div class="md:col-span-4 flex justify-end">
+              <.button
+                type="button"
+                phx-click="add_step"
+                phx-target={@myself}
+                class="btn btn-success btn-sm gap-1"
+              >
+                <.icon name="hero-plus" class="size-4" /> Step
               </.button>
             </div>
             <div class="md:col-span-4">
@@ -55,21 +68,22 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow.FormComponent do
                 if Map.has_key?(@changeset.changes, :flow), do: @changeset.changes.flow, else: [] %>
               <%= if is_list(flow) and length(flow) > 0 do %>
                 <.inputs_for :let={fp} field={f[:flow]}>
-                  <div class="flow-step bg-gray-100/20 p-4 rounded-lg border border-secondary/20 mb-4">
-                    <div class="flex justify-between items-start mb-3">
-                      <h4 class="font-bold">STEP: {fp.index + 1}</h4>
+                  <div class="mb-4 rounded-box border border-base-300 bg-base-200/40 p-4">
+                    <div class="mb-3 flex items-start justify-between">
+                      <h4 class="font-semibold text-base-content">Step {fp.index + 1}</h4>
                       <.button
                         type="button"
                         phx-click="remove_step"
                         phx-value-index={fp.index}
                         phx-target={@myself}
-                        class="text-red-500 hover:text-red-700"
+                        class="btn btn-ghost btn-xs text-error"
+                        aria-label="Remove step"
                       >
-                        <i class="fas fa-trash"></i>
+                        <.icon name="hero-trash" class="size-4" />
                       </.button>
                     </div>
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                      <input type="hidden" name={flow[:step_no]} value={fp.index + 1} />
+                    <div class="grid grid-cols-1 gap-6 md:grid-cols-4">
+                      <input type="hidden" name={fp[:step_no].name} value={fp.index + 1} />
                       <div class="md:col-span-2">
                         <.input
                           field={fp[:description]}
@@ -98,7 +112,7 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow.FormComponent do
                             type="select"
                             label="Select Specific Department"
                             options={for department <- @specific_department_list, do: department}
-                            prompt="-- Select Depatment --"
+                            prompt="-- Select Department --"
                             required
                           />
                         </div>
@@ -110,7 +124,7 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow.FormComponent do
                             type="select"
                             label="Select Specific User"
                             options={for user <- @specific_user_list, do: user}
-                            prompt="-- Select Depatment --"
+                            prompt="-- Select User --"
                             required
                           />
                         </div>
@@ -119,22 +133,24 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow.FormComponent do
                   </div>
                 </.inputs_for>
               <% else %>
-                <div class="text-gray-500 text-center">
+                <div class="rounded-box border border-dashed border-base-300 p-6 text-center text-base-content/60">
                   No workflow steps added yet. Click "Add Step" to get started.
                 </div>
               <% end %>
             </div>
             <div class="md:col-span-4">
-              <!-- Form Actions -->
-              <div class="flex justify-between space-x-3 pt-6 border-t border-gray-300/20">
-                <.button type="button" id="cancel-button-2" phx-click="cancel_form_component" phx-target={@myself} class="bg-gray-50/75 px-1.5 rounded rounded-sm  text-black">
+              <div class="flex justify-between gap-3 border-t border-base-300 pt-6">
+                <.button
+                  type="button"
+                  id="cancel-button-2"
+                  phx-click="cancel_form_component"
+                  phx-target={@myself}
+                  class="btn btn-ghost"
+                >
                   Cancel
                 </.button>
 
-                <.button
-                  type="submit"
-                  class="bg-indigo-600 text-white px-2 py-1 rounded-md hover:bg-indigo-700 transition flex items-center"
-                >
+                <.button type="submit" class="btn btn-primary">
                   Save Registration Flow
                 </.button>
               </div>
@@ -147,7 +163,10 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow.FormComponent do
   end
 
   @impl true
-  def update(%{registration_workflow: registration_workflow, form_mode: _form_mode} = assigns, socket) do
+  def update(
+        %{registration_workflow: registration_workflow, form_mode: _form_mode} = assigns,
+        socket
+      ) do
     flow_params =
       registration_workflow.flow
       |> Enum.map(fn step ->
@@ -180,7 +199,6 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow.FormComponent do
     changeset =
       RegistrationWorkflow.changeset(registration_workflow, %{"flow" => flow_params})
 
-
     socket =
       socket
       |> assign(
@@ -194,7 +212,6 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow.FormComponent do
         flow_steps: [%{description: "", actionar_type: "", required_titles: []}]
       )
 
-
     {:ok,
      socket
      |> assign(assigns)}
@@ -204,7 +221,6 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow.FormComponent do
   def handle_event("validate", %{"registration_workflow" => registration_flow_params}, socket) do
     flow_params = registration_flow_params["flow"] || %{}
 
-    IO.inspect(registration_flow_params, label: "===")
     {specific_indices, jobs_by_index, selected_map} =
       Enum.reduce(flow_params, {[], %{}, %{}}, fn {idx, step_params}, {inds, jobs, sels} ->
         sels =
@@ -216,7 +232,6 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow.FormComponent do
 
         jobs =
           if step_params["actionar_type"] == "specific_department" do
-
             Map.put(jobs, idx, @user_role_types)
           else
             Map.delete(jobs, idx)

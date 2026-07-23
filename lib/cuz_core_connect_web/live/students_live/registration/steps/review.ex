@@ -21,7 +21,6 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Review do
 
       <%!-- Summary cards --%>
       <div class="mt-6 space-y-4">
-
         <%!-- Programme --%>
         <.review_row label="Programme" value={@registration.program_name} />
 
@@ -39,16 +38,16 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Review do
               <div class="flex justify-between text-sm">
                 <span class="text-base-content">
                   <span class="font-mono text-xs text-base-content/40 mr-2">{course.code}</span>
-                  {course.name}
+                  {course.title}
                 </span>
-                <span class="text-base-content/60 shrink-0 ml-4">{course.credit_hours} cr</span>
+                <span class="text-base-content/60 shrink-0 ml-4">{course.credits} cr</span>
               </div>
             <% end %>
 
             <div class="pt-2 border-t border-base-200 flex justify-between text-sm font-semibold">
               <span class="text-base-content/80">Total Credit Hours</span>
               <span class="text-primary">
-                {Enum.sum(Enum.map(@registration.courses, & &1.credit_hours))}
+                {Enum.sum(Enum.map(@registration.courses, & &1.credits))}
               </span>
             </div>
           </div>
@@ -71,7 +70,7 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Review do
                 <span class="truncate text-sm text-base-content">{entry.client_name}</span>
               </div>
               <span class="text-xs font-medium text-green-600">
-                <%= if entry.done?, do: "Ready", else: "#{entry.progress}% uploaded" %>
+                {if entry.done?, do: "Ready", else: "#{entry.progress}% uploaded"}
               </span>
             </div>
           <% end %>
@@ -82,7 +81,12 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Review do
         <button type="button" phx-click="back" phx-target={@myself} class="btn btn-ghost">
           ← Back
         </button>
-        <button type="button" phx-click="submit_review" phx-target={@myself} class="btn btn-primary px-8">
+        <button
+          type="button"
+          phx-click="submit_review"
+          phx-target={@myself}
+          class="btn btn-primary px-8"
+        >
           <.icon name="hero-check-circle" class="w-5 h-5 mr-1" /> Submit Registration
         </button>
       </div>

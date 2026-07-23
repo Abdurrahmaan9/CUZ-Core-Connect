@@ -1,27 +1,36 @@
 defmodule CuzCoreConnectWeb.Student.Registration.Steps.Courses do
   use CuzCoreConnectWeb, :live_component
 
-  # TODO: alias CuzCoreConnect.Academics
+  alias CuzCoreConnect.Academic
 
   @impl true
   def update(assigns, socket) do
-    # TODO: Replace with Academics.list_courses_for(program_id, semester)
-    # using assigns.registration.program_id and assigns.registration.semester
-    available_courses = [
-      %{id: 1, code: "CS101", name: "Introduction to Programming",      credit_hours: 3},
-      %{id: 2, code: "CS201", name: "Data Structures & Algorithms",     credit_hours: 3},
-      %{id: 3, code: "CS301", name: "Database Systems",                  credit_hours: 3},
-      %{id: 4, code: "CS401", name: "Software Engineering",             credit_hours: 3},
-      %{id: 5, code: "MA101", name: "Calculus I",                       credit_hours: 4},
-      %{id: 6, code: "MA201", name: "Linear Algebra",                   credit_hours: 3},
-      %{id: 7, code: "EN101", name: "Technical Writing",                credit_hours: 2},
-      %{id: 8, code: "CS501", name: "Operating Systems",                credit_hours: 3}
-    ]
+    program_id = assigns.registration.program_id
+    semester = parse_semester(assigns.registration.semester)
+
+    available_courses =
+      case {program_id, semester} do
+        {pid, sem} when is_integer(pid) and is_integer(sem) ->
+          Academic.list_all_courses()
+
+        _ ->
+          []
+      end
+
+    # Pre-select required (core) courses on first visit when nothing chosen yet.
+    selected =
+      case assigns.registration.courses do
+        courses when is_list(courses) and courses != [] ->
+          courses
+
+        _ ->
+          Enum.filter(available_courses, & &1.is_active)
+      end
 
     {:ok,
      socket
      |> assign(assigns)
-     |> assign_new(:selected_courses, fn -> assigns.registration.courses end)
+     |> assign_new(:selected_courses, fn -> selected end)
      |> assign(available_courses: available_courses, search: "", error: nil)}
   end
 
@@ -31,15 +40,20 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Courses do
     <div>
       <h2 class="text-lg font-semibold text-base-content">Select Courses</h2>
       <p class="text-sm text-base-content/70 mt-1">
-        Registering for: <span class="font-medium text-base-content/80">{@registration.program_name}</span>
-        — <span class="font-medium text-base-content/80">
+        Registering for:
+        <span class="font-medium text-base-content/80">{@registration.program_name}</span>
+        —
+        <span class="font-medium text-base-content/80">
           Semester {@registration.semester}, {@registration.academic_year}
         </span>
       </p>
 
       <%!-- Search bar --%>
       <div class="mt-5 relative">
-        <.icon name="hero-magnifying-glass" class="w-4 h-4 absolute left-3 top-3 text-base-content/40" />
+        <.icon
+          name="hero-magnifying-glass"
+          class="w-4 h-4 absolute left-3 top-3 text-base-content/40"
+        />
         <input
           type="text"
           value={@search}
@@ -62,8 +76,8 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Courses do
           ]}>
             <div>
               <span class="text-xs font-bold text-base-content/40">{course.code}</span>
-              <p class="text-sm font-medium text-base-content">{course.name}</p>
-              <span class="text-xs text-base-content/40">{course.credit_hours} credit hours</span>
+              <p class="text-sm font-medium text-base-content">{course.title}</p>
+              <span class="text-xs text-base-content/40">{course.credits} credit hours</span>
             </div>
             <button
               type="button"
@@ -151,13 +165,26 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Courses do
   # ── Private ──────────────────────────────────────────────────────────────────
 
   defp filtered_courses(courses, ""), do: courses
+
   defp filtered_courses(courses, query) do
     q = String.downcase(query)
+
     Enum.filter(courses, fn c ->
       String.contains?(String.downcase(c.name), q) or
-      String.contains?(String.downcase(c.code), q)
+        String.contains?(String.downcase(c.code), q)
     end)
   end
 
-  defp total_credits(courses), do: Enum.sum(Enum.map(courses, & &1.credit_hours))
+  defp total_credits(courses), do: Enum.sum(Enum.map(courses, & &1.credits))
+
+  defp parse_semester(sem) when is_integer(sem), do: sem
+
+  defp parse_semester(sem) when is_binary(sem) do
+    case Integer.parse(sem) do
+      {n, _} -> n
+      :error -> nil
+    end
+  end
+
+  defp parse_semester(_), do: nil
 end

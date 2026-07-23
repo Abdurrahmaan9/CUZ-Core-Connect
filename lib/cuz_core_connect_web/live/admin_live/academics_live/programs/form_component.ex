@@ -8,7 +8,7 @@ defmodule CuzCoreConnectWeb.Admin.AcademicManagement.Programmes.FormComponent do
     ~H"""
     <div>
       <.header>
-        <%= @title %>
+        {@title}
         <:subtitle>Manage programme details</:subtitle>
       </.header>
 
@@ -23,11 +23,17 @@ defmodule CuzCoreConnectWeb.Admin.AcademicManagement.Programmes.FormComponent do
         <.input field={@form[:code]} type="text" label="Code" required />
         <.input field={@form[:name]} type="text" label="Name" required />
         <.input field={@form[:description]} type="textarea" label="Description" />
-        <.input field={@form[:duration_years]} type="number" label="Duration (years)" min="1" max="10" />
+        <.input
+          field={@form[:duration_years]}
+          type="number"
+          label="Duration (years)"
+          min="1"
+          max="10"
+        />
         <.input field={@form[:is_active]} type="checkbox" label="Active" />
 
         <div class="flex justify-end space-x-2">
-          <.link patch={~p"/admin/student/programmes"}>
+          <.link patch={~p"/admin/programmes"}>
             <.button>Cancel</.button>
           </.link>
 

@@ -32,7 +32,11 @@ defmodule CuzCoreConnectWeb.Admin.UserPageAccessComponent do
     {:noreply, assign(socket, :user_access, user_access)}
   end
 
-  def handle_event("update_actions", %{"page-id" => page_id, "page-name" => _page_name, "actions" => actions}, socket) do
+  def handle_event(
+        "update_actions",
+        %{"page-id" => page_id, "page-name" => _page_name, "actions" => actions},
+        socket
+      ) do
     user = socket.assigns.user
     page = Enum.find(socket.assigns.role_pages, &(to_string(&1.id) == page_id))
 
@@ -55,7 +59,14 @@ defmodule CuzCoreConnectWeb.Admin.UserPageAccessComponent do
   def render(assigns) do
     ~H"""
     <div id={@id}>
-      <.modal id={"#{@id}-modal"} show on_cancel={JS.push("cancel_form_component", target: @myself) |> JS.exec("phx-remove", to: "##{@id}-modal")}>
+      <.modal
+        id={"#{@id}-modal"}
+        show
+        on_cancel={
+          JS.push("cancel_form_component", target: @myself)
+          |> JS.exec("phx-remove", to: "##{@id}-modal")
+        }
+      >
         <:title>
           <h3 class="font-semibold text-base">
             Page Access for <span class="text-primary">{@user.email}</span>
@@ -64,7 +75,6 @@ defmodule CuzCoreConnectWeb.Admin.UserPageAccessComponent do
         </:title>
 
         <div class="space-y-4">
-
           <%= if Enum.empty?(@role_pages) do %>
             <p class="text-sm text-base-content/50">No pages defined for this role.</p>
           <% else %>
@@ -104,7 +114,13 @@ defmodule CuzCoreConnectWeb.Admin.UserPageAccessComponent do
                                 phx-click="update_actions"
                                 phx-value-page-id={page.id}
                                 phx-value-page-name={page.name}
-                                phx-value-actions={Jason.encode!(if checked, do: List.delete(current_actions, action), else: current_actions ++ [action])}
+                                phx-value-actions={
+                                  Jason.encode!(
+                                    if checked,
+                                      do: List.delete(current_actions, action),
+                                      else: current_actions ++ [action]
+                                  )
+                                }
                                 phx-target={@myself}
                               />
                               {action}

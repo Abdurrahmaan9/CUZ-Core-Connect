@@ -14,6 +14,7 @@ defmodule CuzCoreConnect.Accounts.UserRolePermissionSeeds do
     create_internal_user!("Academics User", "academics@cuz.coreconnect.edu", "academics")
     create_internal_user!("Finance User", "finance@cuz.coreconnect.edu", "finance")
     create_internal_user!("HOD User", "hod@cuz.coreconnect.edu", "hod")
+    create_internal_user!("Retention User", "retention@cuz.coreconnect.edu", "retention")
 
     IO.puts("""
     ═══════════════════════════════════════════════
@@ -30,16 +31,14 @@ defmodule CuzCoreConnect.Accounts.UserRolePermissionSeeds do
 
   defp create_super_admin!(username, email, password \\ @default_password) do
     {:ok, user} =
-      Accounts.register_user(
-        %{
-          "username" => username,
-          "email" => email,
-          "password" => password,
-          "is_active" => true,
-          "status" => "ACTIVE",
-          "user_role" => "admin"
-        }
-      )
+      Accounts.register_user(%{
+        "username" => username,
+        "email" => email,
+        "password" => password,
+        "is_active" => true,
+        "status" => "ACTIVE",
+        "user_role" => "admin"
+      })
 
     {:ok, user} = Repo.update(Accounts.User.confirm_changeset(user))
     user
@@ -47,16 +46,14 @@ defmodule CuzCoreConnect.Accounts.UserRolePermissionSeeds do
 
   defp create_internal_user!(username, email, role, password \\ @default_password) do
     {:ok, user} =
-      Accounts.register_user(
-        %{
-          "username" => username,
-          "email" => email,
-          "password" => password,
-          "is_active" => true,
-          "status" => "ACTIVE",
-          "user_role" => role
-        }
-      )
+      Accounts.register_user(%{
+        "username" => username,
+        "email" => email,
+        "password" => password,
+        "is_active" => true,
+        "status" => "ACTIVE",
+        "user_role" => role
+      })
 
     {:ok, user} = Repo.update(Accounts.User.confirm_changeset(user))
     user
@@ -64,16 +61,14 @@ defmodule CuzCoreConnect.Accounts.UserRolePermissionSeeds do
 
   defp create_student_user!(username, email, password \\ @default_password) do
     {:ok, user} =
-      Accounts.register_user(
-        %{
-          "username" => username,
-          "email" => email,
-          "password" => password,
-          "is_active" => true,
-          "status" => "ACTIVE",
-          "user_role" => "student"
-        }
-      )
+      Accounts.register_user(%{
+        "username" => username,
+        "email" => email,
+        "password" => password,
+        "is_active" => true,
+        "status" => "ACTIVE",
+        "user_role" => "student"
+      })
 
     {:ok, user} = Repo.update(Accounts.User.confirm_changeset(user))
     user

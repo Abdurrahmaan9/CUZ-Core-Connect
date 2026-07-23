@@ -8,13 +8,18 @@ defmodule CuzCoreConnect.Academic do
   # alias CuzCoreConnect.Academics.ProgramCourse
   # alias CuzCoreConnect.Academic.StudentProgram
   # alias CuzCoreConnect.Academic.LecturerCourse
-  alias CuzCoreConnect.Academic.LecturerProgram
+  # alias CuzCoreConnect.Academic.LecturerProgram
   alias CuzCoreConnect.Academics.Courses, as: Course
   # alias CuzCoreConnect.Accounts.User
 
   # ====================== Programme functions =================================
   def list_programs do
     Repo.all(Programme)
+  end
+
+  def list_active_programs do
+    from(p in Programme, where: p.is_active == true, order_by: [asc: :name])
+    |> Repo.all()
   end
 
   def get_program!(id), do: Repo.get!(Programme, id)
@@ -49,6 +54,33 @@ defmodule CuzCoreConnect.Academic do
     |> Repo.all()
   end
 
+  @doc """
+  Courses available for student registration for a programme + semester.
+  Returns maps shaped for the registration wizard (`id`, `code`, `name`,
+  `credits`, `is_core`).
+  """
+  def list_courses_for_registration(program_id, semester)
+      when is_integer(program_id) and is_integer(semester) do
+    from(pc in CuzCoreConnect.Academics.ProgramCourse,
+      join: c in assoc(pc, :course),
+      where:
+        # pc.program_id == ^program_id and pc.semester == ^semester and
+        # pc.is_active == true and
+          c.is_active == true,
+      order_by: [asc: c.code],
+      select: %{
+        id: c.id,
+        code: c.code,
+        name: c.title,
+        credit_hours: c.credits,
+        is_core: pc.is_core
+      }
+    )
+    |> Repo.all()
+  end
+
+  def list_courses_for_registration(_program_id, _semester), do: []
+
   def get_program_course!(id), do: Repo.get!(CuzCoreConnect.Academics.ProgramCourse, id)
 
   def create_program_course(attrs \\ %{}) do
@@ -67,7 +99,10 @@ defmodule CuzCoreConnect.Academic do
     Repo.delete(program_course)
   end
 
-  def change_program_course(%CuzCoreConnect.Academics.ProgramCourse{} = program_course, attrs \\ %{}) do
+  def change_program_course(
+        %CuzCoreConnect.Academics.ProgramCourse{} = program_course,
+        attrs \\ %{}
+      ) do
     CuzCoreConnect.Academics.ProgramCourse.changeset(program_course, attrs)
   end
 
@@ -88,12 +123,6 @@ defmodule CuzCoreConnect.Academic do
     |> Repo.all()
   end
 
-
-
-
-  @doc """
-  Lists all programmes for a specific lecturer.
-  """
   # def list_lecturer_programs(user_id) do
   #   from(up in Register.Academic.LecturerProgram,
   #     where: up.user_id == ^user_id,
@@ -107,7 +136,7 @@ defmodule CuzCoreConnect.Academic do
   @doc """
   Lists all courses for a specific lecturer in a specific programme.
   """
-  def list_lecturer_courses(user_id, program_id) do
+  def list_lecturer_courses(_user_id, program_id) do
     # First, get all programme courses for the given programme
     program_courses =
       from(pc in CuzCoreConnect.Academics.ProgramCourse,
@@ -122,9 +151,6 @@ defmodule CuzCoreConnect.Academic do
     Enum.map(program_courses, & &1.course)
   end
 
-  @doc """
-  Assigns a programme to a lecturer.
-  """
   # def assign_lecturer_to_program(user_id, program_id, attrs \\ %{}) do
   #   %Register.Academic.LecturerProgram{}
   #   |> Register.Academic.LecturerProgram.changeset(
@@ -152,9 +178,6 @@ defmodule CuzCoreConnect.Academic do
   #   |> Repo.all()
   # end
 
-  @doc """
-  Gets a lecturer with their assigned programmes.
-  """
   # def get_lecturer_with_programs(user_id) do
   #   from(u in Register.Accounts.User,
   #     where: u.id == ^user_id and u.role == "lecturer",
@@ -165,9 +188,6 @@ defmodule CuzCoreConnect.Academic do
   #   |> Repo.one()
   # end
 
-  @doc """
-  Lists all programmes not assigned to a lecturer.
-  """
   # def list_unassigned_programs(user_id) do
   #   assigned_program_ids =
   #     from(lp in LecturerProgram,
@@ -288,8 +308,6 @@ defmodule CuzCoreConnect.Academic do
   #   |> Repo.all()
   # end
 
-
-
   # ===================== LECTURER COURSES =====================
 
   # def list_lecturers_with_courses do
@@ -374,7 +392,6 @@ defmodule CuzCoreConnect.Academic do
   #   )
   #   |> Repo.all()
   # end
-
 
   # ======================= Course Functions ==================================
   @doc """
@@ -502,9 +519,6 @@ defmodule CuzCoreConnect.Academic do
     |> Repo.all()
   end
 
-  @doc """
-  Gets courses by programme, year, and semester.
-  """
   # def get_courses_by_program_and_semester(program_id, year, semester) do
   #   from(pc in CuzCoreConnect.Academics.ProgramCourse,
   #     where: pc.program_id == ^program_id and pc.year == ^year and pc.semester == ^semester,

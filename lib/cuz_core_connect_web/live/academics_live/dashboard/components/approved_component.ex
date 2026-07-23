@@ -4,9 +4,27 @@ defmodule CuzCoreConnectWeb.AcademicsLive.Dashboard.ApprovedComponent do
   alias CuzCoreConnect.Registrations
 
   @impl true
+  def update(%{selected: :clear}, socket) do
+    {:ok, assign(socket, :selected, nil)}
+  end
+
   def update(assigns, socket) do
     registrations = Registrations.list_by_academics_status("APPROVED")
-    {:ok, socket |> assign(assigns) |> assign(:registrations, registrations)}
+
+    {:ok,
+     socket
+     |> assign(assigns)
+     |> assign(:registrations, registrations)
+     |> assign_new(:selected, fn -> nil end)}
+  end
+
+  @impl true
+  def handle_event("view_details", %{"id" => id}, socket) do
+    {:noreply, assign(socket, :selected, Registrations.get_registration_with_details!(id))}
+  end
+
+  def handle_event("close_details", _, socket) do
+    {:noreply, assign(socket, :selected, nil)}
   end
 
   @impl true
@@ -27,11 +45,12 @@ defmodule CuzCoreConnectWeb.AcademicsLive.Dashboard.ApprovedComponent do
                 <th>Tracking #</th>
                 <th>Approved At</th>
                 <th>Overall Status</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
               <%= for reg <- @registrations do %>
-                <tr class="hover:bg-base-200/30">
+                <tr id={"academics-approved-#{reg.id}"} class="hover:bg-base-200/30">
                   <td>
                     <div class="font-medium">{reg.student_names}</div>
                     <div class="text-xs text-base-content/50">{reg.student_email}</div>
@@ -43,11 +62,35 @@ defmodule CuzCoreConnectWeb.AcademicsLive.Dashboard.ApprovedComponent do
                       {reg.registration_status}
                     </span>
                   </td>
+                  <td class="text-right">
+                    <div title="view" class="inline-flex">
+                      <button
+                        type="button"
+                        phx-click="view_details"
+                        phx-value-id={reg.id}
+                        phx-target={@myself}
+                        class="btn btn-ghost btn-sm btn-square text-info hover:bg-info/10"
+                        aria-label="View"
+                      >
+                        <.icon name="hero-eye" class="size-5" />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               <% end %>
             </tbody>
           </table>
         </div>
+      <% end %>
+
+      <%= if @selected do %>
+        <.live_component
+          module={CuzCoreConnectWeb.RegistrationDetailsComponent}
+          id="academics-approved-details-modal"
+          registration={@selected}
+          parent_module={__MODULE__}
+          parent_id="academics-approved"
+        />
       <% end %>
     </div>
     """

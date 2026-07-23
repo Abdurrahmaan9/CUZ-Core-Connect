@@ -19,8 +19,12 @@ defmodule CuzCoreConnect.Registrations.Registration do
     field :hod_status, :string, default: "PENDING"
     field :financial_status, :string, default: "PENDING"
     field :registration_status, :string, default: "PENDING"
+    field :rejection_reason, :string
+    field :rejected_stage, :string
     field :deleted_at, :naive_datetime
-    has_many :payment_receipts, CuzCoreConnect.Students.PaymentReceipt, foreign_key: :student_registration_id
+
+    has_many :payment_receipts, CuzCoreConnect.Students.PaymentReceipt,
+      foreign_key: :student_registration_id
 
     belongs_to :workflow, CuzCoreConnect.Workflows.RegistrationWorkflow
 
@@ -29,25 +33,29 @@ defmodule CuzCoreConnect.Registrations.Registration do
 
   def changeset(registration, attrs) do
     registration
-    |> cast(attrs,
-    [
-    :student_id,
-    :student_names,
-    :student_email,
-    :student_contact,
-    :student_program_details,
-    :student_courses,
-    :registration_date,
-    :tracking_number,
-    :approval_level,
-    :payment_status,
-    :retention_status,
-    :accademics_status,
-    :hod_status,
-    :financial_status,
-    :registration_status,
-    :deleted_at
-    ])
+    |> cast(
+      attrs,
+      [
+        :student_id,
+        :student_names,
+        :student_email,
+        :student_contact,
+        :student_program_details,
+        :student_courses,
+        :registration_date,
+        :tracking_number,
+        :approval_level,
+        :payment_status,
+        :retention_status,
+        :accademics_status,
+        :hod_status,
+        :financial_status,
+        :registration_status,
+        :rejection_reason,
+        :rejected_stage,
+        :deleted_at
+      ]
+    )
     |> put_active_workflow()
     |> validate_required([
       :student_id,
@@ -65,7 +73,7 @@ defmodule CuzCoreConnect.Registrations.Registration do
       :hod_status,
       :financial_status,
       :registration_status
-      ])
+    ])
     |> validate_email()
   end
 
@@ -77,6 +85,7 @@ defmodule CuzCoreConnect.Registrations.Registration do
           nil -> add_error(changeset, :workflow_id, "No active registration workflow found")
           workflow -> put_change(changeset, :workflow_id, workflow.id)
         end
+
       _ ->
         changeset
     end

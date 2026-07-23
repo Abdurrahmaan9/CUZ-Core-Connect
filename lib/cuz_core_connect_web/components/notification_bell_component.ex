@@ -119,7 +119,10 @@ defmodule CuzCoreConnectWeb.NotificationBellComponent do
         aria-label="Notifications"
       >
         <.icon name="hero-bell" class="w-6 h-6" />
-        <span :if={@unread_count > 0} class="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-orange-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 animate-pulse">
+        <span
+          :if={@unread_count > 0}
+          class="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-orange-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 animate-pulse"
+        >
           {if @unread_count > 99, do: "99+", else: @unread_count}
         </span>
       </button>

@@ -144,7 +144,8 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Semesters do
 
   @impl true
   def handle_event("select_semester", %{"semester" => semester}, socket) do
-    {:noreply, assign(socket, semester: semester, errors: Map.delete(socket.assigns.errors, :semester))}
+    {:noreply,
+     assign(socket, semester: semester, errors: Map.delete(socket.assigns.errors, :semester))}
   end
 
   @impl true
@@ -157,11 +158,15 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Semesters do
     errors = validate(socket.assigns)
 
     if map_size(errors) == 0 do
-      send(self(), {:next_step, %{
-        academic_year: socket.assigns.academic_year,
-        semester: socket.assigns.semester,
-        intake: socket.assigns.intake
-      }})
+      send(
+        self(),
+        {:next_step,
+         %{
+           academic_year: socket.assigns.academic_year,
+           semester: socket.assigns.semester,
+           intake: socket.assigns.intake
+         }}
+      )
 
       {:noreply, socket}
     else
@@ -180,7 +185,11 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Semesters do
   defp validate(assigns) do
     %{}
     |> maybe_add_error(:academic_year, assigns.academic_year == "", "Academic year is required.")
-    |> maybe_add_error(:academic_year, not valid_year_format?(assigns.academic_year), "Use format YYYY/YYYY, e.g. 2025/2026.")
+    |> maybe_add_error(
+      :academic_year,
+      not valid_year_format?(assigns.academic_year),
+      "Use format YYYY/YYYY, e.g. 2025/2026."
+    )
     |> maybe_add_error(:semester, is_nil(assigns.semester), "Please select a semester.")
     |> maybe_add_error(:intake, is_nil(assigns.intake), "Please select an intake period.")
   end
@@ -188,6 +197,7 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Semesters do
   defp maybe_add_error(errors, _key, false, _msg), do: errors
   defp maybe_add_error(errors, key, true, msg), do: Map.put(errors, key, msg)
 
-  defp valid_year_format?(""), do: true  # handled separately above
+  # handled separately above
+  defp valid_year_format?(""), do: true
   defp valid_year_format?(year), do: Regex.match?(~r/^\d{4}\/\d{4}$/, year)
 end

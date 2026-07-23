@@ -4,32 +4,91 @@ defmodule CuzCoreConnectWeb.AcademicsLive.Dashboard.PendingRegistrationsComponen
   alias CuzCoreConnect.Registrations
 
   @impl true
+  def update(%{selected: :clear}, socket) do
+    {:ok, assign(socket, :selected, nil)}
+  end
+
   def update(assigns, socket) do
     registrations = Registrations.list_pending_for_academics()
-    {:ok, socket |> assign(assigns) |> assign(:registrations, registrations) |> assign(:selected, nil)}
+
+    {:ok,
+     socket
+     |> assign(assigns)
+     |> assign(:registrations, registrations)
+     |> assign_new(:selected, fn -> nil end)
+     |> assign_new(:selected_ids, fn -> MapSet.new() end)}
   end
 
   @impl true
+  def handle_event("toggle_select", %{"id" => id}, socket) do
+    id = String.to_integer(id)
+    selected_ids = socket.assigns.selected_ids
+
+    selected_ids =
+      if MapSet.member?(selected_ids, id) do
+        MapSet.delete(selected_ids, id)
+      else
+        MapSet.put(selected_ids, id)
+      end
+
+    {:noreply, assign(socket, :selected_ids, selected_ids)}
+  end
+
+  def handle_event("bulk_approve", _params, socket) do
+    actor = socket.assigns.current_scope && socket.assigns.current_scope.user
+    ids = MapSet.to_list(socket.assigns.selected_ids)
+
+    registrations =
+      Enum.map(ids, &Registrations.get_registration!/1)
+
+    {ok_count, errors} = Registrations.bulk_approve(registrations, actor, "academics")
+
+    flash =
+      if errors == [] do
+        {:info, "Approved #{ok_count} registration(s)."}
+      else
+        {:error, "Approved #{ok_count}; #{length(errors)} failed."}
+      end
+
+    {kind, msg} = flash
+
+    {:noreply,
+     socket
+     |> put_flash(kind, msg)
+     |> assign(:selected_ids, MapSet.new())
+     |> assign(:registrations, Registrations.list_pending_for_academics())}
+  end
+
   def handle_event("approve", %{"id" => id}, socket) do
     registration = Registrations.get_registration!(id)
+    actor = socket.assigns.current_scope && socket.assigns.current_scope.user
 
-    case Registrations.update_registration(registration, %{accademics_status: "APPROVED"}) do
+    case Registrations.approve_academics(registration, actor) do
       {:ok, _} ->
         registrations = Registrations.list_pending_for_academics()
-        {:noreply, socket |> put_flash(:info, "Registration approved.") |> assign(:registrations, registrations)}
+
+        {:noreply,
+         socket
+         |> put_flash(:info, "Registration approved.")
+         |> assign(:registrations, registrations)}
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Failed to approve registration.")}
     end
   end
 
-  def handle_event("reject", %{"id" => id}, socket) do
+  def handle_event("reject", %{"registration_id" => id, "reason" => reason}, socket) do
     registration = Registrations.get_registration!(id)
+    actor = socket.assigns.current_scope && socket.assigns.current_scope.user
 
-    case Registrations.update_registration(registration, %{accademics_status: "REJECTED"}) do
+    case Registrations.reject_academics(registration, actor, reason) do
       {:ok, _} ->
         registrations = Registrations.list_pending_for_academics()
-        {:noreply, socket |> put_flash(:info, "Registration rejected.") |> assign(:registrations, registrations)}
+
+        {:noreply,
+         socket
+         |> put_flash(:info, "Registration rejected.")
+         |> assign(:registrations, registrations)}
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Failed to reject registration.")}
@@ -37,10 +96,7 @@ defmodule CuzCoreConnectWeb.AcademicsLive.Dashboard.PendingRegistrationsComponen
   end
 
   def handle_event("view_details", %{"id" => id}, socket) do
-    registration = 
-      Registrations.get_registration!(id)
-      |> CuzCoreConnect.Repo.preload(:payment_receipts)
-    {:noreply, assign(socket, :selected, registration)}
+    {:noreply, assign(socket, :selected, Registrations.get_registration_with_details!(id))}
   end
 
   def handle_event("close_details", _, socket) do
@@ -60,10 +116,24 @@ defmodule CuzCoreConnectWeb.AcademicsLive.Dashboard.PendingRegistrationsComponen
           <p class="text-sm text-base-content/50">No registrations pending academic review.</p>
         </div>
       <% else %>
+        <div class="flex justify-between items-center mb-3">
+          <p class="text-sm text-base-content/60">
+            {MapSet.size(@selected_ids)} selected
+          </p>
+          <.button
+            phx-click="bulk_approve"
+            phx-target={@myself}
+            disabled={MapSet.size(@selected_ids) == 0}
+            class="btn-sm bg-success text-success-content"
+          >
+            Approve selected
+          </.button>
+        </div>
         <div class="overflow-x-auto rounded-xl border border-base-300">
           <table class="table w-full">
             <thead>
               <tr class="bg-base-200/60">
+                <th></th>
                 <th>Student</th>
                 <th>Tracking #</th>
                 <th>Programme</th>
@@ -75,6 +145,16 @@ defmodule CuzCoreConnectWeb.AcademicsLive.Dashboard.PendingRegistrationsComponen
             <tbody>
               <%= for reg <- @registrations do %>
                 <tr class="hover:bg-base-200/30">
+                  <td>
+                    <input
+                      type="checkbox"
+                      checked={MapSet.member?(@selected_ids, reg.id)}
+                      phx-click="toggle_select"
+                      phx-value-id={reg.id}
+                      phx-target={@myself}
+                      class="checkbox checkbox-sm"
+                    />
+                  </td>
                   <td>
                     <div class="font-medium">{reg.student_names}</div>
                     <div class="text-xs text-base-content/50">{reg.student_email}</div>
@@ -95,8 +175,7 @@ defmodule CuzCoreConnectWeb.AcademicsLive.Dashboard.PendingRegistrationsComponen
                         phx-target={@myself}
                         class="btn-xs bg-info/20 text-info border-info/30"
                       >
-                        <.icon name="hero-eye" class="w-4 h-4" />
-                        Details
+                        <.icon name="hero-eye" class="w-4 h-4" /> Details
                       </.button>
                       <.button
                         phx-click="approve"
@@ -107,14 +186,33 @@ defmodule CuzCoreConnectWeb.AcademicsLive.Dashboard.PendingRegistrationsComponen
                         Approve
                       </.button>
                       <.button
-                        phx-click="reject"
-                        phx-value-id={reg.id}
-                        phx-target={@myself}
+                        phx-click={JS.toggle(to: "#reject-academics-form-#{reg.id}")}
                         class="btn-xs bg-error/20 text-error border-error/30"
                       >
                         Reject
                       </.button>
                     </div>
+                  </td>
+                </tr>
+                <tr id={"reject-academics-form-#{reg.id}"} class="hidden">
+                  <td colspan="7" class="bg-error/5">
+                    <form
+                      phx-submit="reject"
+                      phx-target={@myself}
+                      class="flex gap-2 items-center py-2"
+                    >
+                      <input type="hidden" name="registration_id" value={reg.id} />
+                      <input
+                        type="text"
+                        name="reason"
+                        placeholder="Reason for rejection"
+                        required
+                        class="input input-bordered input-sm flex-1"
+                      />
+                      <button type="submit" class="btn btn-sm bg-error text-white">
+                        Confirm Reject
+                      </button>
+                    </form>
                   </td>
                 </tr>
               <% end %>
@@ -128,7 +226,8 @@ defmodule CuzCoreConnectWeb.AcademicsLive.Dashboard.PendingRegistrationsComponen
           module={CuzCoreConnectWeb.RegistrationDetailsComponent}
           id="registration-details-modal"
           registration={@selected}
-          return_to=""
+          parent_module={__MODULE__}
+          parent_id="academics-pending"
         />
       <% end %>
     </div>

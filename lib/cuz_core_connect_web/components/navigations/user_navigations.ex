@@ -7,40 +7,36 @@ defmodule CuzCoreConnectWeb.Navigations.User do
   # Grouped by role for the sidebar
   @nav_items %{
     "academics" => [
-      {"academics_dashboard", "Dashboard", "chart-pie",
-       "/academics/dashboard", :academics_dashboard},
-      {"academics_pending_review", "Pending Review", "clock",
-       "/academics/dashboard?tab=pending", :academics_pending_review},
-      {"academics_approved", "Approved", "check-badge",
-       "/academics/dashboard?tab=approved", :academics_approved}
+      {"academics_dashboard", "Dashboard", "chart-pie", "/academics/dashboard",
+       :academics_dashboard},
+      {"academics_pending_review", "Pending Review", "clock", "/academics/dashboard?tab=pending",
+       :academics_pending_review},
+      {"academics_approved", "Approved", "check-badge", "/academics/dashboard?tab=approved",
+       :academics_approved}
     ],
     "finance" => [
-      {"finance_dashboard", "Dashboard", "chart-pie",
-       "/finance/dashboard", :finance_dashboard},
+      {"finance_dashboard", "Dashboard", "chart-pie", "/finance/dashboard", :finance_dashboard},
       {"finance_pending_payments", "Pending Payments", "banknotes",
        "/finance/dashboard?tab=pending", :finance_pending_payments},
-      {"finance_verified", "Verified", "document-check",
-       "/finance/dashboard?tab=approved", :finance_verified}
+      {"finance_verified", "Verified", "document-check", "/finance/dashboard?tab=approved",
+       :finance_verified}
     ],
     "hod" => [
-      {"hod_dashboard", "Dashboard", "chart-pie",
-       "/hod/dashboard", :hod_dashboard},
-      {"hod_pending_review", "Pending Review", "clock",
-       "/hod/dashboard?tab=pending", :hod_pending_review},
-      {"hod_approved", "Approved", "check-badge",
-       "/hod/dashboard?tab=approved", :hod_approved}
+      {"hod_dashboard", "Dashboard", "chart-pie", "/hod/dashboard", :hod_dashboard},
+      {"hod_pending_review", "Pending Review", "clock", "/hod/dashboard?tab=pending",
+       :hod_pending_review},
+      {"hod_approved", "Approved", "check-badge", "/hod/dashboard?tab=approved", :hod_approved}
     ],
     "retention" => [
-      {"retention_dashboard", "Dashboard", "chart-pie",
-       "/retention/dashboard", :retention_dashboard},
+      {"retention_dashboard", "Dashboard", "chart-pie", "/retention/dashboard",
+       :retention_dashboard},
       {"retention_final_review", "Final Review", "clipboard-document-check",
        "/retention/dashboard?tab=pending", :retention_final_review},
-      {"retention_completed", "Completed", "check-circle",
-       "/retention/dashboard?tab=approved", :retention_completed}
+      {"retention_completed", "Completed", "check-circle", "/retention/dashboard?tab=approved",
+       :retention_completed}
     ],
     "student" => [
-      {"student_dashboard", "Dashboard", "chart-pie",
-       "/student/dashboard", :student_dashboard},
+      {"student_dashboard", "Dashboard", "chart-pie", "/student/dashboard", :student_dashboard},
       {"student_my_registrations", "My Registrations", "document-text",
        "/student/dashboard?tab=my_registrations", :student_my_registrations},
       {"student_new_registration", "New Registration", "plus-circle",
@@ -51,19 +47,16 @@ defmodule CuzCoreConnectWeb.Navigations.User do
     # Admin always sees everything — no access_map check needed
     "admin" => [
       {nil, "Dashboard", "chart-pie", "/admin/dashboard", :admin_dashboard},
-      {nil, "Students", "academic-cap", "/admin/student", :student_registrations},
-      {nil, "Programmes", "book-open", "/admin/programmes", :programmes},
-      {nil, "Courses", "rectangle-stack", "/admin/courses", :courses},
+      # {nil, "Students", "academic-cap", "/admin/student", :student_registrations},
+      {nil, "Programmes", "book-open", "/admin/programmes", :programmes_management},
+      {nil, "Courses", "rectangle-stack", "/admin/courses", :courses_management},
       {nil, "Workflows", "arrows-right-left", "/admin/workflows/registration",
        :registration_workflows},
-      {nil, "Internal Accounts", "users", "/admin/user-accounts/internal",
-       :internal_accounts},
+      {nil, "Internal Accounts", "users", "/admin/user-accounts/internal", :internal_users},
       {nil, "External Accounts", "user-group", "/admin/user-accounts/external",
-       :external_accounts},
-      {nil, "Attendance", "chart-bar", "/admin/reports/attendance",
-       :reports_attendance},
-      {nil, "Performance", "chart-pie", "/admin/reports/performance",
-       :reports_performance},
+       :external_users},
+      # {nil, "Attendance", "chart-bar", "/admin/reports/attendance", :reports_attendance},
+      # {nil, "Performance", "chart-pie", "/admin/reports/performance", :reports_performance},
       {nil, "Messages", "chat-bubble-left-right", "/admin/messages", :messages},
       {nil, "Announcements", "megaphone", "/admin/announcements", :announcements}
     ]
@@ -110,7 +103,6 @@ defmodule CuzCoreConnectWeb.Navigations.User do
         </div>
 
         <nav class="flex-1 px-4 py-8 space-y-1 overflow-y-auto scrollbar-thin scrollbar-thumb-orange-500/20 scrollbar-track-transparent border-t border-orange-500/10">
-
           <div class="menu-title mb-3">
             <span class="text-xs font-semibold uppercase tracking-wider text-base-content/40">
               {role_label(@role)}
@@ -185,10 +177,17 @@ defmodule CuzCoreConnectWeb.Navigations.User do
                     |> List.first()
                     |> String.capitalize()}
                 </p>
-                <p class="text-xs text-base-content/50">{role_label(@current_scope.user.user_role)}</p>
+                <p class="text-xs text-base-content/50">
+                  {role_label(@current_scope.user.user_role)}
+                </p>
               </div>
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 9l-7 7-7-7"
+                />
               </svg>
             </button>
 

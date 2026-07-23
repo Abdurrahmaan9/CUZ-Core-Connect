@@ -86,11 +86,11 @@ defmodule CuzCoreConnectWeb.Layouts do
         </div>
       </main>
       <%= if @current_scope && @current_scope.user do %>
-      <.live_component
-        module={CuzCoreConnectWeb.Components.SessionTimerComponent}
-        id="session-timer-admin"
-      />
-    <% end %>
+        <.live_component
+          module={CuzCoreConnectWeb.Components.SessionTimerComponent}
+          id="session-timer-admin"
+        />
+      <% end %>
     </div>
 
     <!-- Overlay for mobile sidebar -->
@@ -98,7 +98,8 @@ defmodule CuzCoreConnectWeb.Layouts do
       id="sidebar-overlay"
       class="fixed inset-0 bg-black/50 z-30 hidden lg:hidden"
       phx-click={JS.toggle(to: "#sidebar") |> JS.toggle(to: "#sidebar-overlay")}
-    ></div>
+    >
+    </div>
     """
   end
 

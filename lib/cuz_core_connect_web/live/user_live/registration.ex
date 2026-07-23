@@ -20,7 +20,10 @@ defmodule CuzCoreConnectWeb.UserLive.Registration do
                 Register for an account
                 <:subtitle>
                   Already registered?
-                  <.link navigate={~p"/users/log-in"} class="font-semibold text-brand hover:underline text-primary">
+                  <.link
+                    navigate={~p"/users/log-in"}
+                    class="font-semibold text-brand hover:underline text-primary"
+                  >
                     Log in
                   </.link>
                   to your account now.

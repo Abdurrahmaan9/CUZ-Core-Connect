@@ -4,30 +4,60 @@ defmodule CuzCoreConnectWeb.FinanceLive.Dashboard.PendingPaymentsComponent do
   alias CuzCoreConnect.Registrations
 
   @impl true
+  def update(%{selected: :clear}, socket) do
+    {:ok, assign(socket, :selected, nil)}
+  end
+
   def update(assigns, socket) do
     registrations = Registrations.list_pending_for_finance()
-    {:ok, socket |> assign(assigns) |> assign(:registrations, registrations)}
+
+    {:ok,
+     socket
+     |> assign(assigns)
+     |> assign(:registrations, registrations)
+     |> assign_new(:selected, fn -> nil end)}
   end
 
   @impl true
+  def handle_event("view_details", %{"id" => id}, socket) do
+    registration =
+      Registrations.get_registration_with_details!(id)
+
+    {:noreply, assign(socket, :selected, registration)}
+  end
+
+  def handle_event("close_details", _, socket) do
+    {:noreply, assign(socket, :selected, nil)}
+  end
+
   def handle_event("approve_payment", %{"id" => id}, socket) do
     reg = Registrations.get_registration!(id)
+    actor = socket.assigns.current_scope && socket.assigns.current_scope.user
 
-    case Registrations.update_registration(reg, %{payment_status: "APPROVED", financial_status: "APPROVED"}) do
+    case Registrations.approve_payment(reg, actor) do
       {:ok, _} ->
-        {:noreply, socket |> put_flash(:info, "Payment verified.") |> assign(:registrations, Registrations.list_pending_for_finance())}
+        {:noreply,
+         socket
+         |> put_flash(:info, "Payment verified.")
+         |> assign(:registrations, Registrations.list_pending_for_finance())
+         |> assign(:selected, nil)}
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Failed to verify payment.")}
     end
   end
 
-  def handle_event("reject_payment", %{"id" => id}, socket) do
+  def handle_event("reject_payment", %{"registration_id" => id, "reason" => reason}, socket) do
     reg = Registrations.get_registration!(id)
+    actor = socket.assigns.current_scope && socket.assigns.current_scope.user
 
-    case Registrations.update_registration(reg, %{payment_status: "REJECTED", financial_status: "REJECTED"}) do
+    case Registrations.reject_payment(reg, actor, reason) do
       {:ok, _} ->
-        {:noreply, socket |> put_flash(:info, "Payment rejected.") |> assign(:registrations, Registrations.list_pending_for_finance())}
+        {:noreply,
+         socket
+         |> put_flash(:info, "Payment rejected.")
+         |> assign(:registrations, Registrations.list_pending_for_finance())
+         |> assign(:selected, nil)}
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Failed to reject payment.")}
@@ -73,7 +103,16 @@ defmodule CuzCoreConnectWeb.FinanceLive.Dashboard.PendingPaymentsComponent do
                     </span>
                   </td>
                   <td>
-                    <div class="flex gap-2">
+                    <div class="flex gap-2 flex-wrap">
+                      <.button
+                        phx-click="view_details"
+                        phx-value-id={reg.id}
+                        phx-target={@myself}
+                        class="btn-xs bg-info/20 text-info border-info/30"
+                      >
+                        <.icon name="hero-eye" class="w-4 h-4" />
+                        Details
+                      </.button>
                       <.button
                         phx-click="approve_payment"
                         phx-value-id={reg.id}
@@ -83,9 +122,7 @@ defmodule CuzCoreConnectWeb.FinanceLive.Dashboard.PendingPaymentsComponent do
                         Verify
                       </.button>
                       <.button
-                        phx-click="reject_payment"
-                        phx-value-id={reg.id}
-                        phx-target={@myself}
+                        phx-click={JS.toggle(to: "#reject-payment-form-#{reg.id}")}
                         class="btn-xs bg-error/20 text-error"
                       >
                         Reject
@@ -93,10 +130,41 @@ defmodule CuzCoreConnectWeb.FinanceLive.Dashboard.PendingPaymentsComponent do
                     </div>
                   </td>
                 </tr>
+                <tr id={"reject-payment-form-#{reg.id}"} class="hidden">
+                  <td colspan="5" class="bg-error/5">
+                    <form
+                      phx-submit="reject_payment"
+                      phx-target={@myself}
+                      class="flex gap-2 items-center py-2"
+                    >
+                      <input type="hidden" name="registration_id" value={reg.id} />
+                      <input
+                        type="text"
+                        name="reason"
+                        placeholder="Reason for rejecting this payment"
+                        required
+                        class="input input-bordered input-sm flex-1"
+                      />
+                      <button type="submit" class="btn btn-sm bg-error text-white">
+                        Confirm Reject
+                      </button>
+                    </form>
+                  </td>
+                </tr>
               <% end %>
             </tbody>
           </table>
         </div>
+      <% end %>
+
+      <%= if @selected do %>
+        <.live_component
+          module={CuzCoreConnectWeb.RegistrationDetailsComponent}
+          id="finance-registration-details-modal"
+          registration={@selected}
+          parent_module={__MODULE__}
+          parent_id="finance-pending"
+        />
       <% end %>
     </div>
     """
