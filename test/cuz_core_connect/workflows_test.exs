@@ -56,7 +56,9 @@ defmodule CuzCoreConnect.WorkflowsTest do
     assert registration_a.workflow_id == flow_a.id
 
     {:ok, flow_b} = Workflows.create_registration_flow(flow_attrs("Flow B", true))
-    registration_b = registration_fixture(%{tracking_number: "REG-switch-#{System.unique_integer([:positive])}"})
+
+    registration_b =
+      registration_fixture(%{tracking_number: "REG-switch-#{System.unique_integer([:positive])}"})
 
     assert registration_b.workflow_id == flow_b.id
     assert registration_a.workflow_id == flow_a.id

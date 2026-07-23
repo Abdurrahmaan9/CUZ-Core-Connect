@@ -23,7 +23,6 @@ defmodule CuzCoreConnectWeb.RetentionLive.Dashboard.Index do
   @impl true
   def handle_params(%{"tab" => tab}, _url, socket)
       when tab in ["overview", "pending", "approved"] do
-
     current_page =
       cond do
         tab == "overview" -> :retention_dashboard
@@ -31,9 +30,9 @@ defmodule CuzCoreConnectWeb.RetentionLive.Dashboard.Index do
         tab == "approved" -> :retention_completed
       end
 
-    {:noreply, assign(socket, :active_tab, tab)
-     |> assign(:current_page, current_page)
-    }
+    {:noreply,
+     assign(socket, :active_tab, tab)
+     |> assign(:current_page, current_page)}
   end
 
   def handle_params(_params, _url, socket),
@@ -53,7 +52,6 @@ defmodule CuzCoreConnectWeb.RetentionLive.Dashboard.Index do
       page_title={@page_title}
       current_page={@current_page}
     >
-
       <div class="mx-auto px-4 sm:px-6 lg:px-8">
         <%= case @active_tab do %>
           <% "overview" -> %>

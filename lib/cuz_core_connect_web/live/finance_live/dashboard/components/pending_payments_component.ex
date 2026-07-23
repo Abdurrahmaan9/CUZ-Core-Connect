@@ -110,8 +110,7 @@ defmodule CuzCoreConnectWeb.FinanceLive.Dashboard.PendingPaymentsComponent do
                         phx-target={@myself}
                         class="btn-xs bg-info/20 text-info border-info/30"
                       >
-                        <.icon name="hero-eye" class="w-4 h-4" />
-                        Details
+                        <.icon name="hero-eye" class="w-4 h-4" /> Details
                       </.button>
                       <.button
                         phx-click="approve_payment"

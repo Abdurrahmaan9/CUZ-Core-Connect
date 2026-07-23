@@ -279,8 +279,7 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow do
           <div class="flex flex-col gap-4 border-b border-base-300 p-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 class="flex items-center gap-2 text-lg font-semibold text-base-content">
-                <.icon name="hero-arrow-path" class="size-5 text-primary" />
-                Registration Flows
+                <.icon name="hero-arrow-path" class="size-5 text-primary" /> Registration Flows
               </h3>
               <p class="mt-1 text-sm text-base-content/60">
                 Configure and activate the approval workflow for student registrations.
@@ -288,7 +287,12 @@ defmodule CuzCoreConnectWeb.Admin.RegistrationWorkflow do
             </div>
 
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <.form for={%{}} phx-change="filter" id="registration-flow-filter" class="w-full sm:w-72">
+              <.form
+                for={%{}}
+                phx-change="filter"
+                id="registration-flow-filter"
+                class="w-full sm:w-72"
+              >
                 <.input
                   id="registration-flow-filter-search"
                   name="search_filter"

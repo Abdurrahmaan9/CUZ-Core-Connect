@@ -63,10 +63,9 @@ defmodule CuzCoreConnect.Academic do
       when is_integer(program_id) and is_integer(semester) do
     from(pc in CuzCoreConnect.Academics.ProgramCourse,
       join: c in assoc(pc, :course),
-      where:
-        # pc.program_id == ^program_id and pc.semester == ^semester and
-        # pc.is_active == true and
-          c.is_active == true,
+      # pc.program_id == ^program_id and pc.semester == ^semester and
+      # pc.is_active == true and
+      where: c.is_active == true,
       order_by: [asc: c.code],
       select: %{
         id: c.id,

@@ -188,7 +188,9 @@ defmodule CuzCoreConnectWeb.RegistrationDetailsComponent do
           <% else %>
             <section class="space-y-2">
               <h3 class="text-lg font-semibold border-b border-base-300 pb-3">Payment Receipts</h3>
-              <p class="text-sm text-base-content/60">No payment receipts were uploaded with this registration.</p>
+              <p class="text-sm text-base-content/60">
+                No payment receipts were uploaded with this registration.
+              </p>
             </section>
           <% end %>
 

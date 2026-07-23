@@ -20,20 +20,22 @@ defmodule CuzCoreConnect.Registrations.RegistrationNotifier do
     "retention" => "Retention"
   }
 
-  defp deliver(recipient, subject, body) when is_binary(recipient) and recipient != "" do
+  defp deliver(recipient, subject, body, notif_type)
+       when is_binary(recipient) and recipient != "" do
     email =
       new()
       |> to(recipient)
       |> from({"CUZ - Core Connect", "contact@cuz.coreconnect.edu"})
       |> subject(subject)
       |> text_body(body)
+      |> put_private(:notif_type, notif_type)
 
     with {:ok, _metadata} <- Mailer.deliver(email) do
       {:ok, email}
     end
   end
 
-  defp deliver(_recipient, _subject, _body), do: {:ok, :skipped}
+  defp deliver(_recipient, _subject, _body, _notif_type), do: {:ok, :skipped}
 
   @doc "Notify the student that their registration was submitted successfully."
   def deliver_submission_email(registration) do
@@ -51,7 +53,8 @@ defmodule CuzCoreConnect.Registrations.RegistrationNotifier do
       You can track its progress at any time using this number, even without logging in.
 
       ==============================
-      """
+      """,
+      "registration_submission"
     )
   end
 
@@ -59,32 +62,42 @@ defmodule CuzCoreConnect.Registrations.RegistrationNotifier do
   def deliver_stage_approved_email(registration, stage) do
     label = Map.get(@stage_labels, stage, stage)
 
-    deliver(registration.student_email, "Registration update - #{label} approved", """
+    deliver(
+      registration.student_email,
+      "Registration update - #{label} approved",
+      """
 
-    Hi #{registration.student_names},
+      Hi #{registration.student_names},
 
-    Good news! The #{label} stage of your registration (#{registration.tracking_number}) has been approved.
+      Good news! The #{label} stage of your registration (#{registration.tracking_number}) has been approved.
 
-    ==============================
-    """)
+      ==============================
+      """,
+      "registration_stage_approved"
+    )
   end
 
   @doc "Notify the student that a stage rejected their registration, with the reason given."
   def deliver_stage_rejected_email(registration, stage, reason) do
     label = Map.get(@stage_labels, stage, stage)
 
-    deliver(registration.student_email, "Registration update - #{label} rejected", """
+    deliver(
+      registration.student_email,
+      "Registration update - #{label} rejected",
+      """
 
-    Hi #{registration.student_names},
+      Hi #{registration.student_names},
 
-    Unfortunately the #{label} stage of your registration (#{registration.tracking_number}) was rejected.
+      Unfortunately the #{label} stage of your registration (#{registration.tracking_number}) was rejected.
 
-    Reason given: #{reason || "No reason provided."}
+      Reason given: #{reason || "No reason provided."}
 
-    Please log in and revise/resubmit your registration.
+      Please log in and revise/resubmit your registration.
 
-    ==============================
-    """)
+      ==============================
+      """,
+      "registration_stage_rejected"
+    )
   end
 
   @doc "Notify the student that their registration is fully approved/completed."
@@ -99,7 +112,8 @@ defmodule CuzCoreConnect.Registrations.RegistrationNotifier do
       Congratulations! Your registration (#{registration.tracking_number}) has completed every approval stage and is now fully APPROVED.
 
       ==============================
-      """
+      """,
+      "registration_completion"
     )
   end
 end

@@ -48,13 +48,88 @@ defmodule CuzCoreConnect.Registrations do
     )
   end
 
-  def list_registrations_by_student(user_id) do
-    Repo.all(
-      from r in Registration,
-        where: r.student_id == ^to_string(user_id),
-        order_by: [desc: r.inserted_at]
+  def list_registrations_by_student(%CuzCoreConnect.Accounts.User{} = user) do
+    student_number =
+      case user.student_number do
+        number when is_binary(number) and number != "" -> number
+        _ -> nil
+      end
+
+    email =
+      case user.email do
+        address when is_binary(address) and address != "" -> String.downcase(address)
+        _ -> nil
+      end
+
+    user_id = to_string(user.id)
+
+    conditions = dynamic([r], r.student_id == ^user_id)
+
+    conditions =
+      if student_number do
+        dynamic([r], ^conditions or r.student_id == ^student_number)
+      else
+        conditions
+      end
+
+    conditions =
+      if email do
+        dynamic([r], ^conditions or fragment("lower(?)", r.student_email) == ^email)
+      else
+        conditions
+      end
+
+    from(r in Registration,
+      where: is_nil(r.deleted_at),
+      where: ^conditions,
+      order_by: [desc: r.inserted_at]
     )
+    |> Repo.all()
   end
+
+  def list_registrations_by_student(user_id) when is_integer(user_id) do
+    case CuzCoreConnect.Repo.get(CuzCoreConnect.Accounts.User, user_id) do
+      %CuzCoreConnect.Accounts.User{} = user ->
+        list_registrations_by_student(user)
+
+      nil ->
+        Repo.all(
+          from r in Registration,
+            where: r.student_id == ^to_string(user_id) and is_nil(r.deleted_at),
+            order_by: [desc: r.inserted_at]
+        )
+    end
+  end
+
+  def list_registrations_by_student(user_id) when is_binary(user_id) do
+    case Integer.parse(user_id) do
+      {id, ""} ->
+        list_registrations_by_student(id)
+
+      _ ->
+        Repo.all(
+          from r in Registration,
+            where: r.student_id == ^user_id and is_nil(r.deleted_at),
+            order_by: [desc: r.inserted_at]
+        )
+    end
+  end
+
+  @doc """
+  Returns true when the user owns the registration (student number, email, or legacy user id).
+  """
+  def owns_registration?(%CuzCoreConnect.Accounts.User{} = user, %Registration{} = registration) do
+    student_number = user.student_number && to_string(user.student_number)
+    user_email = String.downcase(to_string(user.email || ""))
+    reg_student_id = to_string(registration.student_id || "")
+    reg_email = String.downcase(to_string(registration.student_email || ""))
+
+    (is_binary(student_number) and student_number != "" and student_number == reg_student_id) or
+      to_string(user.id) == reg_student_id or
+      (user_email != "" and user_email == reg_email)
+  end
+
+  def owns_registration?(_, _), do: false
 
   def list_by_academics_status(status) do
     Repo.all(from r in Registration, where: r.accademics_status == ^status)
@@ -679,8 +754,7 @@ defmodule CuzCoreConnect.Registrations do
   end
 
   defp extract_student_id(user) do
-    # Extract student ID from user - adjust based on your user schema
-    Map.get(user, :student_id) || to_string(user.id)
+    Map.get(user, :student_number) || Map.get(user, :student_id) || to_string(user.id)
   end
 
   defp extract_student_email(user) do

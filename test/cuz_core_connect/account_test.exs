@@ -118,6 +118,71 @@ defmodule CuzCoreConnect.AccountTest do
     end
   end
 
+  describe "register_student/1" do
+    test "creates a confirmed student and emails credentials" do
+      import Swoosh.TestAssertions
+
+      student_number = "55#{System.unique_integer([:positive])}" |> String.pad_trailing(6, "0")
+      email = "st#{student_number}@students.cavendish.co.zm"
+
+      {:ok, user} =
+        Accounts.register_student(%{
+          student_number: student_number,
+          first_name: "Grace",
+          last_name: "Hopper",
+          email: email
+        })
+
+      assert user.user_role == "student"
+      assert user.student_number == student_number
+      refute is_nil(user.confirmed_at)
+      assert_email_sent(to: email, subject: "Your CUZ Core Connect account")
+    end
+
+    test "rejects invalid student numbers" do
+      {:error, changeset} =
+        Accounts.register_student(%{
+          student_number: "12",
+          first_name: "A",
+          last_name: "B",
+          email: "ab12@students.cavendish.co.zm"
+        })
+
+      assert "must be at least 6 digits" in errors_on(changeset).student_number
+    end
+  end
+
+  describe "ensure_student_account/1" do
+    test "returns existing user by email without creating another" do
+      user = user_fixture(%{email: "existing#{System.unique_integer()}@example.com"})
+
+      assert {:ok, ^user, :existing} =
+               Accounts.ensure_student_account(%{
+                 email: user.email,
+                 student_id: "999999",
+                 student_names: "Existing User"
+               })
+    end
+
+    test "creates a student account when none exists" do
+      import Swoosh.TestAssertions
+
+      email = "newstudent#{System.unique_integer()}@example.com"
+      student_number = "66#{System.unique_integer([:positive])}" |> String.pad_trailing(6, "0")
+
+      assert {:ok, user, :created} =
+               Accounts.ensure_student_account(%{
+                 student_email: email,
+                 student_id: student_number,
+                 student_names: "New Student"
+               })
+
+      assert user.email == email
+      assert user.student_number == student_number
+      assert_email_sent(to: email, subject: "Your CUZ Core Connect account")
+    end
+  end
+
   describe "sudo_mode?/2" do
     test "validates the authenticated_at time" do
       now = DateTime.utc_now()

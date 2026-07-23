@@ -18,7 +18,6 @@ defmodule CuzCoreConnectWeb.AdminLiveIndex do
   @impl true
   def handle_params(%{"tab" => tab}, _url, socket)
       when tab in ["overview", "users", "workflows", "settings"] do
-
     # current_page =
     #   cond do
     #     tab == "overview" -> :admin_dashboard
@@ -27,8 +26,10 @@ defmodule CuzCoreConnectWeb.AdminLiveIndex do
     #     tab == "settings" -> :academics_approved
     #   end
 
-    {:noreply, assign(socket, :active_tab, tab)
-    #  |> assign(:current_page, current_page)
+    {
+      :noreply,
+      assign(socket, :active_tab, tab)
+      #  |> assign(:current_page, current_page)
     }
   end
 
@@ -72,7 +73,6 @@ defmodule CuzCoreConnectWeb.AdminLiveIndex do
       page_title={@page_title}
       current_page={@current_page}
     >
-
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <%= case @active_tab do %>
           <% "overview" -> %>

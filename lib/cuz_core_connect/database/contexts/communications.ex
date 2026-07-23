@@ -6,6 +6,7 @@ defmodule CuzCoreConnect.Communications do
 
   alias CuzCoreConnect.Repo
   alias CuzCoreConnect.Communications.Announcement
+  alias CuzCoreConnect.Communications.EmailLog
   alias CuzCoreConnect.Communications.SiteMessage
   alias CuzCoreConnect.Registrations.Registration
 
@@ -159,6 +160,48 @@ defmodule CuzCoreConnect.Communications do
       unread: Map.get(rows, "unread", 0),
       read: Map.get(rows, "read", 0),
       archived: Map.get(rows, "archived", 0)
+    }
+  end
+
+  # ── Email logs ───────────────────────────────────────────────────────────
+
+  def list_email_logs(limit \\ 100) do
+    from(l in EmailLog, order_by: [desc: l.inserted_at], limit: ^limit)
+    |> Repo.all()
+  end
+
+  def list_email_logs_by_status(status, limit \\ 100)
+      when status in ~w(sent failed) do
+    from(l in EmailLog,
+      where: l.status == ^status,
+      order_by: [desc: l.inserted_at],
+      limit: ^limit
+    )
+    |> Repo.all()
+  end
+
+  def get_email_log!(id), do: Repo.get!(EmailLog, id)
+
+  def create_email_log(attrs \\ %{}) do
+    %EmailLog{}
+    |> EmailLog.changeset(attrs)
+    |> Repo.insert()
+  end
+
+  def delete_email_log(%EmailLog{} = log) do
+    Repo.delete(log)
+  end
+
+  def email_log_stats do
+    rows =
+      from(l in EmailLog, group_by: l.status, select: {l.status, count(l.id)})
+      |> Repo.all()
+      |> Map.new()
+
+    %{
+      total: Map.values(rows) |> Enum.sum(),
+      sent: Map.get(rows, "sent", 0),
+      failed: Map.get(rows, "failed", 0)
     }
   end
 end

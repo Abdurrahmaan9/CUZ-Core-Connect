@@ -62,11 +62,7 @@ defmodule CuzCoreConnectWeb.CertificateController do
   end
 
   defp owns_registration?(user, registration) do
-    student_id = to_string(registration.student_id || "")
-    email = String.downcase(to_string(registration.student_email || ""))
-
-    to_string(user.id) == student_id or
-      String.downcase(to_string(user.email || "")) == email
+    Registrations.owns_registration?(user, registration)
   end
 
   defp unavailable(conn) do

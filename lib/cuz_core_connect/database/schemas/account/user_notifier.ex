@@ -5,13 +5,14 @@ defmodule CuzCoreConnect.Accounts.UserNotifier do
   alias CuzCoreConnect.Accounts.User
 
   # Delivers the email using the application mailer.
-  defp deliver(recipient, subject, body) do
+  defp deliver(recipient, subject, body, notif_type) do
     email =
       new()
       |> to(recipient)
       |> from({"CUZ - Core Connect", "contact@cuz.coreconnect.edu"})
       |> subject(subject)
       |> text_body(body)
+      |> put_private(:notif_type, notif_type)
 
     with {:ok, _metadata} <- Mailer.deliver(email) do
       {:ok, email}
@@ -26,48 +27,58 @@ defmodule CuzCoreConnect.Accounts.UserNotifier do
       when is_binary(password) and is_binary(login_url) do
     name = user.username || user.email
 
-    deliver(user.email, "Your CUZ Core Connect account", """
+    deliver(
+      user.email,
+      "Your CUZ Core Connect account",
+      """
 
-    ==============================
+      ==============================
 
-    Hi #{name},
+      Hi #{name},
 
-    An account has been created for you on CUZ Core Connect.
+      An account has been created for you on CUZ Core Connect.
 
-    Email:    #{user.email}
-    Username: #{user.username}
-    Role:     #{user.user_role}
-    Password: #{password}
+      Email:    #{user.email}
+      Username: #{user.username}
+      Role:     #{user.user_role}
+      Password: #{password}
 
-    Sign in here:
-    #{login_url}
+      Sign in here:
+      #{login_url}
 
-    Please change your password after your first login.
+      Please change your password after your first login.
 
-    If you did not expect this email, contact the system administrator.
+      If you did not expect this email, contact the system administrator.
 
-    ==============================
-    """)
+      ==============================
+      """,
+      "account_credentials"
+    )
   end
 
   @doc """
   Deliver instructions to update a user email.
   """
   def deliver_update_email_instructions(user, url) do
-    deliver(user.email, "Update email instructions", """
+    deliver(
+      user.email,
+      "Update email instructions",
+      """
 
-    ==============================
+      ==============================
 
-    Hi #{user.email},
+      Hi #{user.email},
 
-    You can change your email by visiting the URL below:
+      You can change your email by visiting the URL below:
 
-    #{url}
+      #{url}
 
-    If you didn't request this change, please ignore this.
+      If you didn't request this change, please ignore this.
 
-    ==============================
-    """)
+      ==============================
+      """,
+      "update_email"
+    )
   end
 
   @doc """
@@ -81,36 +92,46 @@ defmodule CuzCoreConnect.Accounts.UserNotifier do
   end
 
   defp deliver_magic_link_instructions(user, url) do
-    deliver(user.email, "Log in instructions", """
+    deliver(
+      user.email,
+      "Log in instructions",
+      """
 
-    ==============================
+      ==============================
 
-    Hi #{user.email},
+      Hi #{user.email},
 
-    You can log into your account by visiting the URL below:
+      You can log into your account by visiting the URL below:
 
-    #{url}
+      #{url}
 
-    If you didn't request this email, please ignore this.
+      If you didn't request this email, please ignore this.
 
-    ==============================
-    """)
+      ==============================
+      """,
+      "magic_link"
+    )
   end
 
   defp deliver_confirmation_instructions(user, url) do
-    deliver(user.email, "Confirmation instructions", """
+    deliver(
+      user.email,
+      "Confirmation instructions",
+      """
 
-    ==============================
+      ==============================
 
-    Hi #{user.email},
+      Hi #{user.email},
 
-    You can confirm your account by visiting the URL below:
+      You can confirm your account by visiting the URL below:
 
-    #{url}
+      #{url}
 
-    If you didn't create an account with us, please ignore this.
+      If you didn't create an account with us, please ignore this.
 
-    ==============================
-    """)
+      ==============================
+      """,
+      "confirmation"
+    )
   end
 end

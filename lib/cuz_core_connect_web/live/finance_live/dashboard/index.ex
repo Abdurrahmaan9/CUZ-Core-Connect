@@ -23,16 +23,16 @@ defmodule CuzCoreConnectWeb.FinanceLive.Dashboard.Index do
   @impl true
   def handle_params(%{"tab" => tab}, _url, socket)
       when tab in ["overview", "pending", "approved"] do
-        current_page =
-          cond do
-            tab == "overview" -> :finance_dashboard
-            tab == "pending" -> :finance_pending_payments
-            tab == "approved" -> :finance_verified
-          end
+    current_page =
+      cond do
+        tab == "overview" -> :finance_dashboard
+        tab == "pending" -> :finance_pending_payments
+        tab == "approved" -> :finance_verified
+      end
+
     {:noreply,
-      assign(socket, :active_tab, tab)
-     |> assign(:current_page, current_page)
-    }
+     assign(socket, :active_tab, tab)
+     |> assign(:current_page, current_page)}
   end
 
   def handle_params(_params, _url, socket),
@@ -52,7 +52,6 @@ defmodule CuzCoreConnectWeb.FinanceLive.Dashboard.Index do
       page_title={@page_title}
       current_page={@current_page}
     >
-
       <div class="mx-auto px-4 sm:px-6 lg:px-8">
         <%= case @active_tab do %>
           <% "overview" -> %>

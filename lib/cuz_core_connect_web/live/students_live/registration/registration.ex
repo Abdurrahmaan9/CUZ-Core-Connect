@@ -1,6 +1,7 @@
 defmodule CuzCoreConnectWeb.Student.Registration.RegistrationLive do
   use CuzCoreConnectWeb, :live_view
 
+  alias CuzCoreConnect.Accounts
   alias CuzCoreConnect.Registrations
   alias CuzCoreConnectWeb.Student.Registration.Steps.Courses
   alias CuzCoreConnectWeb.Student.Registration.Steps.PersonalInfo
@@ -248,6 +249,8 @@ defmodule CuzCoreConnectWeb.Student.Registration.RegistrationLive do
 
     case Registrations.create_registration(socket.assigns.current_scope, registration_data) do
       {:ok, registration} ->
+        _ = maybe_ensure_student_account(registration_data, socket.assigns.current_scope)
+
         # Persist uploaded receipts out of the LiveView temp dir into
         # priv/static/uploads/receipts so finance (and other staff) can
         # retrieve them later via ReceiptController.
@@ -323,5 +326,33 @@ defmodule CuzCoreConnectWeb.Student.Registration.RegistrationLive do
   @impl true
   def handle_event("toggle_mobile_menu", _params, socket) do
     {:noreply, assign(socket, :show_mobile_menu, !socket.assigns.show_mobile_menu)}
+  end
+
+  defp maybe_ensure_student_account(registration_data, current_scope) do
+    if current_scope && Map.get(current_scope, :user) do
+      :ok
+    else
+      case Accounts.ensure_student_account(%{
+             student_id: registration_data.student_id,
+             student_names: registration_data.student_names,
+             student_email: registration_data.student_email,
+             email: registration_data.student_email
+           }) do
+        {:ok, _user, :existing} ->
+          :ok
+
+        {:ok, _user, :created} ->
+          :ok
+
+        {:error, reason} ->
+          require Logger
+
+          Logger.warning(
+            "Could not ensure student account after registration: #{inspect(reason)}"
+          )
+
+          :error
+      end
+    end
   end
 end

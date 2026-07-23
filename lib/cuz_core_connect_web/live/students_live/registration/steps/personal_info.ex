@@ -75,7 +75,7 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.PersonalInfo do
           <input
             type="email"
             value={@student_email}
-            placeholder="e.g. ac100000@cavendish.students.co.zm"
+            placeholder="e.g. jd202512345@students.cavendish.co.zm"
             phx-blur="set_student_email"
             phx-target={@myself}
             name="student_email"

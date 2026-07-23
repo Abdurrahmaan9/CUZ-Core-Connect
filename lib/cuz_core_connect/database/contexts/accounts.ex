@@ -6,7 +6,7 @@ defmodule CuzCoreConnect.Accounts do
   import Ecto.Query, warn: false
   alias CuzCoreConnect.Repo
 
-  alias CuzCoreConnect.Accounts.{User, UserToken, UserNotifier}
+  alias CuzCoreConnect.Accounts.{User, UserToken, UserNotifier, StudentEmail}
 
   ## Database getters
 
@@ -25,6 +25,21 @@ defmodule CuzCoreConnect.Accounts do
   def get_user_by_email(email) when is_binary(email) do
     Repo.get_by(User, email: email)
   end
+
+  @doc """
+  Gets a student user by institutional student number.
+  """
+  def get_user_by_student_number(student_number) when is_binary(student_number) do
+    number = StudentEmail.normalize_student_number(student_number)
+
+    if number == "" do
+      nil
+    else
+      Repo.get_by(User, student_number: number)
+    end
+  end
+
+  def get_user_by_student_number(_), do: nil
 
   @doc """
   Gets a user by email and password.
@@ -202,6 +217,178 @@ defmodule CuzCoreConnect.Accounts do
 
       {:error, r} ->
         {:error, r}
+    end
+  end
+
+  @doc """
+  Registers a student portal account from `/users/register`.
+
+  Generates a password, confirms the account, emails login credentials, and
+  always assigns the `student` role.
+  """
+  def register_student(attrs, opts \\ []) do
+    attrs = normalize_attrs(attrs)
+    password = Map.get(attrs, "password") || User.generate_random_password()
+
+    attrs =
+      attrs
+      |> Map.put("password", password)
+      |> Map.put("user_role", "student")
+      |> put_student_username()
+
+    %User{}
+    |> User.student_registration_changeset(attrs)
+    |> Repo.insert()
+    |> case do
+      {:ok, user} ->
+        {:ok, user} =
+          user
+          |> User.confirm_changeset()
+          |> Repo.update()
+
+        CuzCoreConnect.Pages.assign_default_pages_for_user(user)
+
+        if Keyword.get(opts, :notify, true) do
+          _ = deliver_account_credentials(user, password)
+        end
+
+        {:ok, user}
+
+      {:error, changeset} ->
+        {:error, changeset}
+    end
+  end
+
+  @doc """
+  Ensures a student account exists for the email used on a course registration.
+
+  Returns `{:ok, user, :existing | :created}`. When created, login credentials
+  are emailed to the student.
+  """
+  def ensure_student_account(attrs, opts \\ []) when is_map(attrs) do
+    attrs = normalize_attrs(attrs)
+
+    attrs =
+      cond do
+        blank_to_nil(Map.get(attrs, "student_number")) ->
+          attrs
+
+        blank_to_nil(Map.get(attrs, "student_id")) ->
+          Map.put(attrs, "student_number", Map.get(attrs, "student_id"))
+
+        true ->
+          attrs
+      end
+
+    email =
+      attrs
+      |> Map.get("email")
+      |> Kernel.||(Map.get(attrs, "student_email"))
+      |> to_string()
+      |> String.trim()
+      |> String.downcase()
+
+    student_number = StudentEmail.normalize_student_number(Map.get(attrs, "student_number"))
+
+    cond do
+      email == "" ->
+        {:error, :missing_email}
+
+      true ->
+        case get_user_by_email(email) do
+          %User{} = user ->
+            {:ok, user, :existing}
+
+          nil ->
+            case student_number != "" && get_user_by_student_number(student_number) do
+              %User{} = user ->
+                {:ok, user, :existing}
+
+              _ ->
+                {first_name, middle_name, last_name} = split_student_names(attrs)
+
+                case register_student(
+                       %{
+                         "email" => email,
+                         "student_number" => student_number,
+                         "first_name" => first_name,
+                         "last_name" => last_name,
+                         "middle_name" => middle_name
+                       },
+                       notify: Keyword.get(opts, :notify, true)
+                     ) do
+                  {:ok, user} ->
+                    {:ok, user, :created}
+
+                  {:error, changeset} ->
+                    {:error, changeset}
+                end
+            end
+        end
+    end
+  end
+
+  defp normalize_attrs(attrs) do
+    for {key, val} <- attrs, into: %{}, do: {to_string(key), val}
+  end
+
+  defp put_student_username(attrs) do
+    existing = Map.get(attrs, "username")
+
+    if is_binary(existing) and String.trim(existing) != "" do
+      attrs
+    else
+      full_name =
+        [Map.get(attrs, "first_name"), Map.get(attrs, "middle_name"), Map.get(attrs, "last_name")]
+        |> Enum.reject(&(is_nil(&1) or String.trim(to_string(&1)) == ""))
+        |> Enum.map(&String.trim(to_string(&1)))
+        |> Enum.join(" ")
+
+      student_number = StudentEmail.normalize_student_number(Map.get(attrs, "student_number"))
+
+      username =
+        cond do
+          full_name != "" and student_number != "" -> "#{full_name} (#{student_number})"
+          full_name != "" -> full_name
+          student_number != "" -> student_number
+          true -> Map.get(attrs, "email")
+        end
+
+      Map.put(attrs, "username", username)
+    end
+  end
+
+  defp split_student_names(attrs) do
+    first = blank_to_nil(Map.get(attrs, "first_name"))
+    middle = blank_to_nil(Map.get(attrs, "middle_name"))
+    last = blank_to_nil(Map.get(attrs, "last_name"))
+
+    if first && last do
+      {first, middle, last}
+    else
+      names =
+        attrs
+        |> Map.get("student_names")
+        |> to_string()
+        |> String.trim()
+        |> String.split(~r/\s+/, trim: true)
+
+      case names do
+        [f, l] -> {f, nil, l}
+        [f, m, l] -> {f, m, l}
+        [f, m | rest] -> {f, m, Enum.join(rest, " ")}
+        [f] -> {f, nil, f}
+        _ -> {"Student", nil, Map.get(attrs, "student_number") || "portal"}
+      end
+    end
+  end
+
+  defp blank_to_nil(nil), do: nil
+
+  defp blank_to_nil(value) do
+    case String.trim(to_string(value)) do
+      "" -> nil
+      trimmed -> trimmed
     end
   end
 

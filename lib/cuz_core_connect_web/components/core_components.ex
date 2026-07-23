@@ -912,6 +912,10 @@ defmodule CuzCoreConnectWeb.CoreComponents do
     assigns =
       assign(assigns, :svg, Map.get(@icons, assigns.name))
 
+    if is_nil(assigns.svg) do
+      IO.inspect(assigns.name)
+    end
+
     ~H"""
     <%= if @svg do %>
       <span

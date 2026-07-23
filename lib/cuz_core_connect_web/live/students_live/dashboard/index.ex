@@ -23,7 +23,16 @@ defmodule CuzCoreConnectWeb.StudentLive.Dashboard.Index do
   @impl true
   def handle_params(%{"tab" => tab}, _url, socket)
       when tab in ["overview", "my_registrations", "new_registration"] do
-    {:noreply, assign(socket, :active_tab, tab)}
+    current_page =
+      cond do
+        tab == "overview" -> :student_dashboard
+        tab == "my_registrations" -> :student_my_registrations
+        tab == "new_registration" -> :student_new_registration
+      end
+
+    {:noreply,
+     assign(socket, :active_tab, tab)
+     |> assign(:current_page, current_page)}
   end
 
   def handle_params(_params, _url, socket),
@@ -43,24 +52,7 @@ defmodule CuzCoreConnectWeb.StudentLive.Dashboard.Index do
       current_page={@current_page}
       page_title={@page_title}
     >
-      <div class="border-b border-base-300 mb-6">
-        <nav class="flex space-x-8 px-4">
-          <%= for {label, tab} <- [{"Overview", "overview"}, {"My Registrations", "my_registrations"}, {"New Registration", "new_registration"}] do %>
-            <button
-              phx-click="switch_tab"
-              phx-value-tab={tab}
-              class={"py-4 px-1 border-b-2 font-medium text-sm transition-colors " <>
-                if(@active_tab == tab,
-                  do: "border-primary text-primary",
-                  else: "border-transparent text-base-content/50 hover:text-base-content")}
-            >
-              {label}
-            </button>
-          <% end %>
-        </nav>
-      </div>
-
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="mx-auto px-4 sm:px-6 lg:px-8">
         <%= case @active_tab do %>
           <% "overview" -> %>
             <.live_component

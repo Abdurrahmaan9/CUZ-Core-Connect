@@ -5,7 +5,7 @@ defmodule CuzCoreConnectWeb.StudentLive.Dashboard.MyRegistrationsComponent do
 
   @impl true
   def update(%{current_scope: current_scope} = assigns, socket) do
-    registrations = Registrations.list_registrations_by_student(current_scope.user.id)
+    registrations = Registrations.list_registrations_by_student(current_scope.user)
     {:ok, socket |> assign(assigns) |> assign(:registrations, registrations)}
   end
 
@@ -17,7 +17,7 @@ defmodule CuzCoreConnectWeb.StudentLive.Dashboard.MyRegistrationsComponent do
     case Registrations.resubmit_registration(registration, actor) do
       {:ok, _} ->
         registrations =
-          Registrations.list_registrations_by_student(socket.assigns.current_scope.user.id)
+          Registrations.list_registrations_by_student(socket.assigns.current_scope.user)
 
         {:noreply,
          socket

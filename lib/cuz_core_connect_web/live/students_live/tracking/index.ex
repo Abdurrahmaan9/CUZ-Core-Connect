@@ -77,10 +77,12 @@ defmodule CuzCoreConnectWeb.Student.Tracking.Index do
 
         # Avoid re-patching when already on the show route for this tracking number
         # (handle_params already loaded it).
-        if current_path == :show and socket.assigns.tracking_number == registration.tracking_number do
+        if current_path == :show and
+             socket.assigns.tracking_number == registration.tracking_number do
           {:noreply, socket}
         else
-          {:noreply, push_patch(socket, to: ~p"/registration/tracking/#{registration.tracking_number}")}
+          {:noreply,
+           push_patch(socket, to: ~p"/registration/tracking/#{registration.tracking_number}")}
         end
     end
   end
@@ -308,7 +310,9 @@ defmodule CuzCoreConnectWeb.Student.Tracking.Index do
                 <div class="flex flex-wrap gap-2 text-xs sm:justify-end">
                   <span class="inline-flex items-center gap-1.5 rounded-full border border-current/20 bg-base-100/50 px-3 py-1.5">
                     <.icon name="hero-calendar-days" class="size-3.5" />
-                    Submitted {format_datetime(@registration.registration_date || @registration.inserted_at)}
+                    Submitted {format_datetime(
+                      @registration.registration_date || @registration.inserted_at
+                    )}
                   </span>
                   <span class="inline-flex items-center gap-1.5 rounded-full border border-current/20 bg-base-100/50 px-3 py-1.5">
                     <.icon name="hero-banknotes" class="size-3.5" />

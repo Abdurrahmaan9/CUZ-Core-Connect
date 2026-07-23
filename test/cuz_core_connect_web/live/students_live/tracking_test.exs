@@ -11,10 +11,16 @@ defmodule CuzCoreConnectWeb.Student.TrackingTest do
     registration = registration_fixture()
 
     {:ok, registration} =
-      Registrations.approve_academics(registration, unconfirmed_user_fixture(%{user_role: "academics"}))
+      Registrations.approve_academics(
+        registration,
+        unconfirmed_user_fixture(%{user_role: "academics"})
+      )
 
     {:ok, registration} =
-      Registrations.approve_payment(registration, unconfirmed_user_fixture(%{user_role: "finance"}))
+      Registrations.approve_payment(
+        registration,
+        unconfirmed_user_fixture(%{user_role: "finance"})
+      )
 
     {:ok, registration} =
       Registrations.approve_hod(registration, unconfirmed_user_fixture(%{user_role: "hod"}))
@@ -32,6 +38,7 @@ defmodule CuzCoreConnectWeb.Student.TrackingTest do
     assert render(view) =~ "Approved"
     assert render(view) =~ "View Proof"
     assert render(view) =~ "Download / Print"
+
     assert has_element?(
              view,
              "a[href='/registration/tracking/#{registration.tracking_number}/proof']"

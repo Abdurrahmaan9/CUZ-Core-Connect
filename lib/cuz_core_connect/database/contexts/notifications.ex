@@ -140,22 +140,4 @@ defmodule CuzCoreConnect.Notifications do
       action_url: url
     })
   end
-
-  # @doc """
-  # email_log = %CuzCoreConnect.Communications.EmailLog{
-  #   to: "
-  # """
-
-  # def log_email(to, subject, status, notif_type, action_url, error_message \\ nil) do
-  #   %CuzCoreConnect.Communications.EmailLog{}
-  #   |> CuzCoreConnect.Communications.EmailLog.changeset(%{
-  #     to: to,
-  #     subject: subject,
-  #     status: status,
-  #     notif_type: notif_type,
-  #     action_url: action_url,
-  #     error_message: error_message
-  #   })
-  #   |> Repo.insert()
-  # end
 end

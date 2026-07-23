@@ -92,6 +92,6 @@ config :swoosh, :api_client, false
 
 # config :swoosh, :api_client, Swoosh.ApiClient.Req
 
-# config :cuz_core_connect, CuzCoreConnec.Mailer,
+# config :cuz_core_connect, CuzCoreConnect.Mailer,
 #   adapter: Swoosh.Adapters.Resend,
 #   api_key: resend_email_api_key

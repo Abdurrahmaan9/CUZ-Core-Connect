@@ -14,31 +14,20 @@
     <script>
       (() => {
         const setTheme = (theme) => {
-          if (theme === "system") {
-            localStorage.removeItem("phx:theme");
-            document.documentElement.removeAttribute("data-theme");
-          } else {
-            localStorage.setItem("phx:theme", theme);
-            document.documentElement.setAttribute("data-theme", theme);
-          }
+          localStorage.setItem("phx:theme", theme);
+          document.documentElement.setAttribute("data-theme", theme);
         };
+
         if (!document.documentElement.hasAttribute("data-theme")) {
-          setTheme(localStorage.getItem("phx:theme") || "system");
+          setTheme(localStorage.getItem("phx:theme") || "light");
         }
-        window.addEventListener("storage", (e) => e.key === "phx:theme" && setTheme(e.newValue || "system"));
 
-        window.addEventListener("phx:set-theme", (e) =>
-          {
-            const requested = e.target.dataset.phxTheme;
-            const current = localStorage.getItem("phx:theme");
+        window.addEventListener("storage", (e) => e.key === "phx:theme" && setTheme(e.newValue || "light"));
 
-            if (current === requested) {
-              setTheme(requested === "dark" ? "light" : "dark");
-            } else {
-              setTheme(requested);
-            }
-          }
-        );
+        window.addEventListener("phx:set-theme", () => {
+          const current = localStorage.getItem("phx:theme") || "light";
+          setTheme(current === "dark" ? "light" : "dark");
+        });
       })();
     </script>
   </head>

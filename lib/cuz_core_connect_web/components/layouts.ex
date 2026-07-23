@@ -162,7 +162,7 @@ defmodule CuzCoreConnectWeb.Layouts do
         data-phx-theme="light"
         title="toggle Light Theme"
       >
-        <.icon name="hero-sun-micro" class="size-4 opacity-75 hover:opacity-100" />
+        <.icon name="hero-sun-micro" class="size-4 opacity-75" />
       </button>
 
       <button
@@ -171,7 +171,7 @@ defmodule CuzCoreConnectWeb.Layouts do
         data-phx-theme="dark"
         title="toggle Dark Theme"
       >
-        <.icon name="hero-moon-micro" class="size-4 opacity-75 hover:opacity-100" />
+        <.icon name="hero-moon-micro" class="size-4 opacity-75" />
       </button>
     </div>
     """

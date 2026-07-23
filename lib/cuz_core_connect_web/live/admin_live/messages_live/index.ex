@@ -219,7 +219,11 @@ defmodule CuzCoreConnectWeb.Admin.Messages do
                   </span>
                 </td>
                 <td>
-                  <span class={["badge badge-sm", item.show_on_landing && "badge-success", !item.show_on_landing && "badge-ghost"]}>
+                  <span class={[
+                    "badge badge-sm",
+                    item.show_on_landing && "badge-success",
+                    !item.show_on_landing && "badge-ghost"
+                  ]}>
                     {if item.show_on_landing, do: "Shown", else: "Hidden"}
                   </span>
                 </td>

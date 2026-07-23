@@ -175,10 +175,30 @@ defmodule CuzCoreConnectWeb.Admin.Announcements do
         </div>
 
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <.stat_card label="Total" value={@stats.total} icon="hero-megaphone" color="text-primary bg-primary/10" />
-          <.stat_card label="Published" value={@stats.published} icon="hero-check-circle" color="text-success bg-success/10" />
-          <.stat_card label="Scheduled" value={@stats.scheduled} icon="hero-clock" color="text-info bg-info/10" />
-          <.stat_card label="Drafts" value={@stats.drafts} icon="hero-document-text" color="text-warning bg-warning/10" />
+          <.stat_card
+            label="Total"
+            value={@stats.total}
+            icon="hero-megaphone"
+            color="text-primary bg-primary/10"
+          />
+          <.stat_card
+            label="Published"
+            value={@stats.published}
+            icon="hero-check-circle"
+            color="text-success bg-success/10"
+          />
+          <.stat_card
+            label="Scheduled"
+            value={@stats.scheduled}
+            icon="hero-clock"
+            color="text-info bg-info/10"
+          />
+          <.stat_card
+            label="Drafts"
+            value={@stats.drafts}
+            icon="hero-document-text"
+            color="text-warning bg-warning/10"
+          />
         </div>
 
         <div class="flex flex-wrap gap-2">
@@ -314,7 +334,13 @@ defmodule CuzCoreConnectWeb.Admin.Announcements do
           <h3 class="mb-4 text-lg font-bold">
             {if @form.data.id, do: "Edit announcement", else: "New announcement"}
           </h3>
-          <.form for={@form} id="announcement-form" phx-change="validate" phx-submit="save" class="space-y-4">
+          <.form
+            for={@form}
+            id="announcement-form"
+            phx-change="validate"
+            phx-submit="save"
+            class="space-y-4"
+          >
             <.input field={@form[:title]} type="text" label="Title" required />
             <.input field={@form[:body]} type="textarea" label="Body" required />
             <.input field={@form[:audience]} type="text" label="Audience" />

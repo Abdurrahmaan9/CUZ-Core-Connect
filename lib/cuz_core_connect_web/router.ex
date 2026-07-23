@@ -112,6 +112,10 @@ defmodule CuzCoreConnectWeb.Router do
           live "/", Admin.Messages
         end
 
+        scope "/email-logs" do
+          live "/", Admin.EmailLogs
+        end
+
         scope "/announcements" do
           live "/", Admin.Announcements
         end

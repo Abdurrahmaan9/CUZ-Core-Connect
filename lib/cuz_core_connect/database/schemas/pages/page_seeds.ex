@@ -97,6 +97,13 @@ defmodule CuzCoreConnect.Pages.PageSeeds do
         paths: ["/admin/messages"]
       },
       %{
+        name: "email_logs",
+        description: "Outbound email delivery logs",
+        role: "admin",
+        actions: ~w(view delete),
+        paths: ["/admin/email-logs"]
+      },
+      %{
         name: "announcements",
         description: "Announcements",
         role: "admin",

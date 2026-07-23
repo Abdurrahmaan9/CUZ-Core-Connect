@@ -21,7 +21,9 @@ defmodule CuzCoreConnectWeb.ReceiptController do
       {:error, :not_found} ->
         conn
         |> put_status(:not_found)
-        |> text("Receipt file is missing on the server. Ask the student to resubmit the registration with the receipt.")
+        |> text(
+          "Receipt file is missing on the server. Ask the student to resubmit the registration with the receipt."
+        )
 
       _ ->
         conn
@@ -42,11 +44,7 @@ defmodule CuzCoreConnectWeb.ReceiptController do
     with %{student_registration_id: registration_id} <- receipt,
          registration when not is_nil(registration) <-
            Registrations.get_registration(registration_id) do
-      student_id = to_string(registration.student_id || "")
-      email = String.downcase(to_string(registration.student_email || ""))
-
-      to_string(user.id) == student_id or
-        String.downcase(to_string(user.email || "")) == email
+      Registrations.owns_registration?(user, registration)
     else
       _ -> false
     end

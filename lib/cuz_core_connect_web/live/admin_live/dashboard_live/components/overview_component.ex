@@ -63,7 +63,7 @@ defmodule CuzCoreConnectWeb.AdminLiveOverviewComponent do
           </div>
         </div>
       </div>
-
+      
     <!-- Recent Activity -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div class="bg-base-100 p-6 rounded-box shadow-lg">
@@ -73,8 +73,7 @@ defmodule CuzCoreConnectWeb.AdminLiveOverviewComponent do
               <div class="flex items-center justify-between">
                 <div class="flex items-center">
                   <div class="avatar placeholder">
-                    <div class="bg-neutral text-neutral-content rounded-full w-10 h-10 flex">
-                    </div>
+                    <div class="bg-neutral text-neutral-content rounded-full w-10 h-10 flex"></div>
                   </div>
                   <div class="ml-4">
                     <p class="text-sm font-medium text-base-content">{user.email}</p>

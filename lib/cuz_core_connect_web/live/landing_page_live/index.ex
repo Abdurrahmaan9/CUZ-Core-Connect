@@ -50,7 +50,7 @@ defmodule CuzCoreConnectWeb.LandingPageLive do
       <section
         :if={@announcements != []}
         id="announcements-marquee"
-        class="border-y border-primary/20 bg-primary text-primary-content"
+        class="mt-6 border-y border-primary/20 bg-primary text-primary-content"
       >
         <div class="flex items-stretch">
           <div class="flex shrink-0 items-center gap-2 bg-primary-content/15 px-4 py-2.5 text-xs font-bold uppercase tracking-wider">
@@ -161,7 +161,7 @@ defmodule CuzCoreConnectWeb.LandingPageLive do
         </div>
       </section>
 
-      <section id="registration-messages" class="px-6 lg:px-20 py-16 bg-base-200">
+      <%!-- <section id="registration-messages" class="px-6 lg:px-20 py-16 bg-base-200">
         <div class="mb-8 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h2 class="text-2xl md:text-3xl font-semibold">Recent Registrations</h2>
@@ -204,7 +204,7 @@ defmodule CuzCoreConnectWeb.LandingPageLive do
             </article>
           </div>
         <% end %>
-      </section>
+      </section> --%>
 
       <section class="px-6 lg:px-20 py-16">
         <h2 class="text-2xl md:text-3xl font-semibold mb-10">Approval Workflow</h2>
@@ -312,7 +312,12 @@ defmodule CuzCoreConnectWeb.LandingPageLive do
             </div>
 
             <div class="max-w-2xl mx-auto text-left">
-              <.form for={@contact_form} id="landing-contact-form" phx-submit="submit_contact" class="space-y-4">
+              <.form
+                for={@contact_form}
+                id="landing-contact-form"
+                phx-submit="submit_contact"
+                class="space-y-4"
+              >
                 <div class="grid md:grid-cols-2 gap-4">
                   <.input field={@contact_form[:name]} type="text" label="Your Name" required />
                   <.input field={@contact_form[:email]} type="email" label="Your Email" required />
@@ -324,8 +329,7 @@ defmodule CuzCoreConnectWeb.LandingPageLive do
                   phx-disable-with="Sending..."
                   class="btn btn-primary w-full gap-2"
                 >
-                  Send Message
-                  <.icon name="hero-paper-airplane" class="size-4" />
+                  Send Message <.icon name="hero-paper-airplane" class="size-4" />
                 </button>
               </.form>
             </div>

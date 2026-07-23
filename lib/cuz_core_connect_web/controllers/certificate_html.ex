@@ -61,8 +61,12 @@ defmodule CuzCoreConnectWeb.CertificateHTML do
   defp sum_course_credits(courses) do
     Enum.reduce(courses, 0, fn course, acc ->
       case course["credits"] || course[:credits] do
-        n when is_integer(n) -> acc + n
-        n when is_float(n) -> acc + trunc(n)
+        n when is_integer(n) ->
+          acc + n
+
+        n when is_float(n) ->
+          acc + trunc(n)
+
         n when is_binary(n) ->
           case Integer.parse(n) do
             {i, _} -> acc + i

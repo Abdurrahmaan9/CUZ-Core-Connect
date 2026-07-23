@@ -85,7 +85,7 @@ defmodule CuzCoreConnectWeb.UserLive.LoginTest do
         |> render_click()
         |> follow_redirect(conn, ~p"/users/register")
 
-      assert login_html =~ "Register"
+      assert login_html =~ "Student portal sign up"
     end
   end
 

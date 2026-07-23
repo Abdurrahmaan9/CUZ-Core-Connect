@@ -40,7 +40,7 @@ defmodule CuzCoreConnect.Repo.Migrations.MainSystemTables do
       timestamps(type: :utc_datetime)
     end
 
-    create table(:tbl_user_page_access) do
+    create_if_not_exists table(:tbl_user_page_access) do
       add :user_id, references(:tbl_users, on_delete: :delete_all), null: false
       add :page_id, references(:tbl_pages, on_delete: :delete_all), null: false
       add :actions, {:array, :string}, default: []

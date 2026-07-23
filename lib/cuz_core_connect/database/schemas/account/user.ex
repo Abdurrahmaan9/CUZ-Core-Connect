@@ -2,6 +2,8 @@ defmodule CuzCoreConnect.Accounts.User do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias CuzCoreConnect.Accounts.StudentEmail
+
   schema "tbl_users" do
     field :email, :string
     field :username, :string
@@ -13,6 +15,10 @@ defmodule CuzCoreConnect.Accounts.User do
     field :status, :string, default: "PENDING"
     field :is_active, :boolean, default: true
     field :deleted_at, :naive_datetime
+    field :student_number, :string
+    field :first_name, :string
+    field :last_name, :string
+    field :middle_name, :string
 
     timestamps(type: :utc_datetime)
   end
@@ -39,12 +45,23 @@ defmodule CuzCoreConnect.Accounts.User do
   """
   def admin_changeset(user, attrs) do
     user
-    |> cast(attrs, [:email, :username, :user_role, :status, :is_active])
+    |> cast(attrs, [
+      :email,
+      :username,
+      :user_role,
+      :status,
+      :is_active,
+      :student_number,
+      :first_name,
+      :last_name,
+      :middle_name
+    ])
     |> validate_required([:email, :username, :user_role])
     |> validate_inclusion(:user_role, ~w(admin academics finance hod student retention))
     |> validate_format(:email, ~r/^[^\s]+@[^\s]+$/, message: "must have the @ sign and no spaces")
     |> unique_constraint(:email)
     |> unique_constraint(:username)
+    |> unique_constraint(:student_number)
   end
 
   @doc """
@@ -52,12 +69,90 @@ defmodule CuzCoreConnect.Accounts.User do
   """
   def registration_changeset(user, attrs, opts \\ []) do
     user
-    |> cast(attrs, [:email, :password, :user_role, :status, :is_active, :username])
+    |> cast(attrs, [
+      :email,
+      :password,
+      :user_role,
+      :status,
+      :is_active,
+      :username,
+      :student_number,
+      :first_name,
+      :last_name,
+      :middle_name
+    ])
     |> validate_inclusion(:user_role, ~w(admin academics finance hod student retention))
     |> validate_email(opts)
     |> validate_required([:email, :password, :username])
     |> validate_length(:password, min: 8, max: 24)
     |> maybe_hash_password(opts)
+  end
+
+  @doc """
+  Changeset for public student self-registration (`/users/register`).
+  Always assigns the `student` role.
+  """
+  def student_registration_changeset(user, attrs, opts \\ []) do
+    attrs =
+      attrs
+      |> Map.new(fn {k, v} -> {to_string(k), v} end)
+      |> Map.put("user_role", "student")
+      |> Map.put_new("status", "ACTIVE")
+      |> Map.put_new("is_active", true)
+
+    user
+    |> cast(attrs, [
+      :email,
+      :password,
+      :user_role,
+      :status,
+      :is_active,
+      :username,
+      :student_number,
+      :first_name,
+      :last_name,
+      :middle_name
+    ])
+    |> update_change(:student_number, &StudentEmail.normalize_student_number/1)
+    |> update_change(:first_name, &trim_or_nil/1)
+    |> update_change(:last_name, &trim_or_nil/1)
+    |> update_change(:middle_name, &trim_or_nil/1)
+    |> update_change(:email, &trim_downcase/1)
+    |> validate_required([:student_number, :first_name, :last_name, :email, :password, :username])
+    |> validate_student_number()
+    |> validate_length(:first_name, min: 1, max: 80)
+    |> validate_length(:last_name, min: 1, max: 80)
+    |> validate_length(:middle_name, max: 80)
+    |> validate_email(opts)
+    |> validate_length(:password, min: 8, max: 24)
+    |> unique_constraint(:username)
+    |> unique_constraint(:student_number)
+    |> maybe_hash_password(opts)
+  end
+
+  defp validate_student_number(changeset) do
+    validate_change(changeset, :student_number, fn :student_number, number ->
+      if StudentEmail.valid_student_number?(number) do
+        []
+      else
+        [student_number: "must be at least 6 digits"]
+      end
+    end)
+  end
+
+  defp trim_or_nil(nil), do: nil
+
+  defp trim_or_nil(value) do
+    case String.trim(to_string(value)) do
+      "" -> nil
+      trimmed -> trimmed
+    end
+  end
+
+  defp trim_downcase(nil), do: nil
+
+  defp trim_downcase(value) do
+    value |> to_string() |> String.trim() |> String.downcase()
   end
 
   defp validate_email(changeset, opts) do

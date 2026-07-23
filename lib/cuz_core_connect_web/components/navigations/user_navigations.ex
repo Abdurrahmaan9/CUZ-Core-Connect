@@ -53,11 +53,11 @@ defmodule CuzCoreConnectWeb.Navigations.User do
       {nil, "Workflows", "arrows-right-left", "/admin/workflows/registration",
        :registration_workflows},
       {nil, "Internal Accounts", "users", "/admin/user-accounts/internal", :internal_users},
-      {nil, "External Accounts", "user-group", "/admin/user-accounts/external",
-       :external_users},
+      {nil, "External Accounts", "user-group", "/admin/user-accounts/external", :external_users},
       # {nil, "Attendance", "chart-bar", "/admin/reports/attendance", :reports_attendance},
       # {nil, "Performance", "chart-pie", "/admin/reports/performance", :reports_performance},
       {nil, "Messages", "chat-bubble-left-right", "/admin/messages", :messages},
+      {nil, "Email Logs", "envelope", "/admin/email-logs", :email_logs},
       {nil, "Announcements", "megaphone", "/admin/announcements", :announcements}
     ]
   }
