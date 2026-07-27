@@ -60,7 +60,7 @@ defmodule CuzCoreConnect.RegistrationFixtures do
       student_id: "STU#{System.unique_integer([:positive])}",
       student_names: "Test Student",
       student_email: "student#{System.unique_integer([:positive])}@example.com",
-      student_contact: 123_456_789,
+      student_contact: "0971234567",
       student_program_details: %{},
       student_courses: %{},
       registration_date: DateTime.utc_now() |> DateTime.truncate(:second),

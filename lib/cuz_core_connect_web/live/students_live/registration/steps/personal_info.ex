@@ -1,6 +1,8 @@
 defmodule CuzCoreConnectWeb.Student.Registration.Steps.PersonalInfo do
   use CuzCoreConnectWeb, :live_component
 
+  alias CuzCoreConnect.Registrations.Registration
+
   @impl true
   def update(assigns, socket) do
     {:ok,
@@ -10,7 +12,9 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.PersonalInfo do
      |> assign_new(:student_id, fn -> assigns.registration.student_id || "" end)
      |> assign_new(:student_names, fn -> assigns.registration.student_names || "" end)
      |> assign_new(:student_email, fn -> assigns.registration.student_email || "" end)
-     |> assign_new(:student_contact, fn -> assigns.registration.student_contact || "" end)
+     |> assign_new(:student_contact, fn ->
+       contact_to_display(assigns.registration.student_contact)
+     end)
      |> assign(errors: %{})}
   end
 
@@ -98,15 +102,20 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.PersonalInfo do
           <input
             type="tel"
             value={@student_contact}
-            placeholder="e.g. +1234567890"
+            placeholder="e.g. 0978957640 or +260978957640"
             phx-blur="set_student_contact"
             phx-target={@myself}
             name="student_contact"
+            inputmode="tel"
+            autocomplete="tel"
             class={[
               "input input-bordered w-full",
               Map.get(@errors, :student_contact) && "input-error"
             ]}
           />
+          <p class="mt-1 text-xs text-base-content/50">
+            Local: 7–15 digits (e.g. 0978957640). International: + and 8–15 digits (e.g. +260978957640).
+          </p>
           <%= if msg = Map.get(@errors, :student_contact) do %>
             <p class="mt-1 text-xs text-error">{msg}</p>
           <% end %>
@@ -114,8 +123,8 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.PersonalInfo do
       </div>
 
       <%= if Enum.any?(@errors) do %>
-        <div class="mt-4 p-3 bg-error/10 border border-error/200 rounded-lg">
-          <p class="text-sm text-error font-medium">
+        <div class="mt-4 rounded-lg border border-error/20 bg-error/10 p-3">
+          <p class="text-sm font-medium text-error">
             Please correct the errors above before continuing.
           </p>
         </div>
@@ -183,13 +192,13 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.PersonalInfo do
       student_id: assigns.student_id,
       student_names: assigns.student_names,
       student_email: assigns.student_email,
-      student_contact: assigns.student_contact
+      student_contact: Registration.normalize_contact(assigns.student_contact)
     }
   end
 
-  # ── Private ──────────────────────────────────────────────────────────────────
-
   defp validate(assigns) do
+    contact = assigns.student_contact
+
     %{}
     |> maybe_add_error(:student_id, assigns.student_id == "", "Student ID is required.")
     |> maybe_add_error(
@@ -209,16 +218,24 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.PersonalInfo do
       not valid_email_format?(assigns.student_email),
       "Please enter a valid email address."
     )
+    |> maybe_add_error(:student_contact, contact == "", "Contact number is required.")
     |> maybe_add_error(
       :student_contact,
-      assigns.student_contact == "",
-      "Contact number is required."
+      contact != "" and not Registration.valid_contact?(contact),
+      contact_error_message(contact)
     )
-    |> maybe_add_error(
-      :student_contact,
-      not valid_contact_format?(assigns.student_contact),
-      "Please enter a valid contact number."
-    )
+  end
+
+  defp contact_error_message(contact) do
+    trimmed = String.trim(contact || "")
+
+    cond do
+      String.starts_with?(trimmed, "+") ->
+        "International numbers need + and 8–15 digits (e.g. +260978957640)."
+
+      true ->
+        "Local numbers need 7–15 digits (e.g. 0978957640), or use + for international."
+    end
   end
 
   defp maybe_add_error(errors, _key, false, _msg), do: errors
@@ -236,10 +253,6 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.PersonalInfo do
     Regex.match?(~r/^[^\s]+@[^\s]+\.[^\s]+$/, email)
   end
 
-  defp valid_contact_format?(""), do: false
-
-  defp valid_contact_format?(contact) do
-    # Basic validation for phone numbers with optional + prefix
-    Regex.match?(~r/^\+?\d{7,}$/, String.replace(contact, ~r/\s/, ""))
-  end
+  defp contact_to_display(nil), do: ""
+  defp contact_to_display(contact), do: to_string(contact)
 end

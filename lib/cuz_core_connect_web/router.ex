@@ -122,6 +122,10 @@ defmodule CuzCoreConnectWeb.Router do
           live "/", Admin.Announcements
         end
 
+        scope "/scholarships" do
+          live "/", Admin.Scholarships
+        end
+
         scope "/user-accounts" do
           live "/internal", Admin.UserAccounts.Internal, :index
 

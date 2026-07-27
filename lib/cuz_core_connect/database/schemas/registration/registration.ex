@@ -6,7 +6,7 @@ defmodule CuzCoreConnect.Registrations.Registration do
     field :student_id, :string
     field :student_names, :string
     field :student_email, :string, redact: true
-    field :student_contact, :integer
+    field :student_contact, :string
     field :student_program_details, :map, default: %{}
     field :student_courses, :map, default: %{}
     field :registration_date, :utc_datetime
@@ -23,11 +23,13 @@ defmodule CuzCoreConnect.Registrations.Registration do
     field :rejected_stage, :string
     field :wizard_step, :string
     field :deleted_at, :naive_datetime
+    field :under_scholarship, :boolean, default: false
 
     has_many :payment_receipts, CuzCoreConnect.Students.PaymentReceipt,
       foreign_key: :student_registration_id
 
     belongs_to :workflow, CuzCoreConnect.Workflows.RegistrationWorkflow
+    belongs_to :scholarship, CuzCoreConnect.Scholarships.Scholarship
 
     timestamps(type: :utc_datetime)
   end
@@ -49,7 +51,9 @@ defmodule CuzCoreConnect.Registrations.Registration do
     :financial_status,
     :registration_status,
     :wizard_step,
-    :deleted_at
+    :deleted_at,
+    :under_scholarship,
+    :scholarship_id
   ]
 
   def changeset(registration, attrs) do
@@ -74,6 +78,7 @@ defmodule CuzCoreConnect.Registrations.Registration do
       :registration_status
     ])
     |> validate_email()
+    |> validate_student_contact()
   end
 
   @doc """
@@ -92,6 +97,7 @@ defmodule CuzCoreConnect.Registrations.Registration do
     |> put_change(:financial_status, "DRAFT")
     |> validate_required([:student_id, :student_names, :student_email, :student_contact])
     |> validate_email()
+    |> validate_student_contact()
   end
 
   @doc """
@@ -123,6 +129,7 @@ defmodule CuzCoreConnect.Registrations.Registration do
       :registration_status
     ])
     |> validate_email()
+    |> validate_student_contact()
   end
 
   defp put_active_workflow(changeset) do
@@ -147,6 +154,61 @@ defmodule CuzCoreConnect.Registrations.Registration do
       end
     end)
   end
+
+  def validate_student_contact(changeset) do
+    validate_change(changeset, :student_contact, fn :student_contact, contact ->
+      if valid_contact?(contact) do
+        []
+      else
+        [
+          student_contact:
+            "Use 7–15 digits, or + and 8–15 digits (E.164), e.g. 0978957640 or +260978957640"
+        ]
+      end
+    end)
+  end
+
+  @doc """
+  Normalizes a contact number for storage: optional leading `+`, digits only.
+  """
+  def normalize_contact(nil), do: nil
+
+  def normalize_contact(contact) when is_integer(contact),
+    do: normalize_contact(Integer.to_string(contact))
+
+  def normalize_contact(contact) when is_binary(contact) do
+    trimmed = String.trim(contact)
+    has_plus? = String.starts_with?(trimmed, "+")
+    digits = String.replace(trimmed, ~r/[^\d]/, "")
+
+    cond do
+      digits == "" -> nil
+      has_plus? -> "+" <> digits
+      true -> digits
+    end
+  end
+
+  def normalize_contact(_), do: nil
+
+  @doc """
+  Industry-standard phone check (E.164-friendly):
+  - without `+`: 7–15 digits
+  - with `+`: `+` followed by 8–15 digits (country code + national number)
+  """
+  def valid_contact?(nil), do: false
+
+  def valid_contact?(contact) when is_integer(contact),
+    do: valid_contact?(Integer.to_string(contact))
+
+  def valid_contact?(contact) when is_binary(contact) do
+    case normalize_contact(contact) do
+      "+" <> digits -> Regex.match?(~r/^[1-9]\d{7,14}$/, digits)
+      digits when is_binary(digits) -> Regex.match?(~r/^\d{7,15}$/, digits)
+      _ -> false
+    end
+  end
+
+  def valid_contact?(_), do: false
 
   def draft?(%__MODULE__{registration_status: "DRAFT"}), do: true
   def draft?(_), do: false

@@ -4,6 +4,7 @@ defmodule CuzCoreConnectWeb.Student.Registration.RegistrationLive do
   alias CuzCoreConnect.Accounts
   alias CuzCoreConnect.Registrations
   alias CuzCoreConnect.Registrations.Registration
+  alias CuzCoreConnect.Scholarships
   alias CuzCoreConnectWeb.Student.Registration.Steps.Courses
   alias CuzCoreConnectWeb.Student.Registration.Steps.PersonalInfo
   alias CuzCoreConnectWeb.Student.Registration.Steps.Programmes
@@ -48,7 +49,9 @@ defmodule CuzCoreConnectWeb.Student.Registration.RegistrationLive do
         draft: nil,
         drafts: [],
         view_mode: if(authenticated?, do: :drafts_list, else: :wizard),
-        registration: blank_registration()
+        registration: blank_registration(),
+        scholarships: Scholarships.list_active_scholarships(),
+        scholarship_options: Scholarships.scholarship_options()
       )
       |> allow_upload(:receipt,
         accept: ~w(.jpg .jpeg .png .webp .pdf),
@@ -188,6 +191,8 @@ defmodule CuzCoreConnectWeb.Student.Registration.RegistrationLive do
                 id={"step-receipts-#{wizard_key}"}
                 registration={@registration}
                 upload_config={@uploads.receipt}
+                scholarships={@scholarships}
+                scholarship_options={@scholarship_options}
                 authenticated?={@authenticated?}
               />
             <% :review -> %>
@@ -447,7 +452,8 @@ defmodule CuzCoreConnectWeb.Student.Registration.RegistrationLive do
          |> assign(:show_success_modal, true)
          |> assign(:tracking_number, registration.tracking_number)
          |> assign(:draft, nil)
-         |> push_patch(to: ~p"/student/registrations/new")}
+        #  |> push_patch(to: ~p"/student/registrations/new")
+        }
 
       {:error, changeset} ->
         {:noreply,
@@ -612,7 +618,10 @@ defmodule CuzCoreConnectWeb.Student.Registration.RegistrationLive do
       semester: nil,
       intake: nil,
       courses: [],
-      uploaded_receipts: []
+      uploaded_receipts: [],
+      under_scholarship: false,
+      scholarship_id: nil,
+      scholarship_name: nil
     }
   end
 

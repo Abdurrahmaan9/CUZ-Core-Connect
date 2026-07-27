@@ -58,7 +58,8 @@ defmodule CuzCoreConnectWeb.Navigations.User do
       # {nil, "Performance", "chart-pie", "/admin/reports/performance", :reports_performance},
       {nil, "Messages", "chat-bubble-left-right", "/admin/messages", :messages},
       {nil, "Email Logs", "envelope", "/admin/email-logs", :email_logs},
-      {nil, "Announcements", "megaphone", "/admin/announcements", :announcements}
+      {nil, "Announcements", "megaphone", "/admin/announcements", :announcements},
+      {nil, "Scholarships", "academic-cap", "/admin/scholarships", :scholarships}
     ]
   }
 

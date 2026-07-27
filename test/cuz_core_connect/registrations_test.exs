@@ -150,7 +150,7 @@ defmodule CuzCoreConnect.RegistrationsTest do
           student_id: "202612345",
           student_names: "Jane Doe",
           student_email: "jane@example.com",
-          student_contact: 97_712_345,
+          student_contact: "097123456",
           program_id: 1,
           program_name: "BSc CS",
           academic_year: 1,

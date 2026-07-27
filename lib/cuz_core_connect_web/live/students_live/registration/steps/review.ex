@@ -30,6 +30,12 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Review do
           value={"Semester #{@registration.semester}, Academic Year #{@registration.academic_year}, Intake #{@registration.intake}"}
         />
 
+        <.review_row
+          :if={Map.get(@registration, :under_scholarship)}
+          label="Scholarship"
+          value={Map.get(@registration, :scholarship_name) || "Selected scholarship"}
+        />
+
         <%!-- Courses --%>
         <div class="flex gap-4 py-3 border-b border-base-200">
           <span class="w-32 shrink-0 text-sm font-medium text-base-content/70">Courses</span>
@@ -60,6 +66,14 @@ defmodule CuzCoreConnectWeb.Student.Registration.Steps.Review do
           <span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
             {length(@upload_config.entries)} file(s)
           </span>
+        </div>
+
+        <div :if={@upload_config.entries == []} class="mt-3 text-sm text-base-content/60">
+          <%= if Map.get(@registration, :under_scholarship) do %>
+            No receipt attached — registering under scholarship.
+          <% else %>
+            No receipts attached.
+          <% end %>
         </div>
 
         <div class="mt-3 space-y-2">

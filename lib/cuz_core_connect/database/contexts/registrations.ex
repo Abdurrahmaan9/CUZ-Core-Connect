@@ -1,6 +1,7 @@
 defmodule CuzCoreConnect.Registrations do
   alias CuzCoreConnect.Repo
   alias CuzCoreConnect.Registrations.Registration
+  alias CuzCoreConnect.Scholarships
   alias CuzCoreConnect.Students.PaymentReceipt
   alias CuzCoreConnect.Approvals.MemoApproval
   import Ecto.Query
@@ -219,7 +220,14 @@ defmodule CuzCoreConnect.Registrations do
       intake: details["intake"],
       courses: courses,
       uploaded_receipts: [],
-      g_number: nil
+      g_number: nil,
+      under_scholarship: registration.under_scholarship || false,
+      scholarship_id: registration.scholarship_id,
+      scholarship_name:
+        case registration.scholarship_id && Scholarships.get_scholarship(registration.scholarship_id) do
+          %{name: name} -> name
+          _ -> nil
+        end
     }
   end
 
@@ -279,7 +287,9 @@ defmodule CuzCoreConnect.Registrations do
       },
       student_courses: format_courses(data.courses),
       registration_date: DateTime.utc_now() |> DateTime.truncate(:second),
-      wizard_step: wizard_step && to_string(wizard_step)
+      wizard_step: wizard_step && to_string(wizard_step),
+      under_scholarship: data.under_scholarship,
+      scholarship_id: data.scholarship_id
     }
   end
 
@@ -288,16 +298,8 @@ defmodule CuzCoreConnect.Registrations do
 
     contact =
       case get.(:student_contact) do
-        contact when is_binary(contact) ->
-          contact
-          |> String.replace(~r/[^\d]/, "")
-          |> case do
-            "" -> nil
-            digits -> String.to_integer(digits)
-          end
-
-        contact when is_integer(contact) ->
-          contact
+        contact when is_binary(contact) or is_integer(contact) ->
+          Registration.normalize_contact(contact)
 
         _ ->
           nil
@@ -313,9 +315,15 @@ defmodule CuzCoreConnect.Registrations do
       academic_year: get.(:academic_year),
       semester: get.(:semester),
       intake: get.(:intake),
-      courses: get.(:courses) || []
+      courses: get.(:courses) || [],
+      under_scholarship: truthy?(get.(:under_scholarship)),
+      scholarship_id: parse_int(get.(:scholarship_id)),
+      scholarship_name: get.(:scholarship_name)
     }
   end
+
+  defp truthy?(value) when value in [true, "true", "on", "1"], do: true
+  defp truthy?(_), do: false
 
   def list_by_academics_status(status) do
     Repo.all(from r in Registration, where: r.accademics_status == ^status)
@@ -798,7 +806,9 @@ defmodule CuzCoreConnect.Registrations do
       hod_status: "PENDING",
       financial_status: "PENDING",
       registration_status: "PENDING",
-      wizard_step: nil
+      wizard_step: nil,
+      under_scholarship: data.under_scholarship,
+      scholarship_id: if(data.under_scholarship, do: data.scholarship_id, else: nil)
     }
 
     result =
@@ -996,9 +1006,12 @@ defmodule CuzCoreConnect.Registrations do
          "Unknown")
   end
 
+  defp extract_student_contact(nil), do: nil
+
   defp extract_student_contact(user) do
-    # Extract student contact from user - adjust based on your user schema
-    user && (Map.get(user, :phone) || Map.get(user, :contact) || 0)
+    Registration.normalize_contact(
+      Map.get(user, :phone) || Map.get(user, :contact) || Map.get(user, :student_contact)
+    )
   end
 
   # ── File Retrieval ────────────────────────────────────────────────────────────

@@ -81,17 +81,17 @@ config :phoenix_live_view,
   enable_expensive_runtime_checks: true
 
 # Disable swoosh api client as it is only required for production adapters.
-# config :swoosh, :api_client, false
+config :swoosh, :api_client, false
 
-resend_email_api_key =
-  System.get_env("RESEND_API_KEY") ||
-    raise """
-    environment variable RESEND_API_KEY is missing.
-    example: re_xxxxxxxx
-    """
+# resend_email_api_key =
+#   System.get_env("RESEND_API_KEY") ||
+#     raise """
+#     environment variable RESEND_API_KEY is missing.
+#     example: re_xxxxxxxx
+#     """
 
-config :swoosh, :api_client, Swoosh.ApiClient.Req
+# config :swoosh, :api_client, Swoosh.ApiClient.Req
 
-config :cuz_core_connect, CuzCoreConnect.Mailer,
-  adapter: Swoosh.Adapters.Resend,
-  api_key: resend_email_api_key
+# config :cuz_core_connect, CuzCoreConnect.Mailer,
+#   adapter: Swoosh.Adapters.Resend,
+#   api_key: resend_email_api_key

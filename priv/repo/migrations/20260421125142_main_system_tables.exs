@@ -165,6 +165,109 @@ defmodule CuzCoreConnect.Repo.Migrations.MainSystemTables do
 
       timestamps()
     end
+
+    create_if_not_exists table(:tbl_scholarships) do
+      add :name, :string, null: false
+      add :code, :string
+      add :description, :text
+      add :sponsor, :string
+      add :coverage, :string, default: "full"
+      add :status, :string, null: false, default: "active"
+
+      timestamps(type: :utc_datetime)
+    end
+
+    create_if_not_exists table(:tbl_email_logs) do
+      add :to_address, :string, null: false
+      add :from_address, :string
+      add :subject, :string, null: false
+      add :body, :text
+      add :status, :string, null: false, default: "sent"
+      add :api_client_enabled, :boolean, null: false, default: false
+      add :error_message, :text
+      add :notif_type, :string
+      add :adapter, :string
+
+      timestamps(type: :utc_datetime)
+    end
+
+    create_if_not_exists table(:tbl_announcements) do
+      add :title, :string, null: false
+      add :body, :text, null: false
+      add :audience, :string, default: "All Users"
+      add :author, :string, default: "Admin"
+      add :status, :string, null: false, default: "draft"
+      add :published_at, :utc_datetime
+      add :views, :integer, default: 0, null: false
+
+      timestamps(type: :utc_datetime)
+    end
+
+    create_if_not_exists table(:tbl_site_messages) do
+      add :name, :string, null: false
+      add :email, :string
+      add :subject, :string, null: false
+      add :body, :text, null: false
+      add :source, :string, null: false, default: "contact"
+      add :status, :string, null: false, default: "unread"
+      add :priority, :string, default: "normal"
+      add :show_on_landing, :boolean, default: false, null: false
+      add :registration_id, references(:tbl_registration, on_delete: :nilify_all)
+
+      timestamps(type: :utc_datetime)
+    end
+  end
+
+  def alter_tables() do
+    alter table(:tbl_registration) do
+      add_if_not_exists :under_scholarship, :boolean, default: false, null: false
+      add_if_not_exists :scholarship_id, :id
+
+      modify :tracking_number, :string, null: true, from: {:string, null: false}
+      add_if_not_exists :wizard_step, :string
+      add_if_not_exists :rejection_reason, :string
+      add_if_not_exists :rejected_stage, :string
+    end
+
+    execute """
+    DO $$
+    BEGIN
+      IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'tbl_registration_scholarship_id_fkey'
+      ) THEN
+        ALTER TABLE tbl_registration
+          ADD CONSTRAINT tbl_registration_scholarship_id_fkey
+          FOREIGN KEY (scholarship_id) REFERENCES tbl_scholarships(id)
+          ON DELETE SET NULL;
+      END IF;
+    END $$;
+    """
+
+    alter table(:tbl_users) do
+      add_if_not_exists :student_number, :string
+      add_if_not_exists :first_name, :string
+      add_if_not_exists :last_name, :string
+      add_if_not_exists :middle_name, :string
+    end
+
+    execute """
+    ALTER TABLE tbl_registration
+      ALTER COLUMN student_contact TYPE varchar(32)
+      USING student_contact::varchar
+    """
+    execute "ALTER TABLE tbl_notifications DROP CONSTRAINT IF EXISTS tbl_notifications_sender_id_fkey"
+
+    execute "ALTER TABLE tbl_notifications ALTER COLUMN sender_id DROP NOT NULL"
+
+    execute """
+    ALTER TABLE tbl_notifications
+      ADD CONSTRAINT tbl_notifications_sender_id_fkey
+      FOREIGN KEY (sender_id) REFERENCES tbl_users(id)
+      ON DELETE SET NULL
+    """
+
+    execute "REVOKE UPDATE, DELETE ON tbl_registration_approvals FROM PUBLIC",
+            "GRANT UPDATE, DELETE ON tbl_registration_approvals TO PUBLIC"
   end
 
   def index_tables() do
@@ -178,6 +281,11 @@ defmodule CuzCoreConnect.Repo.Migrations.MainSystemTables do
     create_if_not_exists index(:tbl_registration, [:tracking_number])
     create_if_not_exists index(:tbl_registration, [:approval_level])
     create_if_not_exists index(:tbl_registration, [:payment_status])
+    create_if_not_exists unique_index(:tbl_registration_workflows, [:is_active],
+                           where: "is_active = true",
+                           name: :one_active_registration_workflow
+                         )
+    create_if_not_exists index(:tbl_registration, [:scholarship_id])
 
     create_if_not_exists index(:tbl_pages, [:deleted_at])
     create_if_not_exists index(:tbl_pages, [:role])
@@ -200,18 +308,69 @@ defmodule CuzCoreConnect.Repo.Migrations.MainSystemTables do
     create_if_not_exists index(:tbl_program_courses, [:course_id])
     create_if_not_exists index(:tbl_program_courses, [:is_active])
 
-    create_if_not_exists unique_index(:tbl_registration_workflows, [:is_active],
-                           where: "is_active = true",
-                           name: :one_active_registration_workflow
-                         )
-
     create_if_not_exists unique_index(:tbl_user_page_access, [:user_id, :page_id])
     create_if_not_exists index(:tbl_user_page_access, [:user_id])
-  end
 
-  def alter_tables() do
+    create_if_not_exists unique_index(:tbl_scholarships, [:code])
+    create_if_not_exists index(:tbl_scholarships, [:status])
+
+    create_if_not_exists index(:tbl_email_logs, [:status])
+    create_if_not_exists index(:tbl_email_logs, [:inserted_at])
+    create_if_not_exists index(:tbl_email_logs, [:to_address])
+
+    create_if_not_exists unique_index(:tbl_users, [:student_number],
+                           where: "student_number IS NOT NULL",
+                           name: :tbl_users_student_number_index
+                         )
+
+    create_if_not_exists index(:tbl_announcements, [:status])
+    create_if_not_exists index(:tbl_announcements, [:published_at])
+
+    create_if_not_exists index(:tbl_site_messages, [:status])
+    create_if_not_exists index(:tbl_site_messages, [:source])
+    create_if_not_exists index(:tbl_site_messages, [:show_on_landing])
   end
 
   def drop_tables() do
+    # Drop values that cannot fit in a 32-bit integer before reverting.
+    execute """
+    UPDATE tbl_registration
+    SET student_contact = NULL
+    WHERE student_contact ~ '[^0-9]'
+       OR length(regexp_replace(student_contact, '[^0-9]', '', 'g')) > 9
+       OR CAST(regexp_replace(student_contact, '[^0-9]', '', 'g') AS bigint) > 2147483647
+    """
+
+    execute """
+    ALTER TABLE tbl_registration
+      ALTER COLUMN student_contact TYPE integer
+      USING NULLIF(regexp_replace(student_contact, '[^0-9]', '', 'g'), '')::integer
+    """
+
+    execute "ALTER TABLE tbl_notifications DROP CONSTRAINT IF EXISTS tbl_notifications_sender_id_fkey"
+
+    # System / sender-less notifications cannot satisfy NOT NULL on rollback.
+    execute "DELETE FROM tbl_notifications WHERE sender_id IS NULL"
+
+    execute "ALTER TABLE tbl_notifications ALTER COLUMN sender_id SET NOT NULL"
+
+    execute """
+    ALTER TABLE tbl_notifications
+      ADD CONSTRAINT tbl_notifications_sender_id_fkey
+      FOREIGN KEY (sender_id) REFERENCES tbl_users(id)
+      ON DELETE CASCADE
+    """
+
+    # Drafts are allowed to have a null tracking_number; remove them before
+    # restoring the NOT NULL constraint on rollback.
+    execute """
+    DELETE FROM tbl_registration
+    WHERE tracking_number IS NULL
+    """
+
+    alter table(:tbl_registration) do
+      modify :tracking_number, :string, null: false, from: {:string, null: true}
+      remove_if_exists :wizard_step, :string
+    end
   end
 end
